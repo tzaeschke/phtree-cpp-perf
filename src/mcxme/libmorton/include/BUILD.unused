@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:private"])
+
+cc_library(
+    name = "libmorton",
+    testonly = True,
+    hdrs = [
+        "morton.h",
+        "morton2D.h",
+        "morton2D_LUTs.h",
+        "morton3D.h",
+        "morton3D_LUTs.h",
+        "morton_BMI.h",
+        "morton_common.h",
+        "morton_LUT_generators.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+    ],
+    alwayslink = 1,
+)

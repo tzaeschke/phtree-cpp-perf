@@ -17,6 +17,7 @@
 #include "logging.h"
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
+#include "src/mcxme/PHTree.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -47,13 +48,15 @@ template <Scenario SCENARIO, dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
 template <Scenario SCENARIO, dimension_t DIM>
-using TestMap = typename std::conditional_t<
+using TestMap =
+        typename std::conditional_t<
+                SCENARIO == ERASE_EMPLACE, xxxx, typename std::conditional_t<
     SCENARIO == ERASE_EMPLACE,
     PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
     typename std::conditional_t<
         SCENARIO == MM_BPT_RELOCATE,
         PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, b_plus_tree_hash_set<payload_t>>,
-        PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, std::set<payload_t>>>>;
+        PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, std::set<payload_t>>>>>;
 
 template <dimension_t DIM>
 struct UpdateOp {
@@ -235,6 +238,12 @@ void IndexBenchmark<DIM, SCENARIO>::UpdateWorld(benchmark::State& state) {
 }  // namespace
 
 template <typename... Arguments>
+void McxmeRelocate3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::MM_SET_RELOCATE_IF> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTreeMMRelocateIfStdSet3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::MM_SET_RELOCATE_IF> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -259,6 +268,12 @@ void PhTreeMMEraseEmplace3D(benchmark::State& state, Arguments&&... arguments) {
 }
 
 // index type, scenario name, data_type, num_entities, updates_per_round, move_distance
+// McxMe
+BENCHMARK_CAPTURE(McxmeRelocate3D, UPDATE_1000, UPDATES_PER_ROUND)
+->RangeMultiplier(10)
+->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+->Unit(benchmark::kMillisecond);
+
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(PhTreeMMRelocateIfStdSet3D, UPDATE_1000, UPDATES_PER_ROUND)
     ->RangeMultiplier(10)

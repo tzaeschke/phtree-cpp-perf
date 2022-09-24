@@ -17,6 +17,7 @@
 #include "logging.h"
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
+#include "src/mcxme/PHTree.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -235,6 +236,12 @@ void IndexBenchmark<DIM, SCENARIO>::UpdateWorld(benchmark::State& state) {
 }  // namespace
 
 template <typename... Arguments>
+void McxmeRelocate3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::ERASE_EMPLACE> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTreeBox3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::ERASE_EMPLACE> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -253,6 +260,12 @@ void PhTreeMultiMapStdBox3D(benchmark::State& state, Arguments&&... arguments) {
 }
 
 // index type, scenario name, data_type, num_entities, updates_per_round, move_distance
+// McxMe
+BENCHMARK_CAPTURE(McxmeRelocate3D, UPDATE_1000, UPDATES_PER_ROUND)
+        ->RangeMultiplier(10)
+        ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+        ->Unit(benchmark::kMillisecond);
+
 // PhTree
 BENCHMARK_CAPTURE(PhTreeBox3D, UPDATE_1000, UPDATES_PER_ROUND)
     ->RangeMultiplier(10)

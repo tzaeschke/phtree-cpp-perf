@@ -284,6 +284,7 @@ cc_binary(
         "@phtree//:phtree",
         "@gbenchmark//:benchmark",
         "@spdlog",
+       "//src/mcxme:ph-mcxme",
     ],
 )
 

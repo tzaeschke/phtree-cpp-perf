@@ -92,3 +92,45 @@ http_archive(
     strip_prefix = "bazel-compilation-database-0.3.5",
     url = "https://github.com/grailbio/bazel-compilation-database/archive/0.3.5.tar.gz",
 )
+
+
+
+#################################################3
+
+#load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+#all_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])"""
+#
+#http_archive(
+#        name = "rules_foreign_cc",
+#        strip_prefix = "rules_foreign_cc-main",
+#        url = "https://github.com/bazelbuild/rules_foreign_cc/archive/master.zip",
+#)
+#
+#load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
+#
+#rules_foreign_cc_dependencies()
+#
+#http_archive(
+#        name = "boost",
+#        build_file_content = all_content,
+#        strip_prefix = "boost_1_68_0",
+#        sha256 = "da3411ea45622579d419bfda66f45cd0f8c32a181d84adfa936f5688388995cf",
+#        urls = ["https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz"],
+#)
+
+
+#load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+_RULES_BOOST_COMMIT = "652b21e35e4eeed5579e696da0facbe8dba52b1f"
+
+http_archive(
+    name = "com_github_nelhage_rules_boost",
+    sha256 = "c1b8b2adc3b4201683cf94dda7eef3fc0f4f4c0ea5caa3ed3feffe07e1fb5b15",
+    strip_prefix = "rules_boost-%s" % _RULES_BOOST_COMMIT,
+    urls = [
+        "https://github.com/nelhage/rules_boost/archive/%s.tar.gz" % _RULES_BOOST_COMMIT,
+    ],
+)
+
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
