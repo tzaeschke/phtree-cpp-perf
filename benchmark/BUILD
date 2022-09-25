@@ -147,6 +147,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
+        "//src/mcxme:ph-mcxme",
         "@phtree//:phtree",
         "@gbenchmark//:benchmark",
         "@spdlog",

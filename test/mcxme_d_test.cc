@@ -94,7 +94,8 @@ double distanceL1(const TestPoint<DIM>& p1, const TestPoint<DIM>& p2) {
 
 template <dimension_t DIM>
 void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
-    DoubleRng rng(-1000, 1000);
+    // DoubleRng rng(-1000, 1000);
+    DoubleRng rng(0, 1000); // TODO TZ fix this ?!?!?
     auto refTree = std::map<TestPoint<DIM>, size_t>();
 
     points.reserve(N);
