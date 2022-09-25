@@ -73,13 +73,13 @@ void SuffixVisitor<DIM>::visitSub(PHTree<DIM, WIDTH>* tree) {
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS, unsigned int N>
-void SuffixVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int depth, unsigned int index) {
+void SuffixVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int , unsigned int index) {
 	this->template visitGeneral<PREF_BLOCKS>(node, index);
 }
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS>
-void SuffixVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int depth, unsigned int index) {
+void SuffixVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int , unsigned int index) {
 	this->template visitGeneral<PREF_BLOCKS>(node, index);
 }
 

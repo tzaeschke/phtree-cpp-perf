@@ -105,7 +105,7 @@ void NodeIterator<DIM>::setToEnd() {
 }
 
 template <unsigned int DIM>
-void NodeIterator<DIM>::setAddress(size_t address) {
+void NodeIterator<DIM>::setAddress(size_t ) {
 	throw std::runtime_error("subclass should implement this");
 }
 

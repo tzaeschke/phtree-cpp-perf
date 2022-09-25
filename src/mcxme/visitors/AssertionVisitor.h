@@ -60,7 +60,7 @@ void AssertionVisitor<DIM>::visitSub(PHTree<DIM, WIDTH>* tree) {
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS, unsigned int N>
-void AssertionVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int depth) {
+void AssertionVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int ) {
 	assert (node->getNumberOfContents() > 0);
 
 	unsigned long lastHcAddress = -1;
@@ -83,12 +83,12 @@ void AssertionVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned in
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS>
-void AssertionVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int depth) {
+void AssertionVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int ) {
 	validateContents(node, node->begin(), node->end());
 }
 
 template <unsigned int DIM>
-void AssertionVisitor<DIM>::validateContents(const Node<DIM>* node, NodeIterator<DIM>* begin, NodeIterator<DIM>* end) {
+void AssertionVisitor<DIM>::validateContents(const Node<DIM>* , NodeIterator<DIM>* begin, NodeIterator<DIM>* end) {
 	delete begin;
 	delete end;
 }

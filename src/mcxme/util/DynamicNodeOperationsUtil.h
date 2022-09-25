@@ -169,7 +169,7 @@ void DynamicNodeOperationsUtil<DIM, WIDTH>::resetCounters() {
 template <unsigned int DIM, unsigned int WIDTH>
 void DynamicNodeOperationsUtil<DIM, WIDTH>::createSubnodeWithExistingSuffix(
 		size_t currentIndex, Node<DIM>* currentNode, const NodeAddressContent<DIM>& content,
-		const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>& tree) {
+		const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>&) {
 
 #ifdef PRINT
 	cout << "create subnode with existing suffix" << endl;
@@ -269,7 +269,7 @@ void DynamicNodeOperationsUtil<DIM, WIDTH>::createSubnodeWithExistingSuffix(
 template <unsigned int DIM, unsigned int WIDTH>
 bool DynamicNodeOperationsUtil<DIM, WIDTH>::swapSuffixWithBuffer(size_t currentIndex, Node<DIM>* currentNode,
 			const NodeAddressContent<DIM>& content, const Entry<DIM, WIDTH>& entry,
-			EntryBuffer<DIM, WIDTH>* buffer, PHTree<DIM, WIDTH>& tree) {
+			EntryBuffer<DIM, WIDTH>* buffer, PHTree<DIM, WIDTH>&) {
 	assert (buffer);
 	assert (content.exists && !content.hasSubnode);
 	assert (buffer->assertCleared());
@@ -324,7 +324,7 @@ bool DynamicNodeOperationsUtil<DIM, WIDTH>::needToCopyNodeForSuffixInsertion(Nod
 template <unsigned int DIM, unsigned int WIDTH>
 Node<DIM>* DynamicNodeOperationsUtil<DIM, WIDTH>::insertSuffix(size_t currentIndex,
 		size_t hcAddress, Node<DIM>* currentNode,
-		const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>& tree) {
+		const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>&) {
 #ifdef PRINT
 	cout << "inserting suffix";
 #endif
@@ -605,7 +605,7 @@ void DynamicNodeOperationsUtil<DIM, WIDTH>::readUnlock(Node<DIM>* child, Node<DI
 }
 
 template <unsigned int DIM, unsigned int WIDTH>
-void DynamicNodeOperationsUtil<DIM, WIDTH>::parallelInsert(const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>& tree) {
+void DynamicNodeOperationsUtil<DIM, WIDTH>::parallelInsert(const Entry<DIM, WIDTH>& entry, PHTree<DIM, WIDTH>&) {
 	size_t lastHcAddress, index;
 	index = 0;
 	Node<DIM>* lastNode = NULL;

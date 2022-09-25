@@ -64,13 +64,13 @@ void PrefixSharingVisitor<DIM>::visitSub(PHTree<DIM, WIDTH>* tree) {
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS, unsigned int N>
-void PrefixSharingVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int depth) {
+void PrefixSharingVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int ) {
 	this->template visitGeneral<PREF_BLOCKS>(node);
 }
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS>
-void PrefixSharingVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int depth) {
+void PrefixSharingVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int ) {
 	this->template visitGeneral<PREF_BLOCKS>(node);
 }
 

@@ -535,7 +535,8 @@ void RangeQueryIterator<DIM, WIDTH>::createCurrentContent(const Node<DIM>* nextN
 
 #ifndef NDEBUG
 	const unsigned int ignoreNLowestBits = DIM * (WIDTH - currentIndex_ - 1);
-	assert (ignoreNLowestBits >= 0 && ignoreNLowestBits <= WIDTH * DIM);
+	// assert (ignoreNLowestBits >= 0 && ignoreNLowestBits <= WIDTH * DIM);
+    assert (ignoreNLowestBits <= WIDTH * DIM); // TODO TZ warning fixed
 	assert (MultiDimBitset<DIM>::checkRangeUnset(currentValue, ignoreNLowestBits + DIM, 0));
 	// validate that the node (with the prefix) is within the range
 	if (currentIndex_ > 0) {

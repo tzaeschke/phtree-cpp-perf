@@ -75,7 +75,7 @@ unsigned long CountNodeTypesVisitor<DIM>::getNumberOfVisitedLHCNodes() const {
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS, unsigned int N>
-void CountNodeTypesVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int depth) {
+void CountNodeTypesVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* , unsigned int ) {
 	nLHCNodes_++;
 
 	while (N >= lhcSizeHistogram.size()) {
@@ -87,7 +87,7 @@ void CountNodeTypesVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsign
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS>
-void CountNodeTypesVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int depth) {
+void CountNodeTypesVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* , unsigned int ) {
 	nAHCNodes_++;
 }
 

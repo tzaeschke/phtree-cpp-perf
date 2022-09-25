@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:private"])
 
 cc_library(
-    name = "ph-mcxme",
+    name = "mcxme",
     testonly = True,
     hdrs = [
         "Entry.h",
@@ -56,21 +56,54 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-#        "//src/mcxme/libmorton/include:libmorton",
         "@boost//:thread",
     ],
     alwayslink = 1,
 )
 
 
-cc_binary(
-    name = "mcxme-main",
+cc_library(
+    name = "ph-mcxme",
     testonly = True,
-    srcs = [
-        "main.cpp",
+    hdrs = [
+        "mcxme_map.h",
+   ],
+    visibility = [
+        "//visibility:public",
     ],
-    linkstatic = True,
     deps = [
-       "//src/mcxme:ph-mcxme",
+        ":mcxme",
+       "@phtree//:phtree",
     ],
+    alwayslink = 1,
 )
+
+cc_library(
+    name = "ph-mcxme-mm",
+    testonly = True,
+    hdrs = [
+        "mcxme_multimap.h",
+   ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":mcxme",
+       "@phtree//:phtree",
+    ],
+    alwayslink = 1,
+)
+
+
+
+#cc_binary(
+#    name = "mcxme-main",
+#    testonly = True,
+#    srcs = [
+#        "main.cpp",
+#    ],
+#    linkstatic = True,
+#    deps = [
+#       "//src/mcxme:ph-mcxme",
+#    ],
+#)

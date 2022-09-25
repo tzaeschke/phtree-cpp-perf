@@ -78,8 +78,10 @@ using namespace std;
 
 template <unsigned int DIM, unsigned int WIDTH>
 PHTree<DIM, WIDTH>::PHTree() {
-	const unsigned int blocksForFirstSuffix = 1 + ((WIDTH - 1) * DIM - 1) / (8 * sizeof (unsigned long));
-	root_ = NodeTypeUtil<DIM>::template buildNodeWithSuffixes<WIDTH>(0, 1, 1, blocksForFirstSuffix);
+	//const unsigned int blocksForFirstSuffix = 1 + ((WIDTH - 1) * DIM - 1) / (8 * sizeof (unsigned long));
+	//root_ = NodeTypeUtil<DIM>::template buildNodeWithSuffixes<WIDTH>(0, 1, 1, blocksForFirstSuffix);
+    const unsigned int suffixBits = (WIDTH - 1) * DIM; // TODO TZ, this was obviously wrong
+    root_ = NodeTypeUtil<DIM>::template buildNodeWithSuffixes<WIDTH>(0, 1, 1, suffixBits);
 }
 
 template <unsigned int DIM, unsigned int WIDTH>
@@ -163,7 +165,7 @@ void PHTree<DIM, WIDTH>::insertHyperRect(
 }
 
 template <unsigned int DIM, unsigned int WIDTH>
-pair<bool,int> PHTree<DIM, WIDTH>::lookup(const Entry<DIM, WIDTH>& e) const {
+pair<bool,int> PHTree<DIM, WIDTH>:: lookup(const Entry<DIM, WIDTH>& e) const {
 	#ifdef PRINT
 		cout << "searching: " << e << endl;
 	#endif

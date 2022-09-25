@@ -84,7 +84,8 @@ using namespace std;
 template <unsigned int DIM, unsigned int PREF_BLOCKS, unsigned int N>
 LHC<DIM, PREF_BLOCKS, N>::LHC(size_t prefixLength) : TNode<DIM, PREF_BLOCKS>(prefixLength),
 	addresses_(), references_(), m(0) {
-	assert (N > 0 && m >= 0 && m <= N);
+	//assert (N > 0 && m >= 0 && m <= N);
+    assert (N > 0 && m <= N); // TODO TZ This fixes a warning about midle always being >= 0
 	assert (N <= (1 << DIM));
 }
 
@@ -198,7 +199,8 @@ void LHC<DIM, PREF_BLOCKS, N>::lookupAddress(unsigned long hcAddress, bool* outE
 	while (l < r) {
 		// check interval [l, r)
 		const unsigned int middle = (l + r) / 2;
-		assert (0 <= middle && middle < m);
+		//assert (0 <= middle && middle < m);
+        assert (middle < m); // TODO TZ This fixes a warning about midle always being >= 0
 		lookupIndex(middle, &currentHcAddress);
 		if (currentHcAddress < hcAddress) {
 			l = middle + 1;

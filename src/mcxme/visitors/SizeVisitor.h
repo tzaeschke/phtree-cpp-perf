@@ -86,7 +86,7 @@ void SizeVisitor<DIM>::visitSub(PHTree<DIM, WIDTH>* tree) {
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS, unsigned int N>
-void SizeVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int depth) {
+void SizeVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int ) {
 	totalLHCByteSize += this->template superSize<PREF_BLOCKS>(node);
 	totalLHCByteSize += sizeof (node->addresses_);
 	totalLHCByteSize += sizeof (node->m);
@@ -95,7 +95,7 @@ void SizeVisitor<DIM>::visitSub(LHC<DIM, PREF_BLOCKS, N>* node, unsigned int dep
 
 template <unsigned int DIM>
 template <unsigned int PREF_BLOCKS>
-void SizeVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int depth) {
+void SizeVisitor<DIM>::visitSub(AHC<DIM, PREF_BLOCKS>* node, unsigned int ) {
 	totalAHCByteSize += this->template superSize<PREF_BLOCKS>(node);
 	totalAHCByteSize += sizeof(node->nContents);
 	totalAHCByteSize += sizeof(node->references_);
