@@ -246,7 +246,6 @@ TEST(PhTreeDTest, TestInsert) {
     generateCube(points, N);
 
     for (size_t i = 0; i < N; i++) {
-        std::cout << "Insert: " << i << std::endl;
         TestPoint<dim>& p = points.at(i);
         Id id(i);
         tree.insert(p, i);

@@ -26,11 +26,6 @@ namespace mcxme {
 
 using namespace improbable::phtree;
 
-const uint DIM = 3;
-// using dimension_t = std::uint32_t;
-using scalar_64_t = std::int64_t;
-// using QueryPoint = PhPoint<DIM, double>;
-
 // TODO 32 doesn´t work!
 const unsigned int WIDTH = 64;
 const unsigned int bitLength = WIDTH;  // 64; //4;
@@ -40,17 +35,14 @@ class IteratorBase {
   public:
     explicit IteratorBase() noexcept : entry_{}, finished_{true} {}
 
-    //       explicit IteratorBase(const EntryT *current_entry) noexcept:
-    //       current_entry_{current_entry} {}
-
     inline auto& operator*() const noexcept {
         assert(!finished_);
-        return entry_;  // current_entry_->GetValue();
+        return entry_;
     }
 
     inline auto* operator->() const noexcept {
         assert(!finished_);
-        return &entry_;  // current_entry_->GetValue();
+        return &entry_;
     }
 
     inline friend bool operator==(
@@ -64,39 +56,21 @@ class IteratorBase {
             (!left.finished_ && left.entry_ != right.entry_);
     }
 
-    //        auto &second() const {
-    //            return current_entry_->GetValue();
-    //        }
-
     [[nodiscard]] inline bool IsEnd() const noexcept {
         return finished_;
     }
-
-    //        inline EntryT *GetEntry() const noexcept {
-    //            return const_cast<EntryT *>(current_entry_);
-    //        }
 
   protected:
     void SetFinished() {
         finished_ = true;
     }
 
-    //        void SetCurrentResult(const  *current_entry) {
-    //            current_entry_ = current_entry;
-    //        }
-
-    //    protected:
-    //        const EntryT *current_entry_;
     Entry<DimInternal, WIDTH> entry_;
     bool finished_;
 };
 
 template <dimension_t DimInternal>
 class IteratorFull : public IteratorBase<DimInternal> {
-    //        static constexpr dimension_t DIM = CONVERT::DimInternal;
-    //        using SCALAR = typename CONVERT::ScalarInternal;
-    //        using EntryT = typename IteratorBase<T>::EntryT;
-
   public:
     IteratorFull(RangeQueryIterator<DimInternal, WIDTH>* it)
     : IteratorBase<DimInternal>{}, it_{it} {
@@ -124,34 +98,9 @@ class IteratorFull : public IteratorBase<DimInternal> {
         }
     }
 
-    //        bool IsEmpty() noexcept {
-    //            return !it_l.stack_size_ == 0;
-    //        }
-
     RangeQueryIterator<DimInternal, WIDTH>* it_;
 };
 
-//    template<dimension_t DIM, unsigned int WIDTH>
-//    class RangeQueryIteratorW {
-//    public:
-//        RangeQueryIteratorW(RangeQueryIterator<DIM, WIDTH> *it) : it_{it} {};
-//
-//        inline friend bool operator==(
-//                const RangeQueryIteratorW<DIM, WIDTH>& left, const IteratorBase<EntryT>& right)
-//                noexcept {
-//            return left.current_entry_ == right.current_entry_;
-//        }
-//
-//        inline friend bool operator!=(
-//                const RangeQueryIteratorW<DIM, WIDTH>& left, const IteratorBase<EntryT>& right)
-//                noexcept {
-//            return left.current_entry_ != right.current_entry_;
-//        }
-//
-//
-//    private:
-//        RangeQueryIterator<DIM, WIDTH> *it_;
-//    };
 
 template <dimension_t DimInternal>
 using IteratorEnd = IteratorBase<DimInternal>;
@@ -212,7 +161,9 @@ class PhTree {
     template <typename... Args>
     void emplace(const Key& key, Args&&... args) {
         ++size_;
-        tree_.insert(new_entry(key, std::forward<Args>(args)...));
+        auto e = Entry<DimInternal, WIDTH>(pre(key), std::forward<Args>(args)...);
+        tree_.insert(e);
+        //tree_.insert(new_entry(key, std::forward<Args>(args)...));
         // return tree_.try_emplace(converter_.pre(key), std::forward<Args>(args)...);
     }
 
@@ -245,7 +196,9 @@ class PhTree {
      */
     void insert(const Key& key, const T& value) {
         ++size_;
-        tree_.insert(new_entry(key, value));
+        auto e = Entry<DimInternal, WIDTH>(pre(key), value);
+        tree_.insert(e);
+        //tree_.insert(new_entry(key, value));
         // return tree_.insert(converter_.pre(key), value);
     }
 
@@ -294,16 +247,8 @@ class PhTree {
      * was found
      */
     auto find(const Key& key) {
-        //            if constexpr (IS_BOX) {
-        //                auto k2 = converter_.pre(key);
-        //                auto lo = to_vector(box2.min());
-        //                auto up = to_vector(box2.max());
-        //                std::pair<bool, int> result = tree_.lookupHyperRect(temp_entry(key, 0));
-        //                return result;
-        //            } else {
         std::pair<bool, int> result = tree_.lookup(temp_entry(key, 0));
         return result;
-        //            }
     }
 
     /*
@@ -546,10 +491,6 @@ class PhTree {
 
     Entry<DimInternal, WIDTH> temp_entry(const Key& key, int id) const {
         return Entry<DimInternal, WIDTH>(pre(key), id);
-    }
-
-    Entry<DimInternal, WIDTH>& new_entry(const Key& key, int id) const {
-        return *new Entry<DimInternal, WIDTH>(pre(key), id);
     }
 
     // This is used by PhTreeDebugHelper
