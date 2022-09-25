@@ -16,6 +16,7 @@
 #include "benchmark_util.h"
 #include "logging.h"
 #include "phtree/phtree.h"
+#include "src/mcxme/mcxme_map.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -28,7 +29,7 @@ namespace {
 const double GLOBAL_MAX = 10000;
 const double BOX_LEN = GLOBAL_MAX / 100.;
 
-enum QueryType { MIN_MAX_ITER, MIN_MAX_FOR_EACH };
+enum QueryType { MIN_MAX_ITER, MIN_MAX_FOR_EACH, MCXME };
 
 template <dimension_t DIM>
 using BoxType = PhBoxD<DIM>;
@@ -36,14 +37,25 @@ using BoxType = PhBoxD<DIM>;
 template <dimension_t DIM>
 using PointType = PhPointD<DIM>;
 
-template <dimension_t DIM>
-using TreeType = PhTreeBoxD<DIM, int>;
+// template <dimension_t DIM>
+// using TreeType = PhTreeBoxD<DIM, int>;
+
+template <QueryType SCENARIO, dimension_t DIM>
+using CONVERTER = ConverterBoxIEEE<DIM>;
+
+template <QueryType SCENARIO, dimension_t DIM>
+using TreeType = typename std::conditional_t<
+    SCENARIO == MCXME,
+    mcxme::PhTreeBoxD<DIM, int>,
+    improbable::phtree::PhTreeBoxD<DIM, int, CONVERTER<SCENARIO, DIM>>>;
 
 /*
  * Benchmark for window queries.
  */
 template <dimension_t DIM, QueryType QUERY_TYPE>
 class IndexBenchmark {
+    using Index = TreeType<QUERY_TYPE, DIM>;
+
   public:
     IndexBenchmark(benchmark::State& state, double avg_query_result_size_ = 100);
 
@@ -63,7 +75,7 @@ class IndexBenchmark {
             int)(GLOBAL_MAX * pow(avg_query_result_size_ / (double)num_entities_, 1. / (double)DIM));
     };
 
-    TreeType<DIM> tree_;
+    Index tree_;
     std::default_random_engine random_engine_;
     std::uniform_real_distribution<> cube_distribution_;
     std::vector<BoxType<DIM>> boxes_;
@@ -118,8 +130,8 @@ struct Counter {
     size_t n_ = 0;
 };
 
-template <dimension_t DIM>
-size_t Count_MMI(TreeType<DIM>& tree, BoxType<DIM>& query_box) {
+template <dimension_t DIM, QueryType QUERY_TYPE>
+size_t Count_MMI(TreeType<QUERY_TYPE, DIM>& tree, BoxType<DIM>& query_box) {
     size_t n = 0;
     for (auto q = tree.begin_query(query_box); q != tree.end(); ++q) {
         ++n;
@@ -127,8 +139,8 @@ size_t Count_MMI(TreeType<DIM>& tree, BoxType<DIM>& query_box) {
     return n;
 }
 
-template <dimension_t DIM>
-size_t Count_MMFE(TreeType<DIM>& tree, BoxType<DIM>& query_box) {
+template <dimension_t DIM, QueryType QUERY_TYPE>
+size_t Count_MMFE(TreeType<QUERY_TYPE, DIM>& tree, BoxType<DIM>& query_box) {
     Counter<DIM, int> callback;
     tree.for_each(query_box, callback);
     return callback.n_;
@@ -139,10 +151,11 @@ void IndexBenchmark<DIM, QUERY_TYPE>::QueryWorld(benchmark::State& state, BoxTyp
     size_t n = 0;
     switch (QUERY_TYPE) {
     case MIN_MAX_ITER:
-        n = Count_MMI(tree_, query_box);
+    case MCXME:
+        n = Count_MMI<DIM, QUERY_TYPE>(tree_, query_box);
         break;
     case MIN_MAX_FOR_EACH:
-        n = Count_MMFE(tree_, query_box);
+        n = Count_MMFE<DIM, QUERY_TYPE>(tree_, query_box);
         break;
     }
 
@@ -167,6 +180,12 @@ void IndexBenchmark<DIM, QUERY_TYPE>::CreateQuery(BoxType<DIM>& query_box) {
 }  // namespace
 
 template <typename... Arguments>
+void Mcxme(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, MCXME> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTree3D_MMI(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, MIN_MAX_ITER> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -179,6 +198,12 @@ void PhTree3D_MMFE(benchmark::State& state, Arguments&&... arguments) {
 }
 
 // index type, scenario name, data_type, num_entities, query_result_size
+// Mcxme
+BENCHMARK_CAPTURE(Mcxme, WQ_100, 100.0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
 // PhTree
 BENCHMARK_CAPTURE(PhTree3D_MMFE, WQ_100, 100.0)
     ->RangeMultiplier(10)

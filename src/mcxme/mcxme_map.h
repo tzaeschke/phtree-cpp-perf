@@ -350,10 +350,14 @@ class PhTree {
         CALLBACK&& callback,
         FILTER&& filter = FILTER(),
         QUERY_TYPE query_type = QUERY_TYPE()) const {
-        tree_.for_each(
-            query_type(converter_.pre_query(query_box)),
-            std::forward<CALLBACK>(callback),
-            std::forward<FILTER>(filter));
+        for (auto it = begin_query(query_box); it != end(); ++it) {
+            // TODO
+            //callback();
+        }
+//        tree_.for_each(
+//            query_type(converter_.pre_query(query_box)),
+//            std::forward<CALLBACK>(callback),
+//            std::forward<FILTER>(filter));
     }
 
     /*
