@@ -26,9 +26,8 @@ namespace mcxme {
 
 using namespace improbable::phtree;
 
-// TODO 32 doesn´t work!
 const unsigned int WIDTH = 64;
-const unsigned int bitLength = WIDTH;  // 64; //4;
+const unsigned int bitLength = WIDTH;
 
 template <dimension_t DimInternal>
 class IteratorBase {
@@ -101,7 +100,6 @@ class IteratorFull : public IteratorBase<DimInternal> {
     RangeQueryIterator<DimInternal, WIDTH>* it_;
 };
 
-
 template <dimension_t DimInternal>
 using IteratorEnd = IteratorBase<DimInternal>;
 
@@ -163,8 +161,8 @@ class PhTree {
         ++size_;
         auto e = Entry<DimInternal, WIDTH>(pre(key), std::forward<Args>(args)...);
         tree_.insert(e);
-        //tree_.insert(new_entry(key, std::forward<Args>(args)...));
-        // return tree_.try_emplace(converter_.pre(key), std::forward<Args>(args)...);
+        // tree_.insert(new_entry(key, std::forward<Args>(args)...));
+        //  return tree_.try_emplace(converter_.pre(key), std::forward<Args>(args)...);
     }
 
     /*
@@ -198,8 +196,8 @@ class PhTree {
         ++size_;
         auto e = Entry<DimInternal, WIDTH>(pre(key), value);
         tree_.insert(e);
-        //tree_.insert(new_entry(key, value));
-        // return tree_.insert(converter_.pre(key), value);
+        // tree_.insert(new_entry(key, value));
+        //  return tree_.insert(converter_.pre(key), value);
     }
 
     /*
@@ -326,8 +324,10 @@ class PhTree {
      * signature of the default 'FilterNoOp`.
      */
     template <typename CALLBACK, typename FILTER = FilterNoOp>
-    void for_each(CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        tree_.for_each(std::forward<CALLBACK>(callback), std::forward<FILTER>(filter));
+    void for_each(
+        CALLBACK&&, FILTER&&  // filter = FILTER()
+    ) const {
+        // tree_.for_each(std::forward<CALLBACK>(callback), std::forward<FILTER>(filter));
     }
 
     /*
@@ -347,17 +347,18 @@ class PhTree {
         typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     void for_each(
         QueryBox query_box,
-        CALLBACK&& callback,
-        FILTER&& filter = FILTER(),
-        QUERY_TYPE query_type = QUERY_TYPE()) const {
+        CALLBACK&&,
+        FILTER&&,   // filter = FILTER(),
+        QUERY_TYPE  // query_type = QUERY_TYPE()
+    ) const {
         for (auto it = begin_query(query_box); it != end(); ++it) {
             // TODO
-            //callback();
+            // callback();
         }
-//        tree_.for_each(
-//            query_type(converter_.pre_query(query_box)),
-//            std::forward<CALLBACK>(callback),
-//            std::forward<FILTER>(filter));
+        //        tree_.for_each(
+        //            query_type(converter_.pre_query(query_box)),
+        //            std::forward<CALLBACK>(callback),
+        //            std::forward<FILTER>(filter));
     }
 
     /*
@@ -385,14 +386,19 @@ class PhTree {
     template <typename FILTER = FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box  //,
                                                 // FILTER &&filter = FILTER(),
-                     // QUERY_TYPE query_type = DEFAULT_QUERY_TYPE()
+                                                // QUERY_TYPE query_type = DEFAULT_QUERY_TYPE()
     ) const {
         auto box2 = converter_.pre_query(query_box);
         auto lo = to_vector(box2.min());
         auto up = to_vector(box2.max());
-        // TODO include-query
-        // RangeQueryIterator<DIM, WIDTH> *it = tree_.intersectionQuery(lo, up);
-        return IteratorFull<DimInternal>(tree_.intersectionQuery(lo, up));
+        if constexpr (IS_BOX) {
+            // TODO include-query
+            // RangeQueryIterator<DIM, WIDTH> *it = tree_.intersectionQuery(lo, up);
+            return IteratorFull<DimInternal>(tree_.intersectionQuery(lo, up));
+        } else {
+            return IteratorFull<DimInternal>(tree_.rangeQuery(lo, up));
+            // return end();
+        }
     }
 
     /*

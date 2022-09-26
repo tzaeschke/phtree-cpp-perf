@@ -28,7 +28,7 @@ template <dimension_t DIM>
 using TestPoint = PhPointD<DIM>;
 
 template <dimension_t DIM, typename T>
-using TestTree = PhTreeD<DIM, T, ConverterMultiply<DIM, 1000, 1>>;
+using TestTree = PhTreeD<DIM, T>;//, ConverterMultiply<DIM, 1000, 1>>;
 
 class DoubleRng {
   public:

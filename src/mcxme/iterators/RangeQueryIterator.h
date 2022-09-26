@@ -92,9 +92,10 @@ RangeQueryIterator<DIM, WIDTH>::RangeQueryIterator(vector<pair<unsigned long, co
 
 #ifndef NDEBUG
 	// validation only: lower left < upper right
-	pair<unsigned long, unsigned long> comp = MultiDimBitset<DIM>::
-				compareSmallerEqual(lowerLeftCorner_.values_, upperRightCorner_.values_, DIM * WIDTH, 0, highestAddress);
-	assert ((comp.first == highestAddress) && "should be: lower left < upper right");
+    // TODO TZ this is wrong. Lower-left == iupper-right is perfectly legal.
+//	pair<unsigned long, unsigned long> comp = MultiDimBitset<DIM>::
+//				compareSmallerEqual(lowerLeftCorner_.values_, upperRightCorner_.values_, DIM * WIDTH, 0, highestAddress);
+//	assert ((comp.first == highestAddress) && "should be: lower left < upper right");
 #endif
 
 	assert (!visitedNodes->empty() && "at least the root node must have been visited");

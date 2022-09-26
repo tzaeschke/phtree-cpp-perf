@@ -251,7 +251,7 @@ TEST(PhTreeBoxDTest, TestInsert) {
         size_t found = 0;
         for (auto q = tree.begin_query(p); q != tree.end(); ++q) {
             std::cout << "Found: " << (*q).id_ << std::endl;
-            found += (i == (*q).id_);
+            found += ((int)i == (*q).id_);
         }
         ASSERT_EQ(1, found);
     }
