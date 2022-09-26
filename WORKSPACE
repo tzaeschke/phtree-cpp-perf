@@ -20,6 +20,16 @@ http_archive(
     url = "https://github.com/gabime/spdlog/archive/v1.5.0.tar.gz",
 )
 
+#https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz
+#https://github.com/libspatialindex/libspatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.gz
+http_archive(
+    name = "lib-spatial-index",
+    build_file = "@third_party//lib-spatial-index:BUILD",
+    sha256 = "7b44340a3edc55c11abfc453bb60f148b29f569cef9e1148583e76132e9c7379",
+    strip_prefix = "libspatialindex-1.9.3",
+    url = "https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz",
+)
+
 http_archive(
     name = "gbenchmark",
     sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
@@ -134,3 +144,18 @@ http_archive(
 
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
+
+### libSpatialIndex
+
+#new_local_repository(
+#    name = "system_libs",
+#    # pkg-config --variable=libdir x11
+#    path = "/usr/lib/x86_64-linux-gnu",
+#    build_file_content = """
+#cc_library(
+#    name = "lib-spatial-index",
+#    srcs = ["libspatialindex.so.6"],
+#    visibility = ["//visibility:public"],
+#)
+#""",
+#)

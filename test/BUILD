@@ -28,3 +28,17 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "lsi_rtree_multimap_box_d_test",
+    timeout = "long",
+    srcs = [
+        "lsi_rtree_multimap_box_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/lsi:ph-mcxme-mm",
+        "@phtree//:phtree",
+        "@gtest//:gtest_main",
+    ],
+)
+
