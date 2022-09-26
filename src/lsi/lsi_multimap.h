@@ -667,19 +667,21 @@ class PhTreeMultiMap {
      */
     template <
         typename CALLBACK,
-        typename FILTER = FilterNoOp,
-        typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
+        typename FILTER = FilterNoOp>
     void for_each(
         QueryBox query_box,
         CALLBACK&& callback,
-        FILTER&& filter = FILTER(),
-        QUERY_TYPE query_type = QUERY_TYPE()) const {
+        FILTER&& filter = FILTER()) const {
         class MyVisitor : public IVisitor {
           public:
+            MyVisitor(CALLBACK&& cb, FILTER&& f)
+            : callback_{std::forward<CALLBACK>(cb)}, filter_{std::forward<FILTER>(f)} {};
             void visitNode(const INode& /* n */) override {}
             void visitData(const IData& d) override {
-                if (filter_(d.getIdentifier())) {
-                    callback_(d.getIdentifier());
+                KeyInternal ki{};  // TODO
+                if (filter_.IsEntryValid(ki, d.getIdentifier())) {
+                    Key ke{};  // TODO
+                    callback_(ke, d.getIdentifier());
                 }
                 // std::cout << d.getIdentifier() << std::endl;
                 //  the ID of this data entry is an answer to the query. I will just print it to
@@ -691,9 +693,10 @@ class PhTreeMultiMap {
         };
         MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter)};
 
-        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
-        Region r = Region(box.min(), box.max(), DIM);
-        tree_->intersectsWithQuery(r, v);
+//        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
+//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+//        tree_->intersectsWithQuery(r, v);
+        tree_->intersectsWithQuery(to_region(query_box), v);
         //
         //
         //

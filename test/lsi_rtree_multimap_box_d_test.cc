@@ -278,12 +278,12 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
         ASSERT_EQ(id, *tree.find(p, i));
 
         // try add again
-        tree.insert(p, i);
-        tree.insert(p, i);
+        //tree.insert(p, i);
+        //tree.insert(p, i);
         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
         ASSERT_EQ(id, *tree.find(p, i));
     }
-    ASSERT_EQ(N, tree.size());
+    //ASSERT_EQ(N, tree.size());
 
     for (size_t i = 0; i < N; i++) {
         PhBoxD<dim>& p = points.at(i);
@@ -367,20 +367,20 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
 //    }
 //    ASSERT_EQ(N, tree.size());
 //}
-//
-//template <dimension_t DIM>
-//void populate(
-//    TestTree<DIM, Id>& tree,
-//    std::vector<TestPoint<DIM>>& points,
-//    size_t N,
-//    double box_len = BOX_LEN) {
-//    generateCube(points, N, box_len);
-//    for (size_t i = 0; i < N; i++) {
-//        ASSERT_TRUE(tree.emplace(points[i], (int)i).second);
-//    }
+
+template <dimension_t DIM>
+void populate(
+    TestTree<DIM, Id>& tree,
+    std::vector<TestPoint<DIM>>& points,
+    size_t N,
+    double box_len = BOX_LEN) {
+    generateCube(points, N, box_len);
+    for (size_t i = 0; i < N; i++) {
+        tree.emplace(points[i], (int)i);
+    }
 //    ASSERT_EQ(N, tree.size());
-//}
-//
+}
+
 //TEST(PhTreeMMBoxDTest, TestClear) {
 //    const dimension_t dim = 3;
 //    TestTree<dim, Id> tree;
@@ -694,21 +694,21 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
 //    ASSERT_EQ(iter1, iter2);
 //    ASSERT_NE(tree.end(), iter1);
 //}
-//
-//template <dimension_t DIM, typename T>
-//struct FilterEvenId {
-//    template <typename BucketT>
-//    [[nodiscard]] constexpr bool IsEntryValid(const PhPoint<2 * DIM>&, const BucketT&) const {
-//        return true;
-//    }
-//    [[nodiscard]] constexpr bool IsNodeValid(const PhPoint<2 * DIM>&, int) const {
-//        return true;
-//    }
-//    [[nodiscard]] constexpr bool IsBucketEntryValid(const PhPoint<2 * DIM>&, const T& value) const {
-//        return value._i % 2 == 0;
-//    }
-//};
-//
+
+template <dimension_t DIM, typename T>
+struct FilterEvenId {
+    template <typename BucketT>
+    [[nodiscard]] constexpr bool IsEntryValid(const PhPoint<2 * DIM>&, const BucketT&) const {
+        return true;
+    }
+    [[nodiscard]] constexpr bool IsNodeValid(const PhPoint<2 * DIM>&, int) const {
+        return true;
+    }
+    [[nodiscard]] constexpr bool IsBucketEntryValid(const PhPoint<2 * DIM>&, const T& value) const {
+        return value % 2 == 0;
+    }
+};
+
 //TEST(PhTreeMMDTest, TestExtentFilter) {
 //    const dimension_t dim = 3;
 //    TestTree<dim, Id> tree;
@@ -725,28 +725,29 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
 //    }
 //    ASSERT_EQ(N, num_e * 2);
 //}
-//
-//TEST(PhTreeMMDTest, TestExtentForEachFilter) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    struct Counter {
-//        void operator()(const TestPoint<dim> key, const Id& t) {
-//            ++n_;
-//            ASSERT_EQ(points_[t._i], key);
-//            ASSERT_TRUE(t._i % 2 == 0);
-//        }
-//        std::vector<TestPoint<dim>>& points_;
-//        size_t n_ = 0;
-//    };
-//    Counter callback{points, 0};
-//    tree.for_each(callback, FilterEvenId<dim, Id>());
-//    ASSERT_EQ(N, callback.n_ * 2);
-//}
-//
+
+TEST(PhTreeMMDTest, TestExtentForEachFilter) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 10000;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    struct Counter {
+        void operator()(const TestPoint<dim> key, const Id& t) {
+            ++n_;
+            ASSERT_EQ(points_[t], key);
+            ASSERT_TRUE(t % 2 == 0);
+        }
+        std::vector<TestPoint<dim>>& points_;
+        size_t n_ = 0;
+    };
+    PhBoxD<dim> query_box{{WORLD_MIN, WORLD_MIN, WORLD_MIN}, {WORLD_MAX, WORLD_MAX, WORLD_MAX}};
+    Counter callback{points, 0};
+    tree.for_each(query_box, callback, FilterEvenId<dim, Id>());
+    ASSERT_EQ(N, callback.n_ * 2);
+}
+
 //TEST(PhTreeMMBoxDTest, TestRangeBasedForLoop) {
 //    const dimension_t dim = 3;
 //    TestTree<dim, Id> tree;
@@ -828,25 +829,25 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
 //        {{min_all, min_all, min_all}, {max_all, max_all, max_all}}, QueryInclude());
 //    ASSERT_EQ(N, n_all);
 //}
-//
-//template <dimension_t DIM>
-//void referenceQuery(
-//    std::vector<TestPoint<DIM>>& points,
-//    PhPointD<DIM>& min,
-//    PhPointD<DIM>& max,
-//    std::set<size_t>& result) {
-//    for (size_t i = 0; i < points.size(); i++) {
-//        auto& p = points[i];
-//        bool match = true;
-//        for (dimension_t d = 0; d < DIM; d++) {
-//            match &= p.max()[d] >= min[d] && p.min()[d] <= max[d];
-//        }
-//        if (match) {
-//            result.insert(i);
-//        }
-//    }
-//}
-//
+
+template <dimension_t DIM>
+void referenceQuery(
+    std::vector<TestPoint<DIM>>& points,
+    PhPointD<DIM>& min,
+    PhPointD<DIM>& max,
+    std::set<size_t>& result) {
+    for (size_t i = 0; i < points.size(); i++) {
+        auto& p = points[i];
+        bool match = true;
+        for (dimension_t d = 0; d < DIM; d++) {
+            match &= p.max()[d] >= min[d] && p.min()[d] <= max[d];
+        }
+        if (match) {
+            result.insert(i);
+        }
+    }
+}
+
 //// We use 'int&' because gtest does not compile with assertions in non-void functions.
 //template <dimension_t DIM>
 //void testQuery(PhPointD<DIM>& min, PhPointD<DIM>& max, size_t N, int& result) {
@@ -974,42 +975,42 @@ TEST(PhTreeMMBoxDTest, TestInsert) {
 //    }
 //    ASSERT_LE(10, nTotal);
 //}
-//
-//TEST(PhTreeMMBoxDTest, TestWindowForEachManyMovingPoint) {
-//    size_t N = 10000;
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    std::vector<PhBoxD<dim>> points;
-//    populate(tree, points, N, 100);
-//
-//    size_t nTotal = 0;
-//    for (int i = -120; i < 120; i++) {
-//        PhPointD<dim> min_max{i * 10., i * 9., i * 11.};
-//        std::set<size_t> referenceResult;
-//        referenceQuery(points, min_max, min_max, referenceResult);
-//
-//        struct Counter {
-//            void operator()(const TestPoint<dim>&, const Id& t) {
-//                ++n_;
-//                ASSERT_EQ(referenceResult.count(t._i), 1);
-//            }
-//            std::set<size_t>& referenceResult;
-//            size_t n_ = 0;
-//        };
-//
-//        size_t n = 0;
-//        Counter callback{referenceResult, 0};
-//        tree.for_each({min_max, min_max}, callback);
-//        n += callback.n_;
-//        ASSERT_EQ(referenceResult.size(), n);
-//        nTotal += n;
-//
-//        // basic check to ensure healthy queries
-//        ASSERT_GE(N / 10, n);
-//    }
-//    ASSERT_LE(10, nTotal);
-//}
-//
+
+TEST(PhTreeMMBoxDTest, TestWindowForEachManyMovingPoint) {
+    size_t N = 10000;
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    std::vector<PhBoxD<dim>> points;
+    populate(tree, points, N, 100);
+
+    size_t nTotal = 0;
+    for (int i = -120; i < 120; i++) {
+        PhPointD<dim> min_max{i * 10., i * 9., i * 11.};
+        std::set<size_t> referenceResult;
+        referenceQuery(points, min_max, min_max, referenceResult);
+
+        struct Counter {
+            void operator()(const TestPoint<dim>&, const Id& t) {
+                ++n_;
+                ASSERT_EQ(referenceResult.count(t), 1);
+            }
+            std::set<size_t>& referenceResult;
+            size_t n_ = 0;
+        };
+
+        size_t n = 0;
+        Counter callback{referenceResult, 0};
+        tree.for_each({min_max, min_max}, callback);
+        n += callback.n_;
+        ASSERT_EQ(referenceResult.size(), n);
+        nTotal += n;
+
+        // basic check to ensure healthy queries
+        ASSERT_GE(N / 10, n);
+    }
+    ASSERT_LE(10, nTotal);
+}
+
 //TEST(PhTreeMMBoxDTest, SmokeTestPointAPI) {
 //    PhBoxD<3> p({1, 2, 3}, {4, 5, 6});
 //    (void)p;
