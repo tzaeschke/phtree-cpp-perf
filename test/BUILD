@@ -36,7 +36,7 @@ cc_test(
     ],
     linkstatic = True,
     deps = [
-        "//src/lsi:ph-mcxme-mm",
+        "//src/lsi:ph-lsi-mm",
         "@phtree//:phtree",
         "@gtest//:gtest_main",
     ],

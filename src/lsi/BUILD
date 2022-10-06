@@ -43,7 +43,7 @@ package(default_visibility = ["//visibility:private"])
 #)
 
 cc_library(
-    name = "ph-mcxme-mm",
+    name = "ph-lsi-mm",
     testonly = True,
     hdrs = [
         "lsi_multimap.h",

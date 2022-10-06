@@ -155,6 +155,23 @@ cc_binary(
 )
 
 cc_binary(
+    name = "insert_mm_box_d_benchmark",
+    testonly = True,
+    srcs = [
+        "insert_mm_box_d_benchmark.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        ":benchmark",
+        "//src/mcxme:ph-mcxme",
+        "//src/lsi:ph-lsi-mm",
+        "@phtree//:phtree",
+        "@gbenchmark//:benchmark",
+        "@spdlog",
+    ],
+)
+
+cc_binary(
     name = "knn_d_benchmark",
     testonly = True,
     srcs = [
