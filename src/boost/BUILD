@@ -43,16 +43,16 @@ package(default_visibility = ["//visibility:private"])
 #)
 
 cc_library(
-    name = "ph-lsi-mm",
+    name = "ph-boost-mm",
     testonly = True,
     hdrs = [
-        "lsi_multimap.h",
+        "boost_multimap.h",
    ],
     visibility = [
         "//visibility:public",
     ],
     deps = [
-       "@lib-spatial-index",
+       "@boost//:geometry",
        "@phtree//:phtree",
     ],
     alwayslink = 1,
