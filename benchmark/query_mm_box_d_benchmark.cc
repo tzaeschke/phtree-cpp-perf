@@ -33,7 +33,7 @@ namespace {
 
 const double GLOBAL_MAX = 10000;
 const double BOX_LEN = 100;
-const double AVG_QUERY_RESULT_SIZE = 100;
+const double AVG_QUERY_RESULT_SIZE = 3;
 
 enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP };
 
@@ -244,16 +244,16 @@ void PhTreeMultiMapM3D(benchmark::State& state, Arguments&&... arguments) {
 
 // index type, scenario name, data_type, num_entities, avg_query_result_size
 // PhTree
-BENCHMARK_CAPTURE(PhTree3D, WQ_100, AVG_QUERY_RESULT_SIZE)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-// PhTreeMultiMap
-BENCHMARK_CAPTURE(PhTreeMultiMapM3D, WQ_100, AVG_QUERY_RESULT_SIZE)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
+//BENCHMARK_CAPTURE(PhTree3D, WQ_100, AVG_QUERY_RESULT_SIZE)
+//    ->RangeMultiplier(10)
+//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+//    ->Unit(benchmark::kMillisecond);
+//
+//// PhTreeMultiMap
+//BENCHMARK_CAPTURE(PhTreeMultiMapM3D, WQ_100, AVG_QUERY_RESULT_SIZE)
+//    ->RangeMultiplier(10)
+//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+//    ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BoostRT, WQ_100, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)

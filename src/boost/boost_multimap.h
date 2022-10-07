@@ -20,7 +20,6 @@
 #include <boost/geometry/algorithms/comparable_distance.hpp>
 #include <boost/geometry/algorithms/equals.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
-
 // #include <boost/geometry/geometry.hpp>
 #include <boost/geometry/core/coordinate_system.hpp>
 #include <boost/geometry/geometries/segment.hpp>
@@ -164,8 +163,9 @@ class PhTreeMultiMap {
     using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET, POINT_KEYS, DEFAULT_QUERY_TYPE>;
     using ValueType = T;
 
-    using Entry = std::pair<box_car, T>;
-    using TREE = rtree<Entry, bgi::rstar<4>>;
+    using Geom = typename std::conditional_t<IS_BOX, box_car, point_car>;
+    using Entry = std::pair<Geom, T>;
+    using TREE = rtree<Entry, bgi::rstar<16>>;
     using ITER = decltype(TREE().qend());
 
     friend IteratorBase<PHTREE>;
@@ -197,11 +197,7 @@ class PhTreeMultiMap {
      */
     void emplace(const Key& key, const T& id) {
         if constexpr (DIM == 3) {
-            //            to_shape(key);
-            //            point_car lo{};
-            //            point_car hi{};
-            //            box_car box{lo, hi};
-            static_assert(DIM != DimInternal);
+            // static_assert(DIM != DimInternal);
             tree_.insert(std::make_pair(to_shape(key), id));
         } else {
             assert(false);
@@ -258,7 +254,14 @@ class PhTreeMultiMap {
      * @return '1', if a value is associated with the provided key, otherwise '0'.
      */
     size_t count(const Key& key) const {
-        return tree_.count(to_shape(key));
+        return tree_.count(to_shape(key));  // TODO? This is not publicly documented....??
+
+        //        size_t n = 0;
+        //        auto it = tree_.qbegin(bgi::covered_by(to_region(key)));
+        //        for (; it != tree_.qend(); ++it) {
+        //            ++n;
+        //        }
+        //        return n;
     }
 
     /*
@@ -286,7 +289,6 @@ class PhTreeMultiMap {
      */
     auto find(const Key& key) {
         // auto query_box = to_region(key);
-        //  bgi::covered_by(b)
         auto it = tree_.template qbegin(bgi::covered_by(to_region(key)));
         // TODO && overlaps() ?
         // TODO or: && !within() ?
@@ -306,7 +308,7 @@ class PhTreeMultiMap {
         auto query_box = to_region(key);
         // bgi::covered_by(b) // TODO
         auto it =
-            tree_.template qbegin(bgi::within(query_box) && bgi::satisfies([&](auto const& v) {
+            tree_.template qbegin(bgi::covered_by(query_box) && bgi::satisfies([&](auto const& v) {
                                       return v.second == value;
                                   }));
         return IteratorNormal<ITER, PHTREE>(it);
@@ -318,7 +320,7 @@ class PhTreeMultiMap {
      * @return '1' if the key/value pair was found, otherwise '0'.
      */
     size_t erase(const Key& key, const T& value) {
-        return tree_.remove({to_shape(key), value});
+        return tree_.remove(std::make_pair(to_shape(key), value));
     }
 
     /*
@@ -329,25 +331,10 @@ class PhTreeMultiMap {
      *
      * @return '1' if a value was found, otherwise '0'.
      */
-    //    template <typename ITERATOR>
-    //    size_t erase(const ITERATOR& iterator) {
-    //        static_assert(
-    //            std::is_convertible_v<ITERATOR*, IteratorBase<PHTREE>*>,
-    //            "erase(iterator) requires an iterator argument. For erasing by key please use "
-    //            "erase(key, value).");
-    //        if (iterator != end()) {
-    //            auto& bucket = const_cast<BUCKET&>(*iterator.GetIteratorOfPhTree());
-    //            size_t old_size = bucket.size();
-    //            bucket.erase(iterator.GetIteratorOfBucket());
-    //            bool success = bucket.size() < old_size;
-    //            if (bucket.empty()) {
-    //                success &= tree_->erase(iterator.GetIteratorOfPhTree()) > 0;
-    //            }
-    //            size_ -= success;
-    //            return success;
-    //        }
-    //        return 0;
-    //    }
+    template <typename ITERATOR>
+    size_t erase(const ITERATOR& iterator) {
+        return tree_.remove(iterator.iter_, iterator.iter_);
+    }
 
     /*
      * This function attempts to remove the 'value' from 'old_key' and reinsert it for 'new_key'.
@@ -522,11 +509,6 @@ class PhTreeMultiMap {
      */
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
-        //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        //        tree_->intersectsWithQuery(r, v);
-        // auto predicate =
-
         //        auto predicate =
         //            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
         //                KeyInternal ki{};  // TODO
@@ -538,14 +520,21 @@ class PhTreeMultiMap {
         //            // do something with value
         //        }
 
+        // TODO
+        // TODO
+        // TODO
+        // TODO
         auto it = tree_.qbegin(
             bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
                 KeyInternal ki{};  // TODO
                 return filter.IsBucketEntryValid(ki, v.second);
             }));
 
+        //        auto it = tree_.qbegin(bgi::intersects(to_region(query_box)));
+
         for (; it != tree_.qend(); ++it) {
-            Key k = from_shape(it->first);
+            // Key k = from_shape(it->first);
+            Key k;
             callback(k, it->second);
         }
     }
@@ -557,10 +546,11 @@ class PhTreeMultiMap {
      *
      * @return an iterator over all (filtered) entries in the tree,
      */
-    //    template <typename FILTER = FilterNoOp>
-    //    auto begin(FILTER&& filter = FILTER()) const {
-    //        return CreateIterator(tree_->begin(std::forward<FILTER>(filter)));
-    //    }
+    //        template <typename FILTER = pht::FilterNoOp>
+    //        auto begin(FILTER&& filter = FILTER()) const {
+    //            //return CreateIterator(tree_->begin(std::forward<FILTER>(filter)));
+    //            return IteratorNormal<ITER, PHTREE>(tree_.begin());
+    //        }
 
     /*
      * Performs a rectangular window query. The parameters are the min and max keys which
@@ -576,7 +566,8 @@ class PhTreeMultiMap {
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         auto it = tree_.qbegin(
             bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
-                Key k = from_shape(v.first);  // TODO
+                KeyInternal k;
+                //                Key k = from_shape(v.first);  // TODO
                 auto id = v.second;
                 return filter.IsBucketEntryValid(k, id);
             }));
@@ -669,12 +660,11 @@ class PhTreeMultiMap {
         return b;
     }
 
-    //    template <pht::dimension_t DIM2 = DIM>
-    //    typename std::enable_if<DIM2 == DimInternal, point_car>::type to_shape(const Key& key)
-    //    const {
-    //        point_car p{key[0], key[1], key[2]};
-    //        return p;
-    //    }
+    template <pht::dimension_t DIM2 = DIM>
+    typename std::enable_if<DIM2 == DimInternal, point_car>::type to_shape(const Key& key) const {
+        point_car p{key[0], key[1], key[2]};
+        return p;
+    }
 
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 != DimInternal, box_car>::type to_region(const Key& key) const {
@@ -686,9 +676,8 @@ class PhTreeMultiMap {
     }
 
     template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, box_car>::type to_to_region(const Key& key) const {
+    typename std::enable_if<DIM2 == DimInternal, box_car>::type to_region(const Key& key) const {
         point_car p{key[0], key[1], key[2]};
-        // point_car hi{key[0], box.max()[1], box.max()[2]};
         box_car b{p, p};
         return b;
     }
@@ -698,6 +687,10 @@ class PhTreeMultiMap {
         Key key{p.get<0>(), p.get<1>(), p.get<2>()};
         return key;
     }
+    //    Key from_shape(const point_car& p) const {
+    //        Key key{p.get<0>(), p.get<1>(), p.get<2>()};
+    //        return key;
+    //    }
 
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
@@ -710,6 +703,16 @@ class PhTreeMultiMap {
         pht::PhBoxD<DIM> box{lo, hi};
         return box;
     }
+    //    pht::PhBoxD<DIM> from_shape(
+    //        const box_car& r) const {
+    //        auto& rlo = r.min_corner();
+    //        auto& rhi = r.max_corner();
+    //        pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
+    //        pht::PhPointD<DIM> hi{rhi.get<0>(), rhi.get<1>(), rhi.get<2>()};
+    //
+    //        pht::PhBoxD<DIM> box{lo, hi};
+    //        return box;
+    //    }
 
     // This is used by PhTreeDebugHelper
     const auto& GetInternalTree() const {
