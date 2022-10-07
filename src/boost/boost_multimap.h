@@ -17,12 +17,11 @@
 #ifndef BOOST_MULTIMAP_H
 #define BOOST_MULTIMAP_H
 
-#include <boost/geometry/strategies/strategies.hpp>
 #include <boost/geometry/algorithms/comparable_distance.hpp>
 #include <boost/geometry/algorithms/equals.hpp>
-//#include <boost/geometry/algorithms/dispatch/distance.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 
-//#include <boost/geometry/geometry.hpp>
+// #include <boost/geometry/geometry.hpp>
 #include <boost/geometry/core/coordinate_system.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/index/predicates.hpp>
@@ -77,12 +76,7 @@ namespace {
  */
 template <typename PHTREE>
 class IteratorBase {
-    //    friend PHTREE;
-    //    using T = typename PHTREE::ValueType;
-
   public:
-    //    explicit IteratorBase() noexcept : current_value_ptr_{nullptr} {}
-
     friend bool operator==(
         const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
         return left.current_value_ptr_ == right.current_value_ptr_;
@@ -92,31 +86,15 @@ class IteratorBase {
         const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
         return left.current_value_ptr_ != right.current_value_ptr_;
     }
-
-    //  protected:
-    //    void SetFinished() noexcept {
-    //        current_value_ptr_ = nullptr;
-    //    }
-    //
-    //    void SetCurrentValue(const T* current_value_ptr) noexcept {
-    //        current_value_ptr_ = current_value_ptr;
-    //    }
-    //
-    //  private:
-    //    const T* current_value_ptr_;
 };
 
 template <typename ITER, typename PHTREE>
-class IteratorNormal {//}; : public IteratorBase<PHTREE> {
+class IteratorNormal {
     friend PHTREE;
 
   public:
-    //explicit IteratorNormal() noexcept : IteratorBase<PHTREE>(), iter_{} {}
-
     template <typename ITER_PH>
-    IteratorNormal(ITER_PH&& iter_ph) noexcept
-    : //IteratorBase<PHTREE>(),
-        iter_{std::forward<ITER_PH>(iter_ph)} {}
+    IteratorNormal(ITER_PH&& iter_ph) noexcept : iter_{std::forward<ITER_PH>(iter_ph)} {}
 
     IteratorNormal& operator++() noexcept {
         ++iter_;
@@ -130,24 +108,22 @@ class IteratorNormal {//}; : public IteratorBase<PHTREE> {
     }
 
     auto& operator*() const noexcept {
-        // assert(iter);
-        // return const_cast<T&>(*current_value_ptr_);
         return iter_->second;
     }
 
     auto* operator->() const noexcept {
-        // assert(current_value_ptr_);
-        // return const_cast<T*>(current_value_ptr_);
         return &iter_->second;
     }
 
     friend bool operator==(
-        const IteratorNormal<ITER, PHTREE>& left, const IteratorNormal<ITER, PHTREE>& right) noexcept {
+        const IteratorNormal<ITER, PHTREE>& left,
+        const IteratorNormal<ITER, PHTREE>& right) noexcept {
         return left.iter_ == right.iter_;
     }
 
     friend bool operator!=(
-        const IteratorNormal<ITER, PHTREE>& left, const IteratorNormal<ITER, PHTREE>& right) noexcept {
+        const IteratorNormal<ITER, PHTREE>& left,
+        const IteratorNormal<ITER, PHTREE>& right) noexcept {
         return left.iter_ != right.iter_;
     }
 
@@ -182,16 +158,11 @@ template <
     typename DEFAULT_QUERY_TYPE = pht::QueryPoint,
     bool IS_BOX = CONVERTER::DimInternal != CONVERTER::DimExternal>
 class PhTreeMultiMap {
-    //static_assert(std::is_same_v<int64_t, T>);
-
     using KeyInternal = typename CONVERTER::KeyInternal;
     using Key = typename CONVERTER::KeyExternal;
     static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
     using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET, POINT_KEYS, DEFAULT_QUERY_TYPE>;
     using ValueType = T;
-    // using BucketIterType = decltype(std::declval<BUCKET>().begin());
-    //  using EndType = decltype(std::declval<v16::PhTreeV16<DimInternal, BUCKET,
-    //  CONVERTER>>().end());
 
     using Entry = std::pair<box_car, T>;
     using TREE = rtree<Entry, bgi::rstar<4>>;
@@ -288,28 +259,6 @@ class PhTreeMultiMap {
      */
     size_t count(const Key& key) const {
         return tree_.count(to_shape(key));
-        //        class MyVisitor : public IVisitor {
-        //          public:
-        //            void visitNode(const INode& /* n */) override {}
-        //            void visitData(const IData&) override {
-        //                ++count;
-        //                // std::cout << d.getIdentifier() << std::endl;
-        //                //  the ID of this data entry is an answer to the query. I will just print
-        //                it to
-        //                //  stdout.
-        //            }
-        //            void visitData(std::vector<const IData*>& /* v */) override {}
-        //            size_t count;
-        //        };
-        //        MyVisitor v{};
-        //
-        //        Region r = to_region(key);
-        //        Point p{};
-        //        r.getCenter(p);  // TODO we are just using the center here....
-        //        // TODO for boxes we should also compare the shape!
-        //
-        //        tree_->pointLocationQuery(p, v);
-        //        return v.count;
     }
 
     /*
@@ -336,35 +285,13 @@ class PhTreeMultiMap {
      * to {@code end()} if no value was found
      */
     auto find(const Key& key) {
-        //auto query_box = to_region(key);
-        // bgi::covered_by(b)
+        // auto query_box = to_region(key);
+        //  bgi::covered_by(b)
         auto it = tree_.template qbegin(bgi::covered_by(to_region(key)));
+        // TODO && overlaps() ?
+        // TODO or: && !within() ?
+        // TODO or: satisfies (box1 == box2)
         return IteratorNormal<ITER, PHTREE>(it);
-        //        class MyVisitor : public IVisitor {
-        //          public:
-        //            MyVisitor(std::vector<T>& r) : result{r} {};
-        //            void visitNode(const INode& /* n */) override {}
-        //            void visitData(const IData& d) override {
-        //                result.push_back(d.getIdentifier());
-        //                // std::cout << d.getIdentifier() << std::endl;
-        //                //  the ID of this data entry is an answer to the query. I will just print
-        //                it to
-        //                //  stdout.
-        //            }
-        //            void visitData(std::vector<const IData*>& /* v */) override {}
-        //            std::vector<T>& result;
-        //        };
-        //        result_.clear();
-        //        MyVisitor v{result_};
-        //
-        //        Region r = to_region(key);
-        //        Point p{};
-        //        r.getCenter(p);  // TODO we are just using the center here....
-        //        // TODO for boxes we should also compare the shape!
-        //
-        //        tree_->pointLocationQuery(p, v);
-        //        return v.result.begin();
-        // return CreateIterator(tree_->find(converter_.pre(key)));
     }
 
     /*
@@ -383,33 +310,6 @@ class PhTreeMultiMap {
                                       return v.second == value;
                                   }));
         return IteratorNormal<ITER, PHTREE>(it);
-        //        class MyVisitor : public IVisitor {
-        //          public:
-        //            MyVisitor(const T& v, std::vector<T>& r) : value{v}, result{r} {};
-        //            void visitNode(const INode& /* n */) override {}
-        //            void visitData(const IData& d) override {
-        //                if (d.getIdentifier() == value) {
-        //                    result.push_back(d.getIdentifier());
-        //                }
-        //                // std::cout << d.getIdentifier() << std::endl;
-        //                //  the ID of this data entry is an answer to the query. I will just print
-        //                it to
-        //                //  stdout.
-        //            }
-        //            void visitData(std::vector<const IData*>& /* v */) override {}
-        //            T value;
-        //            std::vector<T>& result;
-        //        };
-        //        result_.clear();
-        //        MyVisitor v{value, result_};
-        //
-        //        Region r = to_region(key);
-        //        Point p{};
-        //        r.getCenter(p);  // TODO we are just using the center here....
-        //        // TODO for boxes we should also compare the shape!
-        //
-        //        tree_->pointLocationQuery(p, v);
-        //        return v.result.begin();
     }
 
     /*
@@ -419,18 +319,6 @@ class PhTreeMultiMap {
      */
     size_t erase(const Key& key, const T& value) {
         return tree_.remove({to_shape(key), value});
-        //        auto iter_outer = tree_->find(converter_.pre(key));
-        //        if (iter_outer != tree_->end()) {
-        //            auto& bucket = *iter_outer;
-        //            auto result = bucket.erase(value);
-        //            if (bucket.empty()) {
-        //                tree_->erase(iter_outer);
-        //            }
-        //            size_ -= result;
-        //            return result;
-        //        }
-        //        return 0;
-        // return 1;  // TODO
     }
 
     /*
@@ -634,45 +522,16 @@ class PhTreeMultiMap {
      */
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        //        using TREE = decltype(this);
-        //        class MyVisitor : public IVisitor {
-        //          public:
-        //            MyVisitor(CALLBACK&& cb, FILTER&& f, const TREE tree)
-        //            : callback_{std::forward<CALLBACK>(cb)}
-        //            , filter_{std::forward<FILTER>(f)}
-        //            , tree_{tree} {};
-        //            void visitNode(const INode& /* n */) override {}
-        //            void visitData(const IData& d) override {
-        //                KeyInternal ki{};  // TODO
-        //                if (filter_.IsBucketEntryValid(ki, d.getIdentifier())) {
-        //                    // Key key{};  // TODO
-        //                    IShape* shape;
-        //                    d.getShape(&shape);
-        //                    Key k = tree_->from_shape(shape);
-        //                    callback_(k, d.getIdentifier());
-        //                }
-        //                // std::cout << d.getIdentifier() << std::endl;
-        //                //  the ID of this data entry is an answer to the query. I will just print
-        //                it to
-        //                //  stdout.
-        //            }
-        //            void visitData(std::vector<const IData*>& /* v */) override {}
-        //            CALLBACK callback_;
-        //            FILTER filter_;
-        //            const TREE tree_;
-        //        };
-        //        MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), this};
-
         //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
         // auto predicate =
 
-//        auto predicate =
-//            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
-//                KeyInternal ki{};  // TODO
-//                return filter.IsBucketEntryValid(ki, v.second);
-//            });
+        //        auto predicate =
+        //            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
+        //                KeyInternal ki{};  // TODO
+        //                return filter.IsBucketEntryValid(ki, v.second);
+        //            });
 
         //        for ( auto it = tree_.qbegin(bgi::nearest(pt, 3)) ; it != tree_.qend() ; ++it )
         //        {
@@ -689,13 +548,6 @@ class PhTreeMultiMap {
             Key k = from_shape(it->first);
             callback(k, it->second);
         }
-        //
-        //
-        //
-        //        tree_->template for_each<NoOpCallback, WrapCallbackFilter<CALLBACK, FILTER>>(
-        //            query_type(converter_.pre_query(query_box)),
-        //            {},
-        //            {std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), converter_});
     }
 
     /*
@@ -722,34 +574,6 @@ class PhTreeMultiMap {
      */
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
-        //        using TREE = decltype(this);
-        //        class MyVisitor : public IVisitor {
-        //          public:
-        //            MyVisitor(FILTER&& f, std::vector<T>& r, TREE tree)
-        //            : filter_{std::forward<FILTER>(f)}, result{r}, tree_{tree} {};
-        //            void visitNode(const INode& /* n */) override {}
-        //            void visitData(const IData& d) override {
-        //                // Key k{};  // TODO
-        //                IShape* shape;
-        //                d.getShape(&shape);
-        //                Key k = tree_->from_shape(shape);
-        //                auto id = d.getIdentifier();
-        //                if (filter_.IsEntryValid(k, id)) {
-        //                    result.push_back(id);
-        //                }
-        //                // std::cout << d.getIdentifier() << std::endl;
-        //                //  the ID of this data entry is an answer to the query. I will just print
-        //                it to
-        //                //  stdout.
-        //            }
-        //            void visitData(std::vector<const IData*>& /* v */) override {}
-        //            FILTER filter_;
-        //            std::vector<T>& result;
-        //            const TREE tree_;
-        //        };
-        //        result_.clear();
-        //        MyVisitor v{std::forward<FILTER>(filter), result_, this};
-
         auto it = tree_.qbegin(
             bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
                 Key k = from_shape(v.first);  // TODO
@@ -758,7 +582,6 @@ class PhTreeMultiMap {
             }));
 
         return IteratorNormal<ITER, PHTREE>(it);
-        // return result_.begin();
     }
 
     /*
@@ -818,9 +641,9 @@ class PhTreeMultiMap {
     /*
      * @return 'true' if the tree is empty, otherwise 'false'.
      */
-    //    [[nodiscard]] bool empty() const {
-    //        return empty();
-    //    }
+    [[nodiscard]] bool empty() const {
+        return tree_.empty();
+    }
 
     /*
      * @return the converter associated with this tree.
@@ -830,36 +653,6 @@ class PhTreeMultiMap {
     }
 
   private:
-    //    ISpatialIndex* create_tree() const {
-    //        IStorageManager* memory = StorageManager::createNewMemoryStorageManager();
-    //
-    //        //        StorageManager::IBuffer* file =
-    //        //        StorageManager::createNewRandomEvictionsBuffer(*memory, 10, false);
-    //        //        // applies a main memory random buffer on top of the persistent storage
-    //        manager
-    //        //        // (LRU buffer, etc can be created the same way).
-    //
-    //        uint32_t indexCapacity = 100;
-    //        uint32_t leafCapacity = 100;
-    //
-    //        // Create a new, empty, RTree with dimensionality 2, minimum load 70%, using "file" as
-    //        // the StorageManager and the RSTAR splitting policy.
-    //        id_type indexIdentifier;
-    //        // ISpatialIndex* tree = RTree::createNewRTree(*memory, 0.7, atoi(argv[3]),
-    //        atoi(argv[3]),
-    //        // DIM, SpatialIndex::RTree::RV_RSTAR, indexIdentifier);
-    //        ISpatialIndex* tree = RTree::createNewRTree(
-    //            *memory,
-    //            0.7,
-    //            indexCapacity,
-    //            leafCapacity,
-    //            DIM,
-    //            SpatialIndex::RTree::RV_RSTAR,
-    //            indexIdentifier);
-    //
-    //        return tree;
-    //    }
-
     box_car to_region(const pht::PhBoxD<DIM>& box) const {
         point_car lo{box.min()[0], box.min()[1], box.min()[2]};
         point_car hi{box.max()[0], box.max()[1], box.max()[2]};
@@ -876,11 +669,12 @@ class PhTreeMultiMap {
         return b;
     }
 
-//    template <pht::dimension_t DIM2 = DIM>
-//    typename std::enable_if<DIM2 == DimInternal, point_car>::type to_shape(const Key& key) const {
-//        point_car p{key[0], key[1], key[2]};
-//        return p;
-//    }
+    //    template <pht::dimension_t DIM2 = DIM>
+    //    typename std::enable_if<DIM2 == DimInternal, point_car>::type to_shape(const Key& key)
+    //    const {
+    //        point_car p{key[0], key[1], key[2]};
+    //        return p;
+    //    }
 
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 != DimInternal, box_car>::type to_region(const Key& key) const {
@@ -894,29 +688,11 @@ class PhTreeMultiMap {
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 == DimInternal, box_car>::type to_to_region(const Key& key) const {
         point_car p{key[0], key[1], key[2]};
-        // TODO can we store points directly?!?!?!?!!?
-        // TODO can we store points directly?!?!?!?!!?
-        // TODO can we store points directly?!?!?!?!!?
-        // TODO can we store points directly?!?!?!?!!?
-        // TODO can we store points directly?!?!?!?!!?
-        // TODO can we store points directly?!?!?!?!!?
         // point_car hi{key[0], box.max()[1], box.max()[2]};
         box_car b{p, p};
         return b;
     }
 
-    Key from_array(const double* a) const {
-        Key key;
-        for (pht::dimension_t d = 0; d < DIM; ++d) {
-            key[d] = a[d];
-        }
-        return key;
-    }
-
-    //    Key from_point(const point_car& p) const {
-    //        return {from_array(p.m_pCoords)};
-    //    }
-    //
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const point_car& p) const {
         Key key{p.get<0>(), p.get<1>(), p.get<2>()};
