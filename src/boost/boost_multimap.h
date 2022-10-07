@@ -17,7 +17,12 @@
 #ifndef BOOST_MULTIMAP_H
 #define BOOST_MULTIMAP_H
 
-#include <boost/geometry/geometry.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
+#include <boost/geometry/algorithms/comparable_distance.hpp>
+#include <boost/geometry/algorithms/equals.hpp>
+//#include <boost/geometry/algorithms/dispatch/distance.hpp>
+
+//#include <boost/geometry/geometry.hpp>
 #include <boost/geometry/core/coordinate_system.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/index/predicates.hpp>
@@ -177,7 +182,7 @@ template <
     typename DEFAULT_QUERY_TYPE = pht::QueryPoint,
     bool IS_BOX = CONVERTER::DimInternal != CONVERTER::DimExternal>
 class PhTreeMultiMap {
-    static_assert(std::is_same_v<int64_t, T>);
+    //static_assert(std::is_same_v<int64_t, T>);
 
     using KeyInternal = typename CONVERTER::KeyInternal;
     using Key = typename CONVERTER::KeyExternal;

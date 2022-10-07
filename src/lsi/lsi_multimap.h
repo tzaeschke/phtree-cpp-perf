@@ -18,9 +18,6 @@
 #define LIB_SI_MULTIMAP_H
 
 #include "include/spatialindex/SpatialIndex.h"
-// #include "include/spatialindex/tools/Tools.h"
-// #include "include/spatialindex/Point.h"
-// #include "include/spatialindex/Region.h"
 #include "include/spatialindex/RTree.h"
 #include "phtree/common/common.h"
 #include "phtree/converter.h"

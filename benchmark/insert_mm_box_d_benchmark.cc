@@ -16,6 +16,7 @@
 #include "benchmark_util.h"
 #include "logging.h"
 #include "phtree/phtree_multimap.h"
+#include "src/boost/boost_multimap.h"
 #include "src/lsi/lsi_multimap.h"
 #include "src/mcxme/mcxme_map.h"
 #include <benchmark/benchmark.h>
@@ -30,6 +31,7 @@ const double GLOBAL_MAX = 10000;
 const double BOX_LEN = 10;
 
 enum Scenario {
+    BOOST_RT,
     LSI,
     MCXME,
     PHTREE,
@@ -46,12 +48,15 @@ using CONVERTER = ConverterBoxIEEE<DIM>;
 
 template <Scenario SCENARIO, dimension_t DIM>
 using TestMap = typename std::conditional_t<
-    SCENARIO == LSI,
-    si::PhTreeMultiMapBoxD<DIM, payload_t>,
+    SCENARIO == BOOST_RT,
+    b::PhTreeMultiMapBoxD<DIM, payload_t>,
     typename std::conditional_t<
-        SCENARIO == MCXME,
-        mcxme::PhTreeBoxD<DIM, payload_t>,
-        improbable::phtree::PhTreeMultiMapBoxD<DIM, payload_t, CONVERTER<SCENARIO, DIM>>>>;
+        SCENARIO == LSI,
+        si::PhTreeMultiMapBoxD<DIM, payload_t>,
+        typename std::conditional_t<
+            SCENARIO == MCXME,
+            mcxme::PhTreeBoxD<DIM, payload_t>,
+            improbable::phtree::PhTreeMultiMapBoxD<DIM, payload_t, CONVERTER<SCENARIO, DIM>>>>>;
 
 /*
  * Benchmark for adding entries to the index.
@@ -124,6 +129,12 @@ void IndexBenchmark<DIM, S>::Insert(benchmark::State& state, Index& tree) {
 }  // namespace
 
 template <typename... Arguments>
+void BoostRT(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, BOOST_RT> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void Lsi(benchmark::State& state, Arguments&&...) {
     IndexBenchmark<3, LSI> benchmark{state};
     benchmark.Benchmark(state);
@@ -143,6 +154,11 @@ void PhTree3D(benchmark::State& state, Arguments&&...) {
 
 // index type, scenario name, data_generator, num_entities
 BENCHMARK_CAPTURE(PhTree3D, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BoostRT, BOOST, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
