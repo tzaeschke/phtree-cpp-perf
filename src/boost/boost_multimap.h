@@ -22,14 +22,50 @@
 #include <boost/geometry/strategies/strategies.hpp>
 // #include <boost/geometry/geometry.hpp>
 #include <boost/geometry/core/coordinate_system.hpp>
+#include <boost/geometry/geometries/register/box.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/index/predicates.hpp>
+
+#include <boost/geometry/geometries/adapted/std_array.hpp>
 
 #include "boost/geometry/index/rtree.hpp"
 #include "phtree/common/common.h"
 #include "phtree/converter.h"
 #include "phtree/filter.h"
+#include <iostream>
 #include <unordered_set>
+
+#define USE_STD_ARRAY
+#define USE_PH_BOX
+
+#ifdef USE_STD_ARRAY
+BOOST_GEOMETRY_REGISTER_STD_ARRAY_CS(cs::cartesian)
+#ifdef USE_PH_BOX
+namespace ph = improbable::phtree;
+BOOST_GEOMETRY_REGISTER_BOX(ph::PhBoxD<3>, ph::PhPointD<3>, min(), max())
+#endif  // USE_PH_BOX
+#endif
+
+// namespace boost { namespace geometry { namespace traits
+//{
+//
+// template <typename T, std::size_t D> struct tag<std::array<T, D>> { using type = point_tag; };
+// template <typename T, std::size_t D> struct dimension<std::array<T, D>> : boost::mpl::int_<D> {};
+// template <typename T, std::size_t D> struct coordinate_type<std::array<T, D>> { using type = T;
+// }; template <typename T, std::size_t D> struct coordinate_system<std::array<T, D>> { using type =
+// boost::geometry::cs::cartesian; };
+//
+// template <typename T, std::size_t D, std::size_t Index>
+// struct access<std::array<T, D>, Index> {
+//     static_assert(Index < D, "Out of range");
+//     using Point = std::array<T, D>;
+//     using CoordinateType = typename coordinate_type<Point>::type;
+//     static inline CoordinateType get(Point const& p) { return p[Index]; }
+//     static inline void set(Point& p, CoordinateType const& value) { p[Index] = value; }
+// };
+//
+// }}} // namespace boost::geometry::traits
 
 namespace b {
 
@@ -60,8 +96,17 @@ namespace pht = improbable::phtree;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
+#ifdef USE_STD_ARRAY
+using point_car = std::array<double, 3>;
+#else
 using point_car = bg::model::point<double, 3, bg::cs::cartesian>;
+#endif
+#ifdef USE_PH_BOX
+namespace ph = improbable::phtree;
+using box_car = ph::PhBoxD<3>;
+#else
 using box_car = bg::model::box<point_car>;
+#endif  // USE_PH_BOX
 
 namespace {
 
@@ -534,8 +579,12 @@ class PhTreeMultiMap {
 
         for (; it != tree_.qend(); ++it) {
             // Key k = from_shape(it->first);
+#ifdef USE_PH_BOX  // TODO also for points....
+            callback(it->first, it->second);
+#else
             Key k;
             callback(k, it->second);
+#endif
         }
     }
 
@@ -684,8 +733,12 @@ class PhTreeMultiMap {
 
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const point_car& p) const {
+#ifdef USE_STD_ARRAY
+        return p;
+#else
         Key key{p.get<0>(), p.get<1>(), p.get<2>()};
         return key;
+#endif
     }
     //    Key from_shape(const point_car& p) const {
     //        Key key{p.get<0>(), p.get<1>(), p.get<2>()};
@@ -695,13 +748,21 @@ class PhTreeMultiMap {
     template <pht::dimension_t DIM2 = DIM>
     typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
         const box_car& r) const {
+#ifdef USE_PH_BOX
+        return r;
+#else
         auto& rlo = r.min_corner();
         auto& rhi = r.max_corner();
+#ifdef USE_STD_ARRAY
+        pht::PhBoxD<DIM> box{rlo, rhi};
+        return box;
+#else
         pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
         pht::PhPointD<DIM> hi{rhi.get<0>(), rhi.get<1>(), rhi.get<2>()};
-
         pht::PhBoxD<DIM> box{lo, hi};
         return box;
+#endif
+#endif // USE_PH_BOX
     }
     //    pht::PhBoxD<DIM> from_shape(
     //        const box_car& r) const {
