@@ -841,8 +841,8 @@ class PhTreeMultiMap {
         //        // applies a main memory random buffer on top of the persistent storage manager
         //        // (LRU buffer, etc can be created the same way).
 
-        uint32_t indexCapacity = 100;
-        uint32_t leafCapacity = 100;
+        uint32_t indexCapacity = 9; // 4; 9; 16; 20; 100;
+        uint32_t leafCapacity = 9; // 4; 9; 16; 20; 100;
 
         // Create a new, empty, RTree with dimensionality 2, minimum load 70%, using "file" as
         // the StorageManager and the RSTAR splitting policy.
