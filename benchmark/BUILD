@@ -139,6 +139,24 @@ cc_binary(
 )
 
 cc_binary(
+    name = "insert_mm_d_benchmark",
+    testonly = True,
+    srcs = [
+        "insert_mm_d_benchmark.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        ":benchmark",
+        "//src/boost:ph-boost-mm",
+        "//src/lsi:ph-lsi-mm",
+        "//src/mcxme:ph-mcxme",
+        "@gbenchmark//:benchmark",
+        "@phtree",
+        "@spdlog",
+    ],
+)
+
+cc_binary(
     name = "insert_box_d_benchmark",
     testonly = True,
     srcs = [
@@ -242,6 +260,9 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
+        "//src/boost:ph-boost-mm",
+        "//src/lsi:ph-lsi-mm",
+        "//src/mcxme:ph-mcxme",
         "@gbenchmark//:benchmark",
         "@phtree",
         "@spdlog",
