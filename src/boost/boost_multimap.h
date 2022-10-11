@@ -110,6 +110,111 @@ using box_car = bg::model::box<point_car>;
 
 namespace {
 
+#ifdef USE_STD_ARRAY
+template <pht::dimension_t DIM, typename SCALAR = double>
+struct PointConverter {
+    const point_car& pre(const pht::PhPoint<DIM, SCALAR>& point) const {
+        return point;
+    }
+
+    const pht::PhPoint<DIM, SCALAR>& post(const point_car& point) const {
+        return point;
+    }
+
+    box_car pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
+        return {pre(query_box.min()), pre(query_box.max())};
+    }
+
+    box_car pre_query(const pht::PhPoint<DIM, SCALAR>& query_point) const {
+        return {pre(query_point), pre(query_point)};
+    }
+};
+#else
+template <pht::dimension_t DIM, typename SCALAR>
+struct PointConverter {
+    point_car pre(const pht::PhPoint<DIM, SCALAR>& key) const {
+        return {key[0], key[1], key[2]};
+    }
+
+    pht::PhPoint<DIM, SCALAR> post(const point_car& p) const {
+        return {p.get<0>(), p.get<1>(), p.get<2>()};
+    }
+
+    box_car pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
+        return {pre(query_box.min()), pre(query_box.max())};
+    }
+};
+#endif
+
+#ifdef USE_PH_BOX
+template <pht::dimension_t DIM, typename SCALAR = double>
+struct BoxConverter {
+    using PhBox = pht::PhBox<DIM, SCALAR>;
+
+    const box_car& pre(const PhBox& box) const {
+        return box;
+    }
+
+    PhBox post(const box_car& r) const {
+        return r;
+    }
+
+    box_car pre_query(const PhBox& box) const {
+        return box;
+    }
+};
+#elif defined(USE_STD_ARRAY)
+template <pht::dimension_t DIM, typename SCALAR = double>
+struct BoxConverter {
+    using PhBox = pht::PhBox<DIM, SCALAR>;
+
+    box_car pre(const PhBox& box) const {
+        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        return {lo, hi};
+    }
+
+    PhBox post(const box_car& r) const {
+        auto& rlo = r.min_corner();
+        auto& rhi = r.max_corner();
+        pht::PhBoxD<DIM> box{rlo, rhi};
+        return box;
+    }
+
+    box_car pre_query(const PhBox& box) const {
+        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        return {lo, hi};
+    }
+};
+#else
+template <pht::dimension_t DIM, typename SCALAR>
+struct BoxConverter {
+    using PhBox = pht::PhBox<DIM, SCALAR>;
+    using QueryBox = PhBox;
+
+    box_car pre(const PhBox& in) const {
+        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(in);
+        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        return {lo, hi};
+    }
+
+    PhBox post(const box_car& in) const {
+        auto& rlo = in.min_corner();
+        auto& rhi = in.max_corner();
+        pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
+        pht::PhPointD<DIM> hi{rhi.get<0>(), rhi.get<1>(), rhi.get<2>()};
+        pht::PhBoxD<DIM> box{lo, hi};
+        return box;
+    }
+
+    auto pre_query(const QueryBox& query_box) const {
+        return pre(query_box);
+    }
+};
+#endif
+
 /*
  * Base class for the internal PH-Tree multi-map iterators.
  *
@@ -196,19 +301,15 @@ class IteratorKnn : public IteratorNormal<ITERATOR_PH, PHTREE> {
 template <
     pht::dimension_t DIM,
     typename T,
-    typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
-    typename BUCKET = void,
+    typename CONVERTER = PointConverter<DIM, double>,
     bool POINT_KEYS = true,
-    typename DEFAULT_QUERY_TYPE = pht::QueryPoint,
-    bool IS_BOX = CONVERTER::DimInternal != CONVERTER::DimExternal>
+    typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
 class PhTreeMultiMap {
-    using KeyInternal = typename CONVERTER::KeyInternal;
-    using Key = typename CONVERTER::KeyExternal;
-    static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
-    using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET, POINT_KEYS, DEFAULT_QUERY_TYPE>;
-    using ValueType = T;
+    using Key =
+        typename std::conditional_t<POINT_KEYS, pht::PhPoint<DIM, double>, pht::PhBox<DIM, double>>;
+    using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, POINT_KEYS, DEFAULT_QUERY_TYPE>;
 
-    using Geom = typename std::conditional_t<IS_BOX, box_car, point_car>;
+    using Geom = typename std::conditional_t<POINT_KEYS, point_car, box_car>;
     using Entry = std::pair<Geom, T>;
     using TREE = rtree<Entry, bgi::rstar<16>>;
     using ITER = decltype(TREE().qend());
@@ -216,7 +317,8 @@ class PhTreeMultiMap {
     friend IteratorBase<PHTREE>;
 
   public:
-    using QueryBox = typename CONVERTER::QueryBoxExternal;
+    using QueryBox = pht::PhBox<DIM, double>;
+    using KeyInternal = Geom;
 
     explicit PhTreeMultiMap(CONVERTER converter = CONVERTER()) : tree_{}, converter_{converter} {}
 
@@ -242,8 +344,7 @@ class PhTreeMultiMap {
      */
     void emplace(const Key& key, const T& id) {
         if constexpr (DIM == 3) {
-            // static_assert(DIM != DimInternal);
-            tree_.insert(std::make_pair(to_shape(key), id));
+            tree_.insert(std::make_pair(converter_.pre(key), id));
         } else {
             assert(false);
         }
@@ -299,14 +400,15 @@ class PhTreeMultiMap {
      * @return '1', if a value is associated with the provided key, otherwise '0'.
      */
     size_t count(const Key& key) const {
-        return tree_.count(to_shape(key));  // TODO? This is not publicly documented....??
+        // TODO? This is not publicly documented....??
+        //        return tree_.count(converter_.pre_query(key));
 
-        //        size_t n = 0;
-        //        auto it = tree_.qbegin(bgi::covered_by(to_region(key)));
-        //        for (; it != tree_.qend(); ++it) {
-        //            ++n;
-        //        }
-        //        return n;
+        size_t n = 0;
+        auto it = tree_.qbegin(bgi::covered_by(converter_.pre_query(key)));
+        for (; it != tree_.qend(); ++it) {
+            ++n;
+        }
+        return n;
     }
 
     /*
@@ -333,11 +435,9 @@ class PhTreeMultiMap {
      * to {@code end()} if no value was found
      */
     auto find(const Key& key) {
-        // auto query_box = to_region(key);
-        auto it = tree_.template qbegin(bgi::covered_by(to_region(key)));
-        // TODO && overlaps() ?
-        // TODO or: && !within() ?
-        // TODO or: satisfies (box1 == box2)
+        auto it = tree_.template qbegin(
+            bgi::covered_by(converter_.pre_query(key)) &&
+            bgi::satisfies([&](auto const& v) { return v.first == key; }));
         return IteratorNormal<ITER, PHTREE>(it);
     }
 
@@ -350,13 +450,11 @@ class PhTreeMultiMap {
      * or to {@code end()} if the key/value pair was found
      */
     auto find(const Key& key, const T& value) {
-        auto query_box = to_region(key);
-        // bgi::covered_by(b) // TODO
-        auto it =
-            tree_.template qbegin(bgi::covered_by(query_box) && bgi::satisfies([&](auto const& v) {
-                                      return v.second == value;
-                                  }));
-        return IteratorNormal<ITER, PHTREE>(it);
+        auto query_box = converter_.pre_query(key);
+        auto it = tree_.qbegin(bgi::covered_by(query_box) && bgi::satisfies([&](auto const& v) {
+                                   return v.second == value;
+                               }));
+        return IteratorNormal<ITER, PHTREE>(std::move(it));
     }
 
     /*
@@ -365,7 +463,7 @@ class PhTreeMultiMap {
      * @return '1' if the key/value pair was found, otherwise '0'.
      */
     size_t erase(const Key& key, const T& value) {
-        return tree_.remove(std::make_pair(to_shape(key), value));
+        return tree_.remove(std::make_pair(converter_.pre(key), value));
     }
 
     /*
@@ -378,7 +476,11 @@ class PhTreeMultiMap {
      */
     template <typename ITERATOR>
     size_t erase(const ITERATOR& iterator) {
-        return tree_.remove(iterator.iter_, iterator.iter_);
+        if (iterator.iter_ == tree_.qend()) {
+            return 0;
+        }
+        return tree_.remove(*iterator.iter_);
+        // return tree_.remove(iterator.iter_, iterator.iter_);
     }
 
     /*
@@ -554,37 +656,17 @@ class PhTreeMultiMap {
      */
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        //        auto predicate =
-        //            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
-        //                KeyInternal ki{};  // TODO
-        //                return filter.IsBucketEntryValid(ki, v.second);
-        //            });
-
-        //        for ( auto it = tree_.qbegin(bgi::nearest(pt, 3)) ; it != tree_.qend() ; ++it )
-        //        {
-        //            // do something with value
-        //        }
-
-        // TODO
-        // TODO
-        // TODO
-        // TODO
-        auto it = tree_.qbegin(
-            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
-                KeyInternal ki{};  // TODO
-                return filter.IsBucketEntryValid(ki, v.second);
-            }));
-
+        auto predicate =
+            bgi::intersects(converter_.pre_query(query_box)) && bgi::satisfies([&](auto const& v) {
+                // KeyInternal k{};  // TODO
+                KeyInternal k = converter_.post(v.first);
+                return filter.IsBucketEntryValid(k, v.second);
+            });
+        auto it = tree_.qbegin(predicate);
         //        auto it = tree_.qbegin(bgi::intersects(to_region(query_box)));
 
         for (; it != tree_.qend(); ++it) {
-            // Key k = from_shape(it->first);
-#ifdef USE_PH_BOX  // TODO also for points....
-            callback(it->first, it->second);
-#else
-            Key k;
-            callback(k, it->second);
-#endif
+            callback(converter_.post(it->first), it->second);
         }
     }
 
@@ -614,9 +696,8 @@ class PhTreeMultiMap {
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         auto it = tree_.qbegin(
-            bgi::intersects(to_region(query_box)) && bgi::satisfies([&](auto const& v) {
-                KeyInternal k;
-                //                Key k = from_shape(v.first);  // TODO
+            bgi::intersects(converter_.pre_query(query_box)) && bgi::satisfies([&](auto const& v) {
+                KeyInternal k = converter_.post(v.first);  // TODO?
                 auto id = v.second;
                 return filter.IsBucketEntryValid(k, id);
             }));
@@ -693,88 +774,6 @@ class PhTreeMultiMap {
     }
 
   private:
-    box_car to_region(const pht::PhBoxD<DIM>& box) const {
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
-        box_car b{lo, hi};
-        return b;
-    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, box_car>::type to_shape(const Key& key) const {
-        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
-        box_car b{lo, hi};
-        return b;
-    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, point_car>::type to_shape(const Key& key) const {
-        point_car p{key[0], key[1], key[2]};
-        return p;
-    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, box_car>::type to_region(const Key& key) const {
-        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
-        box_car b{lo, hi};
-        return b;
-    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, box_car>::type to_region(const Key& key) const {
-        point_car p{key[0], key[1], key[2]};
-        box_car b{p, p};
-        return b;
-    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const point_car& p) const {
-#ifdef USE_STD_ARRAY
-        return p;
-#else
-        Key key{p.get<0>(), p.get<1>(), p.get<2>()};
-        return key;
-#endif
-    }
-    //    Key from_shape(const point_car& p) const {
-    //        Key key{p.get<0>(), p.get<1>(), p.get<2>()};
-    //        return key;
-    //    }
-
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
-        const box_car& r) const {
-#ifdef USE_PH_BOX
-        return r;
-#else
-        auto& rlo = r.min_corner();
-        auto& rhi = r.max_corner();
-#ifdef USE_STD_ARRAY
-        pht::PhBoxD<DIM> box{rlo, rhi};
-        return box;
-#else
-        pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
-        pht::PhPointD<DIM> hi{rhi.get<0>(), rhi.get<1>(), rhi.get<2>()};
-        pht::PhBoxD<DIM> box{lo, hi};
-        return box;
-#endif
-#endif // USE_PH_BOX
-    }
-    //    pht::PhBoxD<DIM> from_shape(
-    //        const box_car& r) const {
-    //        auto& rlo = r.min_corner();
-    //        auto& rhi = r.max_corner();
-    //        pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
-    //        pht::PhPointD<DIM> hi{rhi.get<0>(), rhi.get<1>(), rhi.get<2>()};
-    //
-    //        pht::PhBoxD<DIM> box{lo, hi};
-    //        return box;
-    //    }
-
     // This is used by PhTreeDebugHelper
     const auto& GetInternalTree() const {
         return tree_;
@@ -782,7 +781,6 @@ class PhTreeMultiMap {
 
     TREE tree_;
     CONVERTER converter_;
-    std::vector<T> result_{};  /// Dirty Hack!!!! TODO
 };
 
 /**
@@ -791,15 +789,11 @@ class PhTreeMultiMap {
  *
  * See 'PhTreeD' for details.
  */
-template <
-    pht::dimension_t DIM,
-    typename T,
-    typename CONVERTER = pht::ConverterIEEE<DIM>,
-    typename BUCKET = void>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET>;
+template <pht::dimension_t DIM, typename T, typename CONVERTER = PointConverter<DIM>>
+using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER>;
 
 template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX, typename BUCKET = void>
-using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, BUCKET, false, pht::QueryIntersect>;
+using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, false, pht::QueryIntersect>;
 
 /**
  * A PH-Tree multi-map that uses (axis aligned) boxes as keys.
@@ -807,12 +801,8 @@ using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, BUCKET, false, p
  *
  * See 'PhTreeD' for details.
  */
-template <
-    pht::dimension_t DIM,
-    typename T,
-    typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>,
-    typename BUCKET = void>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX, BUCKET>;
+template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX = BoxConverter<DIM>>
+using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX>;
 
 }  // namespace b
 
