@@ -33,15 +33,15 @@ Comparisons use the following two datasets with varying size. Data ist mostly 3D
 
 Benchmarks filenames are more or less descriptive.
 
-* `_mm_` indicates "multi-map" tests. Most spatial indexes are **multimaps** but the PH-tree works actually better as **
-  map** (with no key duplicates)
+* `_mm_` indicates "multi-map" tests (otherwise it is **map**). Most spatial indexes are **multimaps** but the PH-tree
+  works actually better as **map** (with no key duplicates)
 * `hd_` indicates a test with > 3 dimensions, usually 6D, 10D and 20D
 * `_box_` indicates a test with boxes (otherwise it is points)
-* `_d_` indicates a test with `double` coordinates (otherwise it is integer)
+* `_d_` indicates a test with `double` coordinates (otherwise it is `std::int64_t`)
 
 ## Output
 
-Output it encoded. The first field is the index name, e.g.
+Output it encoded. The fields have usually the following meaning:
 
 1) Index name (and configuration), e.g.
     * `BoostRT` for boost R-Tree
@@ -52,13 +52,13 @@ Output it encoded. The first field is the index name, e.g.
     * `WQ` for window query
 3) Number of entries in the index, usually powers of 10.
 4) Dataset, e.g.
-    * `4` CUBE dataset (4 letters)
-    * `7` CLUSTER dataset (7 letters)
+    * `4` for CUBE dataset (4 letters)
+    * `7` for CLUSTER dataset (7 letters)
 5) Optional: additional fields, e.g.
     * For window queries: expected average number of results per query window
 
-The following example shows the result of a Boost R-Tree with a window query on an index with 1000 entries using the
-CLUSTER dataset:
+The following example shows the result of a **Boost R-Tree** with a **window query** on an index with **1000** entries
+using the **CLUSTER** dataset:
 
 ```
 BoostRT/WQ/1000/7                     0.000 ms        0.000 ms      2684182          2.59242 3.77716M/s  9.79197M/s
@@ -78,8 +78,6 @@ Some notable issues:
   a small but measurable slowdown.
 * liSpatialIndex uses a dirty hack for queries: results are buffered in a member field of the wrapper class.
 * The coordinate conversion for libSpatialIndex and MCXME may cost performance when using FILTERs or CALLBACKs.
-
-
 
 # Usage
 
