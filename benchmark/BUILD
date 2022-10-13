@@ -263,6 +263,7 @@ cc_binary(
         "//src/boost:ph-boost-mm",
         "//src/lsi:ph-lsi-mm",
         "//src/mcxme:ph-mcxme",
+        "//src/robin_hood",
         "@gbenchmark//:benchmark",
         "@phtree",
         "@spdlog",

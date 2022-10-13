@@ -18,6 +18,7 @@
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
 #include "src/boost/boost_multimap.h"
+#include "src/robin_hood/robin_hood.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -39,8 +40,9 @@ using payload_t = int64_t;
 
 using TestPoint = PhPointD<3>;
 using QueryBox = PhBoxD<3>;
-// using payload_t = TestPoint;
-using BucketType = std::set<payload_t>;
+// using BucketType = std::set<payload_t>;
+//using BucketType = std::unordered_set<payload_t>;
+using BucketType = robin_hood::unordered_set<payload_t>;
 
 struct Query {
     QueryBox box{};
@@ -68,11 +70,7 @@ using TestMap = typename std::conditional_t<
                 payload_t,
                 CONVERTER<SCENARIO, DIM>,
                 b_plus_tree_hash_set<payload_t>>,
-            PhTreeMultiMapD<
-                DIM,
-                payload_t,
-                CONVERTER<SCENARIO, DIM>,
-                std::unordered_set<payload_t>>>>>;
+            PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -282,24 +280,24 @@ void PhTreeMultiMapStd3D(benchmark::State& state, Arguments&&... arguments) {
 
 // index type, scenario name, data_type, num_entities, avg_query_result_size
 // PhTree
-BENCHMARK_CAPTURE(PhTree3D, WQ_100, AVG_QUERY_RESULT_SIZE)
+BENCHMARK_CAPTURE(PhTree3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // PhTreeMultiMap
-BENCHMARK_CAPTURE(PhTreeMultiMap3D, WQ_100, AVG_QUERY_RESULT_SIZE)
+BENCHMARK_CAPTURE(PhTreeMultiMap3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // PhTreeMultiMap
-BENCHMARK_CAPTURE(PhTreeMultiMapStd3D, WQ_100, AVG_QUERY_RESULT_SIZE)
+BENCHMARK_CAPTURE(PhTreeMultiMapStd3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BoostRT, WQ_100, AVG_QUERY_RESULT_SIZE)
+BENCHMARK_CAPTURE(BoostRT, WQ0, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
