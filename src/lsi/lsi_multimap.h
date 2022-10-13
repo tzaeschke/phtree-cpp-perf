@@ -1,18 +1,5 @@
-/*
- * Copyright 2020 Improbable Worlds Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: 2022 Tilmann Zäschke <zoodb@gmx.de>
+// SPDX-License-Identifier: MIT
 
 #ifndef LIB_SI_MULTIMAP_H
 #define LIB_SI_MULTIMAP_H
@@ -30,38 +17,12 @@ namespace si {
 using scalar_64_t = std::int64_t;
 const unsigned int bitLength = 64;  // 4;
 
-/*
- * PH-Tree multi-map main class.
- *
- * The PhTreeMultiMap is a wrapper around a normal PH-Tree (single value per key). The wrapper uses
- * collections to store more than one value per key.
- * By default, this multi-map is backed by std::unordered_set<T>.
- *
- * The API follows mostly the std::unordered_multimap, exceptions are pointed out.
- *
- * Differences to PhTree
- * - This is a multi-map and hence follows the std::unordered_multimap rather than std::map
- * - erase() returns an iterator instead of a pairs {iterator, bool)
- * - similar to the normal PH-Tree, emplace() returns a reference to the value instead of an
- * iterator
- *
- * For more information please refer to the README of this project.
- */
-
 using namespace SpatialIndex;
 namespace pht = improbable::phtree;
 
 
 namespace {
 
-/*
- * Base class for the internal PH-Tree multi-map iterators.
- *
- * This base class must be distinct from the other Iterator classes because it must be agnostic of
- * the types of the fields that hold iterators. If it knew about these types then we would need
- * to provide them for the ==/!= operators, which would then make it impossible to compare
- * the generic end() iterator with any specialized iterator.
- */
 template <typename PHTREE>
 class IteratorBase {
     friend PHTREE;
@@ -191,7 +152,7 @@ class IteratorKnn : public IteratorNormal<ITERATOR_PH, PHTREE> {
 }  // namespace
 
 /*
- * The PhTreeMultiMap class.
+ * The main wrapper class
  */
 template <
     pht::dimension_t DIM,
@@ -231,107 +192,28 @@ class PhTreeMultiMap {
     PhTreeMultiMap& operator=(PhTreeMultiMap&& other) noexcept = default;
     ~PhTreeMultiMap() noexcept = default;
 
-    /*
-     *  Attempts to build and insert a key and a value into the tree.
-     *
-     *  @param key The key for the new entry.
-     *
-     *  @param args  Arguments used to generate a new value.
-     *
-     *  @return  A pair, whose first element points to the possibly inserted pair,
-     *           and whose second element is a bool that is true if the pair was actually inserted.
-     *
-     * This function attempts to build and insert a (key, value) pair into the tree. The PH-Tree is
-     * effectively a multi-set, so if an entry with the same key/value was already in the tree, it
-     * returns that entry instead of inserting a new one.
-     */
     void emplace(const Key& key, const T& id) {
-        //        if constexpr (IS_BOX) {
-        //            //            converter_.pre(key)
-        //            //            double plow[DIM], phigh[DIM];
-        //            //            phigh[0] = x2; phigh[1] = y2;
-        //            //            Region r = Region(plow, phigh, 2);
-        //            PhBox<DIM> box = static_cast<PhBox<DIM>>(key);
-        //            Region r = Region(box.min(), box.max(), DIM);
-        //            tree_->insertData(0, 0, r, id);
-        //        } else {
-        //            Point p = Point(key, DIM);
-        //            tree_->insertData(0, 0, p, id);
-        //        }
-
         tree_->insertData(0, 0, to_shape(key), id);
-
-        //        auto& outer_iter = tree_->insertData(0, 0, r, id).first;
-        //        auto bucket_iter = outer_iter.emplace(std::forward<Args>(args)...);
-        //        size_ += bucket_iter.second ? 1 : 0;
-        //        return {const_cast<T&>(*bucket_iter.first), bucket_iter.second};
     }
 
-    /*
-     * The emplace_hint() method uses an iterator as hint for insertion.
-     * The hint is ignored if it is not useful or is equal to end().
-     *
-     * Iterators should normally not be used after the tree has been modified. As an exception to
-     * this rule, an iterator can be used as hint if it was previously used with at most one call
-     * to erase() and if no other modifications occurred.
-     * The following is valid:
-     *
-     * // Move value from key1 to key2 (if you don't want to use relocate() ).
-     * auto iter = tree.find(key1);
-     * auto value = iter.second(); // The value may become invalid in erase()
-     * erase(iter);
-     * emplace_hint(iter, key2, value);  // the iterator can still be used as hint here
-     */
     template <typename ITERATOR, typename... Args>
     std::pair<T&, bool> emplace_hint(const ITERATOR&, const Key& key, const T& id) {
         emplace(key, id);
-        //        auto result_ph = tree_->try_emplace(iterator.GetIteratorOfPhTree(),
-        //        converter_.pre(key)); auto& bucket = result_ph.first; if (result_ph.second) {
-        //            // new bucket
-        //            auto result = bucket.emplace(std::forward<Args>(args)...);
-        //            size_ += result.second;
-        //            return {const_cast<T&>(*result.first), result.second};
-        //        } else {
-        //            // existing bucket -> we can use emplace_hint with iterator
-        //            size_t old_size = bucket.size();
-        //            auto result =
-        //                bucket.emplace_hint(iterator.GetIteratorOfBucket(),
-        //                std::forward<Args>(args)...);
-        //            bool success = old_size < bucket.size();
-        //            size_ += success;
-        //            return {const_cast<T&>(*result), success};
-        //        }
     }
 
-    /*
-     * See std::unordered_multimap::insert().
-     *
-     * @return a pair consisting of the inserted value (or to the value that prevented the
-     * insertion if the key/value already existed) and a bool denoting whether the insertion
-     * took place.
-     */
     void insert(const Key& key, const T& value) {
         emplace(key, value);
     }
 
-    /*
-     * See emplace().
-     */
     void try_emplace(const Key& key, const T& value) {
         emplace(key, value);
     }
 
-    /*
-     * See emplace_hint().
-     */
     template <typename ITERATOR>
     void try_emplace(const ITERATOR& iterator, const Key& key, const T& value) {
         emplace_hint(iterator, key, value);
     }
 
-    /*
-     * @return '1', if a value is associated with the provided key, otherwise '0'.
-     */
     size_t count(const Key& key) const {
         class MyVisitor : public IVisitor {
           public:
@@ -356,14 +238,6 @@ class PhTreeMultiMap {
         return v.count;
     }
 
-    /*
-     * Estimates the result count of a rectangular window query by counting the sizes of all buckets
-     * that overlap with the query box. This estimate function should be much faster than a normal
-     * query, especially in trees with many entries per bucket.
-     *
-     * @param query_box The query window.
-     * @param query_type The type of query, such as QueryIntersect or QueryInclude
-     */
     //    template <typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     //    size_t estimate_count(QueryBox query_box, QUERY_TYPE query_type = QUERY_TYPE()) const {
     //        size_t n = 0;
@@ -372,13 +246,6 @@ class PhTreeMultiMap {
     //        return n;
     //    }
 
-    /*
-     * See std::unordered_multimap::find().
-     *
-     * @param key the key to look up
-     * @return an iterator that points either to the first value associated with the key or
-     * to {@code end()} if no value was found
-     */
     auto find(const Key& key) {
         class MyVisitor : public IVisitor {
           public:
@@ -403,17 +270,8 @@ class PhTreeMultiMap {
 
         tree_->pointLocationQuery(p, v);
         return v.result.begin();
-        // return CreateIterator(tree_->find(converter_.pre(key)));
     }
 
-    /*
-     * See std::unordered_multimap::find().
-     *
-     * @param key the key to look up
-     * @param value the value to look up
-     * @return an iterator that points either to the associated value of the key/value pair
-     * or to {@code end()} if the key/value pair was found
-     */
     auto find(const Key& key, const T& value) {
         class MyVisitor : public IVisitor {
           public:
@@ -443,35 +301,11 @@ class PhTreeMultiMap {
         return v.result.begin();
     }
 
-    /*
-     * See std::unordered_multimap::erase(). Removes the provided key/value pair if it exists.
-     *
-     * @return '1' if the key/value pair was found, otherwise '0'.
-     */
     size_t erase(const Key& key, const T& value) {
         tree_->deleteData(to_shape(key));
-        //        auto iter_outer = tree_->find(converter_.pre(key));
-        //        if (iter_outer != tree_->end()) {
-        //            auto& bucket = *iter_outer;
-        //            auto result = bucket.erase(value);
-        //            if (bucket.empty()) {
-        //                tree_->erase(iter_outer);
-        //            }
-        //            size_ -= result;
-        //            return result;
-        //        }
-        //        return 0;
         return 1;  // TODO
     }
 
-    /*
-     * See std::map::erase(). Removes any entry located at the provided iterator.
-     *
-     * This function uses the iterator to directly erase the entry, so it is usually faster than
-     * erase(key, value).
-     *
-     * @return '1' if a value was found, otherwise '0'.
-     */
     //    template <typename ITERATOR>
     //    size_t erase(const ITERATOR& iterator) {
     //        static_assert(
@@ -492,33 +326,6 @@ class PhTreeMultiMap {
     //        return 0;
     //    }
 
-    /*
-     * This function attempts to remove the 'value' from 'old_key' and reinsert it for 'new_key'.
-     *
-     * The relocate function will report _success_ in the following cases:
-     * - the value was removed from the old position and reinserted at the new position
-     * - the old position and new position are identical.
-     *
-     * The relocate function will report _failure_ in the following cases:
-     * - The value was already present in the new position
-     * - The value was not present in the old position
-     *
-     * In case of _failure_, this function guarantees that the tree remains unchanged
-     * or is returned to its original state (i.e. before the function was called).
-     *
-     * @param old_key The old position
-     * @param new_key The new position
-     * @param value The value that needs to be relocated. The relocate() method used the value's
-     *              '==' operator to identify the entry that should be moved.
-     * @param count_equals This setting toggles whether a relocate() between two identical keys
-     *              should be counted as 'success' and return '1'. The function may still return '0'
-     *              in case the keys are not in the index.
-     *              Background: the intuitively correct behavior is to return '1' for identical
-     *              (exising) keys. However, avoiding this check can considerably speed up
-     *              relocate() calls, especially when using a ConverterMultiply.
-     *
-     * @return '1' if a value was found and reinserted, otherwise '0'.
-     */
     template <typename T2>
     size_t relocate(const Key& old_key, const Key& new_key, T2&& value, bool count_equals = true) {
         erase(old_key, value);
@@ -526,33 +333,6 @@ class PhTreeMultiMap {
         return 1;
     }
 
-    /*
-     * This function attempts to remove the 'value' from 'old_key' and reinsert it for 'new_key'.
-     *
-     * The relocate function will report _success_ in the following cases:
-     * - the value was removed from the old position and reinserted at the new position
-     * - the old position and new position are identical.
-     *
-     * The relocate function will report _failure_ in the following cases:
-     * - The value was already present in the new position
-     * - The value was not present in the old position
-     *
-     * In case of _failure_, this function guarantees that the tree remains unchanged
-     * or is returned to its original state (i.e. before the function was called).
-     *
-     * @param old_key The old position
-     * @param new_key The new position
-     * @param predicate The predicate that is used for every value at position old_key to evaluate
-     *             whether it should be relocated to new_key.
-     * @param count_equals This setting toggles whether a relocate() between two identical keys
-     *              should be counted as 'success' and return '1'. The function may still return '0'
-     *              in case the keys are not in the index.
-     *              Background: the intuitively correct behavior is to return '1' for identical
-     *              (exising) keys. However, avoiding this check can considerably speed up
-     *              relocate() calls, especially when using a ConverterMultiply.
-     *
-     * @return the number of values that were relocated.
-     */
     //    template <typename PREDICATE>
     //    size_t relocate_if(
     //        const Key& old_key, const Key& new_key, PREDICATE&& predicate, bool count_equals =
@@ -593,26 +373,10 @@ class PhTreeMultiMap {
     //        return n;
     //    }
 
-    /*
-     * Relocates all values from one coordinate to another.
-     * Returns an iterator pointing to the relocated data (or end(), if the relocation failed).
-     */
     //    auto relocate_all(const Key& old_key, const Key& new_key) {
     //        return tree_->relocate(old_key, new_key);
     //    }
 
-    /*
-     * Iterates over all entries in the tree. The optional filter allows filtering entries and nodes
-     * (=sub-trees) before returning / traversing them. By default, all entries are returned. Filter
-     * functions must implement the same signature as the default 'FilterNoOp'.
-     *
-     * @param callback The callback function to be called for every entry that matches the filter.
-     * The callback requires the following signature: callback(const PhPointD<DIM> &, const T &)
-     * @param filter An optional filter function. The filter function allows filtering entries and
-     * sub-nodes before they are passed to the callback or traversed. Any filter function must
-     * follow the signature of the default 'FilterNoOp`.
-     * The default 'FilterNoOp` filter matches all entries.
-     */
     //    template <typename CALLBACK, typename FILTER = FilterNoOp>
     //    void for_each(CALLBACK&& callback, FILTER&& filter = FILTER()) const {
     //        class MyVisitor : public IVisitor {
@@ -650,19 +414,6 @@ class PhTreeMultiMap {
     //                std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), converter_});
     //    }
 
-    /*
-     * Performs a rectangular window query. The parameters are the min and max keys which
-     * contain the minimum respectively the maximum keys in every dimension.
-     * @param query_box The query window.
-     * @param callback The callback function to be called for every entry that matches the query
-     * and filter.
-     * The callback requires the following signature: callback(const PhPointD<DIM> &, const T &)
-     * @param query_type The type of query, such as QueryIntersect or QueryInclude
-     * @param filter An optional filter function. The filter function allows filtering entries and
-     * sub-nodes before they are returned or traversed. Any filter function must follow the
-     * signature of the default 'FilterNoOp`.
-     * The default 'FilterNoOp` filter matches all entries.
-     */
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
         using TREE = decltype(this);
@@ -697,37 +448,13 @@ class PhTreeMultiMap {
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
         tree_->intersectsWithQuery(to_region(query_box), v);
-        //
-        //
-        //
-        //        tree_->template for_each<NoOpCallback, WrapCallbackFilter<CALLBACK, FILTER>>(
-        //            query_type(converter_.pre_query(query_box)),
-        //            {},
-        //            {std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), converter_});
     }
 
-    /*
-     * Iterates over all entries in the tree. The optional filter allows filtering entries and nodes
-     * (=sub-trees) before returning / traversing them. By default, all entries are returned. Filter
-     * functions must implement the same signature as the default 'FilterNoOp'.
-     *
-     * @return an iterator over all (filtered) entries in the tree,
-     */
     //    template <typename FILTER = FilterNoOp>
     //    auto begin(FILTER&& filter = FILTER()) const {
     //        return CreateIterator(tree_->begin(std::forward<FILTER>(filter)));
     //    }
 
-    /*
-     * Performs a rectangular window query. The parameters are the min and max keys which
-     * contain the minimum respectively the maximum keys in every dimension.
-     * @param query_box The query window.
-     * @param query_type The type of query, such as QueryIntersect or QueryInclude
-     * @param filter An optional filter function. The filter function allows filtering entries and
-     * sub-nodes before they are returned or traversed. Any filter function must follow the
-     * signature of the default 'FilterNoOp`.
-     * @return Result iterator.
-     */
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         using TREE = decltype(this);
@@ -762,19 +489,6 @@ class PhTreeMultiMap {
         return result_.begin();
     }
 
-    /*
-     * Locate nearest neighbors for a given point in space.
-     *
-     * NOTE: This method is not (currently) available for box keys.
-     *
-     * @param min_results number of entries to be returned. More entries may or may not be returned
-     * when several entries have the same distance.
-     * @param center center point
-     * @param distance_function optional distance function, defaults to euclidean distance
-     * @param filter optional filter predicate that excludes nodes/entries before their distance is
-     * calculated.
-     * @return Result iterator.
-     */
     //    template <
     //        typename DISTANCE,
     //        typename FILTER = FilterNoOp,
@@ -795,39 +509,24 @@ class PhTreeMultiMap {
     //            std::forward<FILTER>(filter)));
     //    }
 
-    /*
-     * @return An iterator representing the tree's 'end'.
-     */
     auto end() const {
         return result_.end();
     }
 
-    /*
-     * Remove all entries from the tree.
-     */
     void clear() {
         delete tree_;
         tree_ = create_tree();
         size_ = 0;
     }
 
-    /*
-     * @return the number of entries (key/value pairs) in the tree.
-     */
     [[nodiscard]] size_t size() const {
         return size_;
     }
 
-    /*
-     * @return 'true' if the tree is empty, otherwise 'false'.
-     */
     //    [[nodiscard]] bool empty() const {
     //        return empty();
     //    }
 
-    /*
-     * @return the converter associated with this tree.
-     */
     [[nodiscard]] const CONVERTER& converter() const {
         return converter_;
     }
@@ -918,11 +617,6 @@ class PhTreeMultiMap {
             return key;
         }
 
-//        template <dimension_t DIM2 = DIM>
-//        typename std::enable_if<DIM2 != DimInternal, Region>::type from_region(const Region& r) const {
-//            PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
-//            return box;
-//        }
         template <pht::dimension_t DIM2 = DIM>
         typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(IShape* shape) const {
             Region r;
@@ -939,29 +633,12 @@ class PhTreeMultiMap {
             return box;
         }
 
-    //    template <typename std::enable_if<(IS_BOX == false), int>::type = 0>
-    //    Point to_shape(const Key& key) const {
-    //        Point p = Point(key, DIM);
-    //        return p;
-    //    }
-
-    // This is used by PhTreeDebugHelper
-    const auto& GetInternalTree() const {
-        return tree_;
-    }
-
     SpatialIndex::ISpatialIndex* tree_;
     CONVERTER converter_;
     size_t size_;
     std::vector<T> result_{};  /// Dirty Hack!!!! TODO
 };
 
-/**
- * A PH-Tree multi-map that uses (axis aligned) points as keys.
- * The points are defined with 64bit 'double' floating point coordinates.
- *
- * See 'PhTreeD' for details.
- */
 template <
     pht::dimension_t DIM,
     typename T,
@@ -972,12 +649,6 @@ using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET>;
 template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX, typename BUCKET = std::set<T>>
 using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, BUCKET, false, pht::QueryIntersect>;
 
-/**
- * A PH-Tree multi-map that uses (axis aligned) boxes as keys.
- * The boxes are defined with 64bit 'double' floating point coordinates.
- *
- * See 'PhTreeD' for details.
- */
 template <
     pht::dimension_t DIM,
     typename T,

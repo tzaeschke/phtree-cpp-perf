@@ -40,9 +40,9 @@ using payload_t = int64_t;
 
 using TestPoint = PhPointD<3>;
 using QueryBox = PhBoxD<3>;
-// using BucketType = std::set<payload_t>;
-//using BucketType = std::unordered_set<payload_t>;
-using BucketType = robin_hood::unordered_set<payload_t>;
+using BucketType = std::set<payload_t>;
+// using BucketType = std::unordered_set<payload_t>;
+// using BucketType = robin_hood::unordered_set<payload_t>;
 
 struct Query {
     QueryBox box{};
@@ -65,12 +65,12 @@ using TestMap = typename std::conditional_t<
         PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
         typename std::conditional_t<
             SCENARIO == MULTI_MAP,
-            PhTreeMultiMapD<
+            PhTreeMultiMap<
                 DIM,
                 payload_t,
                 CONVERTER<SCENARIO, DIM>,
                 b_plus_tree_hash_set<payload_t>>,
-            PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>;
+            PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -95,7 +95,7 @@ class IndexBenchmark {
     TestMap<SCENARIO, DIM> tree_;
     std::default_random_engine random_engine_;
     std::uniform_real_distribution<> cube_distribution_;
-    std::vector<PhPointD<DIM>> points_;
+    std::vector<TestPoint> points_;
 };
 
 template <dimension_t DIM, Scenario SCENARIO>
@@ -126,7 +126,7 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
 template <dimension_t DIM>
 void InsertEntry(
     TestMap<Scenario::TREE_WITH_MAP, DIM>& tree,
-    const PhPointD<DIM>& point,
+    const TestPoint& point,
     const payload_t& data) {
     BucketType& bucket = tree.emplace(point).first;
     bucket.emplace(data);
@@ -134,20 +134,20 @@ void InsertEntry(
 
 template <dimension_t DIM>
 void InsertEntry(
-    TestMap<Scenario::BOOST_RT, DIM>& tree, const PhPointD<DIM>& point, const payload_t& data) {
+    TestMap<Scenario::BOOST_RT, DIM>& tree, const TestPoint& point, const payload_t& data) {
     tree.emplace(point, data);
 }
 
 template <dimension_t DIM>
 void InsertEntry(
-    TestMap<Scenario::MULTI_MAP, DIM>& tree, const PhPointD<DIM>& point, const payload_t& data) {
+    TestMap<Scenario::MULTI_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
     tree.emplace(point, data);
 }
 
 template <dimension_t DIM>
 void InsertEntry(
     TestMap<Scenario::MULTI_MAP_STD, DIM>& tree,
-    const PhPointD<DIM>& point,
+    const TestPoint& point,
     const payload_t& data) {
     tree.emplace(point, data);
 }
@@ -161,7 +161,7 @@ void InsertEntry(
 // }
 
 struct CounterTreeWithMap {
-    void operator()(const PhPointD<3>&, const BucketType& value) {
+    void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
             // n_ += (x.entity_id_ >= 0);
             n_ += 1;  // CheckPosition(x, center_, radius_);
@@ -173,7 +173,7 @@ struct CounterTreeWithMap {
 };
 
 struct CounterMultiMap {
-    void operator()(const PhPointD<3>&, const payload_t& value) {
+    void operator()(const TestPoint&, const payload_t& value) {
         n_ += 1;  // CheckPosition(value, center_, radius_);
     }
     const TestPoint& center_;
@@ -216,7 +216,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     // create data with about 10% duplicate coordinates
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX, 0.1);
     for (size_t i = 0; i < num_entities_; ++i) {
-        InsertEntry(tree_, points_[i], (payload_t)i);
+        InsertEntry<DIM>(tree_, points_[i], (payload_t)i);
     }
 
     state.counters["query_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);

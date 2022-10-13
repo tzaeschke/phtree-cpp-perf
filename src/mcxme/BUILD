@@ -78,23 +78,6 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_library(
-    name = "ph-mcxme-mm",
-    testonly = True,
-    hdrs = [
-        "mcxme_multimap.h",
-   ],
-    visibility = [
-        "//visibility:public",
-    ],
-    deps = [
-        ":mcxme",
-       "@phtree//:phtree",
-    ],
-    alwayslink = 1,
-)
-
-
 
 #cc_binary(
 #    name = "mcxme-main",

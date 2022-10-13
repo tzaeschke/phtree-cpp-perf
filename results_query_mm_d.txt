@@ -1,3 +1,8 @@
+Some findings:
+- Using "float" instead of "double" has almost no effect, neither on PH-tree nor on BoostRt
+- Out of std::set, std::unordered_set and robin_hood::unordered_set, std::set appears to be the fastest (by < 5%)
+
+
 bazel run //benchmark:query_mm_d_benchmark --config=benchmark -- --benchmark_counters_tabular=true
 
 STD=std::set<>
@@ -68,3 +73,43 @@ PhTreeMultiMapStd3D/WQ/1000/7         0.000 ms        0.000 ms      2323706     
 PhTreeMultiMapStd3D/WQ/10000/7        0.000 ms        0.000 ms      1819461          2.90753 2.61347M/s  7.59875M/s
 PhTreeMultiMapStd3D/WQ/100000/7       0.001 ms        0.001 ms      1159770          2.97806 1.69849M/s  5.05821M/s
 PhTreeMultiMapStd3D/WQ/1000000/7      0.001 ms        0.001 ms       903156           3.2683 1.29713M/s   4.2394M/s
+
+
+
+Using "float" instead of "double"
+-------------------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations avg_result_count query_rate result_rate
+-------------------------------------------------------------------------------------------------------------------
+PhTree3D/WQ/1000/4                    0.001 ms        0.001 ms       827905          2.71606 1.23834M/s  3.36339M/s
+PhTree3D/WQ/10000/4                   0.001 ms        0.001 ms       630121          2.86406 943.028k/s  2.70089M/s
+PhTree3D/WQ/100000/4                  0.002 ms        0.002 ms       359509          3.20962 546.068k/s  1.75267M/s
+PhTree3D/WQ/1000000/4                 0.003 ms        0.003 ms       239203          4.07772 341.225k/s  1.39142M/s
+PhTree3D/WQ/1000/7                    0.000 ms        0.000 ms      2451593          2.59411 3.50854M/s  9.10156M/s
+PhTree3D/WQ/10000/7                   0.000 ms        0.000 ms      1863778          2.90809 2.73606M/s  7.95669M/s
+PhTree3D/WQ/100000/7                  0.001 ms        0.001 ms      1279473          2.97646 1.87887M/s  5.59238M/s
+PhTree3D/WQ/1000000/7                 0.001 ms        0.001 ms       943276          3.25966 1.36501M/s  4.44946M/s
+PhTreeMultiMap3D/WQ/1000/4            0.001 ms        0.001 ms       924686          2.71522 1.31945M/s  3.58259M/s
+PhTreeMultiMap3D/WQ/10000/4           0.001 ms        0.001 ms       683441          2.86321 994.561k/s  2.84763M/s
+PhTreeMultiMap3D/WQ/100000/4          0.002 ms        0.002 ms       407957            3.178 593.124k/s  1.88495M/s
+PhTreeMultiMap3D/WQ/1000000/4         0.003 ms        0.003 ms       263310          4.07897 377.276k/s   1.5389M/s
+PhTreeMultiMap3D/WQ/1000/7            0.000 ms        0.000 ms      2441986          2.59386 3.53261M/s  9.16311M/s
+PhTreeMultiMap3D/WQ/10000/7           0.000 ms        0.000 ms      1953897          2.90816 2.79863M/s  8.13885M/s
+PhTreeMultiMap3D/WQ/100000/7          0.001 ms        0.001 ms      1312976          2.97772 1.94673M/s  5.79682M/s
+PhTreeMultiMap3D/WQ/1000000/7         0.001 ms        0.001 ms       978509          3.25746  1.4358M/s  4.67707M/s
+PhTreeMultiMapStd3D/WQ/1000/4         0.001 ms        0.001 ms       873582          2.71539 1.26836M/s   3.4441M/s
+PhTreeMultiMapStd3D/WQ/10000/4        0.001 ms        0.001 ms       649302           2.8637 949.328k/s  2.71859M/s
+PhTreeMultiMapStd3D/WQ/100000/4       0.002 ms        0.002 ms       372213          3.20071 548.148k/s  1.75446M/s
+PhTreeMultiMapStd3D/WQ/1000000/4      0.003 ms        0.003 ms       231027          4.07883 342.061k/s  1.39521M/s
+PhTreeMultiMapStd3D/WQ/1000/7         0.000 ms        0.000 ms      2419530          2.59453 3.42408M/s  8.88388M/s
+PhTreeMultiMapStd3D/WQ/10000/7        0.000 ms        0.000 ms      1895565          2.90806 2.69105M/s  7.82574M/s
+PhTreeMultiMapStd3D/WQ/100000/7       0.001 ms        0.001 ms      1273757          2.97646 1.88181M/s  5.60115M/s
+PhTreeMultiMapStd3D/WQ/1000000/7      0.001 ms        0.001 ms       951431           3.2614 1.36227M/s   4.4429M/s
+BoostRT/WQ0/1000/4                    0.001 ms        0.001 ms       998793          2.71564 1.42961M/s   3.8823M/s
+BoostRT/WQ0/10000/4                   0.001 ms        0.001 ms       718493          2.86259  1032.7k/s   2.9562M/s
+BoostRT/WQ0/100000/4                  0.001 ms        0.001 ms       514634          3.12617 741.433k/s  2.31785M/s
+BoostRT/WQ0/1000000/4                 0.003 ms        0.003 ms       263656           4.0791 370.952k/s  1.51315M/s
+BoostRT/WQ0/1000/7                    0.000 ms        0.000 ms      2620975          2.59334 3.62108M/s   9.3907M/s
+BoostRT/WQ0/10000/7                   0.000 ms        0.000 ms      2103271          2.90384 3.00707M/s  8.73205M/s
+BoostRT/WQ0/100000/7                  0.001 ms        0.001 ms      1173039          2.97804 1.73099M/s  5.15496M/s
+BoostRT/WQ0/1000000/7                 0.001 ms        0.001 ms       752366          3.26838 1008.48k/s   3.2961M/s
+
