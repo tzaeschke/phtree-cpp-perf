@@ -11,6 +11,14 @@ cc_library(
         "iterators/NodeIterator.h",
         "iterators/RangeQueryIterator.h",
         "iterators/RangeQueryStackContent.h",
+        "libmorton/include/morton.h",
+        "libmorton/include/morton2D.h",
+        "libmorton/include/morton2D_LUTs.h",
+        "libmorton/include/morton3D.h",
+        "libmorton/include/morton3D_LUTs.h",
+        "libmorton/include/morton_BMI.h",
+        "libmorton/include/morton_LUT_generators.h",
+        "libmorton/include/morton_common.h",
         "nodes/AHC.h",
         "nodes/LHC.h",
         "nodes/Node.h",
@@ -18,8 +26,6 @@ cc_library(
         "nodes/SuffixStorage.h",
         "nodes/TNode.h",
         "nodes/TSuffixStorage.h",
-        "util/compare/ParallelRangeQueryScan.h",
-        "util/compare/RTreeBulkWrapper.h",
         "util/DeletedNodes.h",
         "util/DynamicNodeOperationsUtil.h",
         "util/EntryBuffer.h",
@@ -33,25 +39,19 @@ cc_library(
         "util/RandUtil.h",
         "util/RangeQueryThreadPool.h",
         "util/RangeQueryUtil.h",
-        "util/rdtsc.h",
         "util/ResultStorage.h",
         "util/SpatialSelectionOperationsUtil.h",
         "util/TEntryBuffer.h",
+        "util/compare/ParallelRangeQueryScan.h",
+        "util/compare/RTreeBulkWrapper.h",
+        "util/rdtsc.h",
         "visitors/AssertionVisitor.h",
         "visitors/CountNodeTypesVisitor.h",
         "visitors/PrefixSharingVisitor.h",
         "visitors/SizeVisitor.h",
         "visitors/SuffixVisitor.h",
         "visitors/Visitor.h",
-        "libmorton/include/morton.h",
-         "libmorton/include/morton2D.h",
-         "libmorton/include/morton2D_LUTs.h",
-         "libmorton/include/morton3D.h",
-         "libmorton/include/morton3D_LUTs.h",
-         "libmorton/include/morton_BMI.h",
-         "libmorton/include/morton_common.h",
-         "libmorton/include/morton_LUT_generators.h",
-   ],
+    ],
     visibility = [
         "//visibility:public",
     ],
@@ -61,23 +61,21 @@ cc_library(
     alwayslink = 1,
 )
 
-
 cc_library(
     name = "ph-mcxme",
     testonly = True,
     hdrs = [
         "mcxme_map.h",
-   ],
+    ],
     visibility = [
         "//visibility:public",
     ],
     deps = [
         ":mcxme",
-       "@phtree//:phtree",
+        "@phtree",
     ],
     alwayslink = 1,
 )
-
 
 #cc_binary(
 #    name = "mcxme-main",
