@@ -303,6 +303,23 @@ cc_binary(
 )
 
 cc_binary(
+    name = "query_mm_box_d_web_benchmark",
+    testonly = True,
+    srcs = [
+        "query_mm_box_d_web_benchmark.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        ":benchmark",
+        "//src/boost:ph-boost-mm",
+        "//src/lsi:ph-lsi-mm",
+        "@gbenchmark//:benchmark",
+        "@phtree",
+        "@spdlog",
+    ],
+)
+
+cc_binary(
     name = "update_d_benchmark",
     testonly = True,
     srcs = [
