@@ -132,55 +132,26 @@ template <dimension_t DIM>
 auto CreateDataWEB = [](auto& points,
                         size_t num_entities,
                         std::uint32_t seed,
-                        double world_mininum,
+                        double world_minimum,
                         double world_maximum,
                         double box_length,
                         auto set_coordinate) {
-    //    using Point = decltype(points[0]);
-
     std::default_random_engine random_engine{seed};
-    std::uniform_real_distribution<> distribution(world_mininum, world_maximum);
+    std::uniform_real_distribution<> distribution(world_minimum, world_maximum);
     std::uniform_real_distribution<> dir_dist(-1, 1);
-    const double world_length = world_maximum - world_mininum;
+    const double world_length = world_maximum - world_minimum;
     const int EDGE_LENGTH = world_length / 4;
     const int BOXES_PER_EDGE = EDGE_LENGTH / box_length;
-    //    const int NUM_NODES = 20;  // TODO = std::max(10, num_entities / 200);
-    //    const int BRANCH_FACTOR = 3;
 
     // Creates nodes
     using Node = std::array<double, DIM>;
-    //   std::vector<Node> nodes();
-    //    auto wl_lo = world_length * 0.25;
-    //    auto wl_hi = world_length * 0.75;
-    //    nodes.push_back({wl_lo, wl_lo, wl_lo});
-    //    nodes.push_back({wl_lo, wl_lo, wl_hi});
-    //    nodes.push_back({wl_lo, wl_hi, wl_lo});
-    //    nodes.push_back({wl_lo, wl_hi, wl_hi});
-    //    nodes.push_back({wl_hi, wl_lo, wl_lo});
-    //    nodes.push_back({wl_hi, wl_lo, wl_hi});
-    //    nodes.push_back({wl_hi, wl_hi, wl_lo});
-    //    nodes.push_back({wl_hi, wl_hi, wl_hi});
-    //    for (size_t i = 0; i < NUM_NODES; ++i) {
-    //        auto& p = nodes[i];
-    //        for (dimension_t d = 0; d < DIM; ++d) {
-    //            p[d] = distribution(random_engine);
-    //        }
-    //    }
 
-    //    // Sort by x
-    //    std::sort(nodes.begin(), nodes.end(), [](const Node& a, const Node& b) -> bool {
-    //        return (a[0] < b[0]);
-    //    });
-
-    // Determine total length of edges
-    // double total_length = 0;
-    // double total_desired_length = num_entities / box_length;
     size_t id = 0;
     Node start;
     for (dimension_t d = 0; d < DIM; ++d) {
         start[d] = distribution(random_engine);
     }
-    while (points.size() < num_entities) {
+    while (id < num_entities) {
         Node direction{};
         for (dimension_t d = 0; d < DIM; ++d) {
             direction[d] = distribution(random_engine);
@@ -189,34 +160,34 @@ auto CreateDataWEB = [](auto& points,
         double s = EDGE_LENGTH / length(direction);
         scale(direction, s);
 
+        // constrain to world
+        for (dimension_t d = 0; d < DIM; ++d) {
+            double x = start[d] + direction[d];
+            if (x < world_minimum || x > world_maximum) {
+                direction[d] = -direction[d];
+            }
+        }
+
         // create end point
         Node end{start};
         add(end, direction);
 
-        // constrain to world
-        for (dimension_t d = 0; d < DIM; ++d) {
-            if (end[d] < world_mininum || end[d] > world_maximum) {
-                end[d] = -end[d];
-            }
-        }
-
         // Create edge consisting of boxes
-        Node delta = end;  // copy!
-        sub(delta, start);
+        Node delta = direction;  // copy!
         scale(delta, 1. / BOXES_PER_EDGE);
 
         Node current = start;  // copy!
-        for (int i = 0; i < BOXES_PER_EDGE; ++i) {
+        for (int i = 0; i < BOXES_PER_EDGE && id < num_entities; ++i) {
             auto& p = points[id++];
             add(current, delta);  // TODO doing this incrementally is numerically questionable
             for (dimension_t d = 0; d < DIM; ++d) {
                 double x = current[d];
                 set_coordinate(p, d, x);
             }
+            //std::cout << "Box: " << p << " " << start << "/" << end << " d=" << delta << std::endl;
         }
 
-        // Finally add new node.
-        // nodes.push_back(new_node);
+        // move on
         start = end;
     }
 };

@@ -188,7 +188,7 @@ template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     logging::info("Setting up world with {} entities and {} dimensions.", num_entities_, DIM);
     // create data with about 10% duplicate coordinates
-    CreateBoxData<DIM>(boxes_, data_type_, num_entities_, 0, GLOBAL_MAX, BOX_LEN, 0.1);
+    CreateBoxData<DIM>(boxes_, data_type_, num_entities_, 0, GLOBAL_MAX, BOX_LEN);
     for (size_t i = 0; i < num_entities_; ++i) {
         InsertEntry<DIM, SCENARIO>(tree_, boxes_[i], (payload_t)i);
     }
