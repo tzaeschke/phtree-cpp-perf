@@ -80,6 +80,147 @@ auto CreateDataCLUSTER = [](auto& points,
     }
 };
 
+template <dimension_t DIM>
+using NodeD = std::array<double, DIM>;
+template <dimension_t DIM>
+double dist(const NodeD<DIM>& n1, const NodeD<DIM>& n2) {
+    double sum = 0;
+    for (dimension_t d = 0; d < DIM; ++d) {
+        sum += (n1[d] - n2[d]) * (n1[d] - n2[d]);
+    }
+    return sqrt(sum);
+}
+
+template <dimension_t DIM>
+void add(NodeD<DIM>& in_out, const NodeD<DIM>& diff) {
+    for (dimension_t d = 0; d < DIM; ++d) {
+        in_out[d] += diff[d];
+    }
+}
+
+template <dimension_t DIM>
+void sub(NodeD<DIM>& in_out, const NodeD<DIM>& diff) {
+    for (dimension_t d = 0; d < DIM; ++d) {
+        in_out[d] -= diff[d];
+    }
+}
+
+template <dimension_t DIM>
+void scale(NodeD<DIM>& in_out, const double scale) {
+    for (dimension_t d = 0; d < DIM; ++d) {
+        in_out[d] *= scale;
+    }
+}
+
+template <dimension_t DIM>
+double length(const NodeD<DIM>& node) {
+    double sum = 0;
+    for (dimension_t d = 0; d < DIM; ++d) {
+        sum += node[d] * node[d];
+    }
+    return sqrt(sum);
+}
+
+/*
+ * A WEB consists of "nodes" that are connected with straight "edges".
+ *
+ * The web is created as follows:
+ * - Creates a series of edges with equal length that are connected
+ * - Each edge consists of small boxes (slightly overlapping).
+ */
+template <dimension_t DIM>
+auto CreateDataWEB = [](auto& points,
+                        size_t num_entities,
+                        std::uint32_t seed,
+                        double world_mininum,
+                        double world_maximum,
+                        double box_length,
+                        auto set_coordinate) {
+    //    using Point = decltype(points[0]);
+
+    std::default_random_engine random_engine{seed};
+    std::uniform_real_distribution<> distribution(world_mininum, world_maximum);
+    std::uniform_real_distribution<> dir_dist(-1, 1);
+    const double world_length = world_maximum - world_mininum;
+    const int EDGE_LENGTH = world_length / 4;
+    const int BOXES_PER_EDGE = EDGE_LENGTH / box_length;
+    //    const int NUM_NODES = 20;  // TODO = std::max(10, num_entities / 200);
+    //    const int BRANCH_FACTOR = 3;
+
+    // Creates nodes
+    using Node = std::array<double, DIM>;
+    //   std::vector<Node> nodes();
+    //    auto wl_lo = world_length * 0.25;
+    //    auto wl_hi = world_length * 0.75;
+    //    nodes.push_back({wl_lo, wl_lo, wl_lo});
+    //    nodes.push_back({wl_lo, wl_lo, wl_hi});
+    //    nodes.push_back({wl_lo, wl_hi, wl_lo});
+    //    nodes.push_back({wl_lo, wl_hi, wl_hi});
+    //    nodes.push_back({wl_hi, wl_lo, wl_lo});
+    //    nodes.push_back({wl_hi, wl_lo, wl_hi});
+    //    nodes.push_back({wl_hi, wl_hi, wl_lo});
+    //    nodes.push_back({wl_hi, wl_hi, wl_hi});
+    //    for (size_t i = 0; i < NUM_NODES; ++i) {
+    //        auto& p = nodes[i];
+    //        for (dimension_t d = 0; d < DIM; ++d) {
+    //            p[d] = distribution(random_engine);
+    //        }
+    //    }
+
+    //    // Sort by x
+    //    std::sort(nodes.begin(), nodes.end(), [](const Node& a, const Node& b) -> bool {
+    //        return (a[0] < b[0]);
+    //    });
+
+    // Determine total length of edges
+    // double total_length = 0;
+    // double total_desired_length = num_entities / box_length;
+    size_t id = 0;
+    Node start;
+    for (dimension_t d = 0; d < DIM; ++d) {
+        start[d] = distribution(random_engine);
+    }
+    while (points.size() < num_entities) {
+        Node direction{};
+        for (dimension_t d = 0; d < DIM; ++d) {
+            direction[d] = distribution(random_engine);
+        }
+
+        double s = EDGE_LENGTH / length(direction);
+        scale(direction, s);
+
+        // create end point
+        Node end{start};
+        add(end, direction);
+
+        // constrain to world
+        for (dimension_t d = 0; d < DIM; ++d) {
+            if (end[d] < world_mininum || end[d] > world_maximum) {
+                end[d] = -end[d];
+            }
+        }
+
+        // Create edge consisting of boxes
+        Node delta = end;  // copy!
+        sub(delta, start);
+        scale(delta, 1. / BOXES_PER_EDGE);
+
+        Node current = start;  // copy!
+        for (int i = 0; i < BOXES_PER_EDGE; ++i) {
+            auto& p = points[id++];
+            add(current, delta);  // TODO doing this incrementally is numerically questionable
+            for (dimension_t d = 0; d < DIM; ++d) {
+                double x = current[d];
+                set_coordinate(p, d, x);
+            }
+        }
+
+        // Finally add new node.
+        // nodes.push_back(new_node);
+        start = end;
+    }
+};
+
 auto CreateDuplicates =
     [](auto& points, int num_unique_entries, size_t num_total_entities, std::uint32_t seed) {
         std::default_random_engine random_engine{seed};
@@ -91,7 +232,7 @@ auto CreateDuplicates =
     };
 }  // namespace
 
-enum TestGenerator { CUBE = 4, CLUSTER = 7 };
+enum TestGenerator { WEB = 3, CUBE = 4, CLUSTER = 7 };
 
 template <dimension_t DIM>
 auto CreatePointDataMinMax = [](auto& points,
@@ -102,12 +243,13 @@ auto CreatePointDataMinMax = [](auto& points,
                                 double world_maximum,
                                 double fraction_of_duplicates) {
     auto set_coordinate_lambda = [](auto& p, dimension_t dim, auto value) {
-        p[dim] = static_cast < typename std::remove_reference_t<decltype(p[0])>>(value);
+        p[dim] = static_cast<typename std::remove_reference_t<decltype(p[0])>>(value);
     };
     // Create at least 1 unique point
     // Note that the following point generator is likely, but not guaranteed, to created unique
     // points.
-    int num_unique_entries = static_cast<int>(1 + (num_entities - 1) * (1. - fraction_of_duplicates));
+    int num_unique_entries =
+        static_cast<int>(1 + (num_entities - 1) * (1. - fraction_of_duplicates));
     points.reserve(num_entities);
     switch (test_generator) {
     case CUBE:
@@ -142,7 +284,8 @@ auto CreateBoxDataMinMax = [](auto& points,
     // Create at least 1 unique point
     // Note that the following point generator is likely, but not guaranteed, to created unique
     // points.
-    int num_unique_entries = static_cast<int>(1 + (num_entities - 1) * (1. - fraction_of_duplicates));
+    int num_unique_entries =
+        static_cast<int>(1 + (num_entities - 1) * (1. - fraction_of_duplicates));
     points.reserve(num_entities);
     switch (test_generator) {
     case CUBE:
@@ -152,6 +295,16 @@ auto CreateBoxDataMinMax = [](auto& points,
     case CLUSTER:
         CreateDataCLUSTER<DIM>(
             points, num_unique_entries, seed, world_minimum, world_maximum, set_coordinate_lambda);
+        break;
+    case WEB:
+        CreateDataWEB<DIM>(
+            points,
+            num_unique_entries,
+            seed,
+            world_minimum,
+            world_maximum,
+            box_length,
+            set_coordinate_lambda);
         break;
     default:
         assert(false);

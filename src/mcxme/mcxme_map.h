@@ -205,9 +205,11 @@ class PhTree {
     void for_each(
         QueryBox query_box,
         CALLBACK&&,
-        FILTER&&,   // filter = FILTER(),
-        QUERY_TYPE  // query_type = QUERY_TYPE()
+        FILTER&& filter = FILTER(),
+        QUERY_TYPE query_type = QUERY_TYPE()
     ) const {
+        (void) filter; // TODO
+        (void) query_type; // TODO
         for (auto it = begin_query(query_box); it != end(); ++it) {
             // TODO
             // callback();
