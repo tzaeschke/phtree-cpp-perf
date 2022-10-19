@@ -231,12 +231,24 @@ auto CreatePointDataMinMax = [](auto& points,
         CreateDataCLUSTER<DIM>(
             points, num_unique_entries, seed, world_minimum, world_maximum, set_coordinate_lambda);
         break;
+    case WEB:
+        CreateDataWEB<DIM>(
+            points,
+            num_entities,
+            seed,
+            world_minimum,
+            world_maximum,
+            fraction_of_duplicates, // TODO hack to avoid additional parameter
+            set_coordinate_lambda);
+        break;
     default:
         assert(false);
     }
 
     // Create duplicates
-    CreateDuplicates(points, num_unique_entries, num_entities, seed);
+    if (test_generator != WEB) {
+        CreateDuplicates(points, num_unique_entries, num_entities, seed);
+    }
 };
 
 template <dimension_t DIM>
