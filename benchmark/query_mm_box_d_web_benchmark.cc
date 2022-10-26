@@ -259,17 +259,17 @@ BENCHMARK_CAPTURE(PhTree3D, WEB, DUMMY)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
     ->Unit(benchmark::kMillisecond);
 
-//// PhTreeMultiMap
-//BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
-//    ->RangeMultiplier(10)
-//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-//    ->Unit(benchmark::kMillisecond);
-//
-//// PhTreeMultiMap with multiply converter
-//BENCHMARK_CAPTURE(PhTreeMultiMapMultiply3D, WEB, DUMMY)
-//    ->RangeMultiplier(10)
-//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-//    ->Unit(benchmark::kMillisecond);
+// PhTreeMultiMap
+BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTreeMultiMap with multiply converter
+BENCHMARK_CAPTURE(PhTreeMultiMapMultiply3D, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BoostRT, WEB, DUMMY)
     ->RangeMultiplier(10)
