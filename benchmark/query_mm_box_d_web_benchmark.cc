@@ -30,9 +30,8 @@ using namespace improbable::phtree::phbenchmark;
  * Benchmark for querying entries in multi-map implementations.
  */
 namespace {
-TODO - check optimised query
-TODO - check libSI
-TODO - try points
+//TODO - check optimised query
+//TODO - check libSI
 const double GLOBAL_MAX = 10000;
 const double BOX_LEN = 10;
 const double QUERY_SHELL_RADIUS = BOX_LEN * 0.1;
@@ -258,22 +257,22 @@ BENCHMARK_CAPTURE(PhTree3D, WEB, DUMMY)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
     ->Unit(benchmark::kMillisecond);
 
-// PhTreeMultiMap
-BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-    ->Unit(benchmark::kMillisecond);
-
-// PhTreeMultiMap with multiply converter
-BENCHMARK_CAPTURE(PhTreeMultiMapMultiply3D, WEB, DUMMY)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(BoostRT, WEB, DUMMY)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-    ->Unit(benchmark::kMillisecond);
+//// PhTreeMultiMap
+//BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
+//    ->RangeMultiplier(10)
+//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+//    ->Unit(benchmark::kMillisecond);
+//
+//// PhTreeMultiMap with multiply converter
+//BENCHMARK_CAPTURE(PhTreeMultiMapMultiply3D, WEB, DUMMY)
+//    ->RangeMultiplier(10)
+//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+//    ->Unit(benchmark::kMillisecond);
+//
+//BENCHMARK_CAPTURE(BoostRT, WEB, DUMMY)
+//    ->RangeMultiplier(10)
+//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+//    ->Unit(benchmark::kMillisecond);
 
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(LibSI, WEB, DUMMY)

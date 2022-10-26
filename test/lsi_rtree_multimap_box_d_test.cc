@@ -697,14 +697,15 @@ void populate(
 
 template <dimension_t DIM, typename T>
 struct FilterEvenId {
+    using KeyInternal = typename TestTree<DIM, T>::KeyInternal;
     template <typename BucketT>
-    [[nodiscard]] constexpr bool IsEntryValid(const PhPoint<2 * DIM>&, const BucketT&) const {
+    [[nodiscard]] constexpr bool IsEntryValid(const KeyInternal&, const BucketT&) const {
         return true;
     }
-    [[nodiscard]] constexpr bool IsNodeValid(const PhPoint<2 * DIM>&, int) const {
+    [[nodiscard]] constexpr bool IsNodeValid(const KeyInternal&, int) const {
         return true;
     }
-    [[nodiscard]] constexpr bool IsBucketEntryValid(const PhPoint<2 * DIM>&, const T& value) const {
+    [[nodiscard]] constexpr bool IsBucketEntryValid(const KeyInternal&, const T& value) const {
         return value % 2 == 0;
     }
 };

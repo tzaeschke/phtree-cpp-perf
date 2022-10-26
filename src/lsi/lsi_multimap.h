@@ -5,7 +5,6 @@
 #define LIB_SI_MULTIMAP_H
 
 #include "include/spatialindex/SpatialIndex.h"
-#include "include/spatialindex/RTree.h"
 #include "phtree/common/common.h"
 #include "phtree/converter.h"
 #include "phtree/filter.h"
@@ -13,143 +12,11 @@
 
 namespace si {
 
-// using dimension_t = std::uint32_t;
 using scalar_64_t = std::int64_t;
 const unsigned int bitLength = 64;  // 4;
 
 using namespace SpatialIndex;
 namespace pht = improbable::phtree;
-
-
-namespace {
-
-template <typename PHTREE>
-class IteratorBase {
-    friend PHTREE;
-    using T = typename PHTREE::ValueType;
-
-  protected:
-    using BucketIterType = typename PHTREE::BucketIterType;
-
-  public:
-    explicit IteratorBase() noexcept : current_value_ptr_{nullptr} {}
-
-    T& operator*() const noexcept {
-        assert(current_value_ptr_);
-        return const_cast<T&>(*current_value_ptr_);
-    }
-
-    T* operator->() const noexcept {
-        assert(current_value_ptr_);
-        return const_cast<T*>(current_value_ptr_);
-    }
-
-    friend bool operator==(
-        const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
-        return left.current_value_ptr_ == right.current_value_ptr_;
-    }
-
-    friend bool operator!=(
-        const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
-        return left.current_value_ptr_ != right.current_value_ptr_;
-    }
-
-  protected:
-    void SetFinished() noexcept {
-        current_value_ptr_ = nullptr;
-    }
-
-    void SetCurrentValue(const T* current_value_ptr) noexcept {
-        current_value_ptr_ = current_value_ptr;
-    }
-
-  private:
-    const T* current_value_ptr_;
-};
-
-template <typename ITERATOR_PH, typename PHTREE>
-class IteratorNormal : public IteratorBase<PHTREE> {
-    friend PHTREE;
-    using BucketIterType = typename IteratorBase<PHTREE>::BucketIterType;
-
-  public:
-    explicit IteratorNormal() noexcept : IteratorBase<PHTREE>(), iter_ph_{}, iter_bucket_{} {}
-
-    template <typename ITER_PH, typename BucketIterType>
-    IteratorNormal(ITER_PH&& iter_ph, BucketIterType&& iter_bucket) noexcept
-    : IteratorBase<PHTREE>()
-    , iter_ph_{std::forward<ITER_PH>(iter_ph)}
-    , iter_bucket_{std::forward<BucketIterType>(iter_bucket)} {
-        FindNextElement();
-    }
-
-    IteratorNormal& operator++() noexcept {
-        ++iter_bucket_;
-        FindNextElement();
-        return *this;
-    }
-
-    IteratorNormal operator++(int) noexcept {
-        IteratorNormal iterator(*this);
-        ++(*this);
-        return iterator;
-    }
-
-    /*
-     * Returns the external key (the 'first' part of the key/value pair).
-     */
-    auto first() const {
-        return iter_ph_.first();
-    }
-
-  protected:
-    auto& GetIteratorOfBucket() const noexcept {
-        return iter_bucket_;
-    }
-
-    auto& GetIteratorOfPhTree() const noexcept {
-        return iter_ph_;
-    }
-
-  private:
-    void FindNextElement() {
-        while (!iter_ph_.IsEnd()) {
-            while (iter_bucket_ != iter_ph_->end()) {
-                // We filter only entries here, nodes are filtered elsewhere
-                if (iter_ph_.__Filter().IsBucketEntryValid(
-                        iter_ph_.GetEntry()->GetKey(), *iter_bucket_)) {
-                    this->SetCurrentValue(&(*iter_bucket_));
-                    return;
-                }
-                ++iter_bucket_;
-            }
-            ++iter_ph_;
-            if (!iter_ph_.IsEnd()) {
-                iter_bucket_ = iter_ph_->begin();
-            }
-        }
-        // finished
-        this->SetFinished();
-    }
-
-    ITERATOR_PH iter_ph_;
-    BucketIterType iter_bucket_;
-};
-
-template <typename ITERATOR_PH, typename PHTREE>
-class IteratorKnn : public IteratorNormal<ITERATOR_PH, PHTREE> {
-  public:
-    template <typename ITER_PH, typename BucketIterType>
-    IteratorKnn(ITER_PH&& iter_ph, BucketIterType&& iter_bucket) noexcept
-    : IteratorNormal<ITER_PH, PHTREE>(
-          std::forward<ITER_PH>(iter_ph), std::forward<BucketIterType>(iter_bucket)) {}
-
-    [[nodiscard]] double distance() const noexcept {
-        return this->GetIteratorOfPhTree().distance();
-    }
-};
-
-}  // namespace
 
 /*
  * The main wrapper class
@@ -158,31 +25,21 @@ template <
     pht::dimension_t DIM,
     typename T,
     typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
-    typename BUCKET = std::set<T>,
     bool POINT_KEYS = true,
-    typename DEFAULT_QUERY_TYPE = pht::QueryPoint,
-    bool IS_BOX = CONVERTER::DimInternal != CONVERTER::DimExternal>
+    typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
 class PhTreeMultiMap {
     static_assert(std::is_same_v<int64_t, T>);
 
-    using KeyInternal = typename CONVERTER::KeyInternal;
+    // using KeyInternal = typename CONVERTER::KeyInternal;
     using Key = typename CONVERTER::KeyExternal;
     static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
-    using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET, POINT_KEYS, DEFAULT_QUERY_TYPE>;
-    using ValueType = T;
-    using BucketIterType = decltype(std::declval<BUCKET>().begin());
-    // using EndType = decltype(std::declval<v16::PhTreeV16<DimInternal, BUCKET,
-    // CONVERTER>>().end());
-
-    friend IteratorBase<PHTREE>;
 
   public:
+    // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
+    using KeyInternal = IData;
     using QueryBox = typename CONVERTER::QueryBoxExternal;
 
-    explicit PhTreeMultiMap(CONVERTER converter = CONVERTER())
-    :  // tree_{&converter_},
-        converter_{converter}
-    , size_{0} {
+    explicit PhTreeMultiMap(CONVERTER converter = CONVERTER()) : converter_{converter}, size_{0} {
         tree_ = create_tree();
     }
 
@@ -194,6 +51,7 @@ class PhTreeMultiMap {
 
     void emplace(const Key& key, const T& id) {
         tree_->insertData(0, 0, to_shape(key), id);
+        ++size_;  // TODO this is bad..!
     }
 
     template <typename ITERATOR, typename... Args>
@@ -302,7 +160,8 @@ class PhTreeMultiMap {
     }
 
     size_t erase(const Key& key, const T& value) {
-        tree_->deleteData(to_shape(key));
+        tree_->deleteData(to_shape(key), value);
+        --size_;   // TODO this is bad..!
         return 1;  // TODO
     }
 
@@ -425,15 +284,16 @@ class PhTreeMultiMap {
             , tree_{tree} {};
             void visitNode(const INode& /* n */) override {}
             void visitData(const IData& d) override {
-                KeyInternal ki{};  // TODO
-                if (filter_.IsBucketEntryValid(ki, d.getIdentifier())) {
-                    //Key key{};  // TODO
-                    IShape *shape;
+                // KeyInternal ki{};  // TODO
+                //  std::cout << d.getIdentifier() << std::endl;
+                if (filter_.IsBucketEntryValid(d, d.getIdentifier())) {
+                    // TODO Disabling coordinate conversion improves query/WEB performance by ~5%
+                    //                    Key k{};
+                    IShape* shape;
                     d.getShape(&shape);
                     Key k = tree_->from_shape(shape);
                     callback_(k, d.getIdentifier());
                 }
-                // std::cout << d.getIdentifier() << std::endl;
                 //  the ID of this data entry is an answer to the query. I will just print it to
                 //  stdout.
             }
@@ -442,12 +302,12 @@ class PhTreeMultiMap {
             FILTER filter_;
             const TREE tree_;
         };
-        MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), this};
+        static MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), this};
 
         //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
-        tree_->intersectsWithQuery(to_region(query_box), v);
+        tree_->intersectsWithQuery(query_to_region(query_box), v);
     }
 
     //    template <typename FILTER = FilterNoOp>
@@ -464,12 +324,19 @@ class PhTreeMultiMap {
             : filter_{std::forward<FILTER>(f)}, result{r}, tree_{tree} {};
             void visitNode(const INode& /* n */) override {}
             void visitData(const IData& d) override {
-                //Key k{};  // TODO
-                IShape *shape;
-                d.getShape(&shape);
-                Key k = tree_->from_shape(shape);
+                // Key k{};      // TODO
+                //                IShape* shape;
+                //                d.getShape(&shape);
+                //                Key k = tree_->from_shape(shape);
+                //                auto id = d.getIdentifier();
+                //                if (filter_.IsBucketEntryValid(k, id)) {
+                //                    result.push_back(id);
+                //                }
+                //                IShape* shape;
+                //                d.getShape(&shape);
+                //                Key k = tree_->from_shape(shape);
                 auto id = d.getIdentifier();
-                if (filter_.IsEntryValid(k, id)) {
+                if (filter_.IsBucketEntryValid(d, id)) {
                     result.push_back(id);
                 }
                 // std::cout << d.getIdentifier() << std::endl;
@@ -484,7 +351,7 @@ class PhTreeMultiMap {
         result_.clear();
         MyVisitor v{std::forward<FILTER>(filter), result_, this};
 
-        tree_->intersectsWithQuery(to_region(query_box), v);
+        tree_->intersectsWithQuery(query_to_region(query_box), v);
 
         return result_.begin();
     }
@@ -540,8 +407,8 @@ class PhTreeMultiMap {
         //        // applies a main memory random buffer on top of the persistent storage manager
         //        // (LRU buffer, etc can be created the same way).
 
-        uint32_t indexCapacity = 9; // 4; 9; 16; 20; 100;
-        uint32_t leafCapacity = 9; // 4; 9; 16; 20; 100;
+        uint32_t indexCapacity = 9;  // 4; 9; 16; 20; 100;
+        uint32_t leafCapacity = 9;   // 4; 9; 16; 20; 100;
 
         // Create a new, empty, RTree with dimensionality 2, minimum load 70%, using "file" as
         // the StorageManager and the RSTAR splitting policy.
@@ -560,34 +427,35 @@ class PhTreeMultiMap {
         return tree;
     }
 
-    Region to_region(const pht::PhBoxD<DIM>& box) const {
+    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
         Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         return r;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, Region>::type to_shape(const Key& key) const {
+    template <bool DUMMY = POINT_KEYS>
+    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
         pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
         Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         return r;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Point>::type to_shape(const Key& key) const {
-        Point p = Point(key, DIM);
+    template <bool DUMMY = POINT_KEYS>
+    typename std::enable_if<DUMMY, Point>::type to_shape(const Key& key) const {
+        Point p = Point(&*key.begin(), DIM);
         return p;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, Region>::type to_region(const Key& key) const {
+    template <bool DUMMY = POINT_KEYS>
+    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
         pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
         Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         return r;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Region>::type to_to_region(const Key& key) const {
-        Region r = Region(key, key, DIM);
+    template <bool DUMMY2 = POINT_KEYS>
+    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
+        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
+        Region r = Region(&*key.begin(), &*key.begin(), DIM);
         return r;
     }
 
@@ -603,35 +471,33 @@ class PhTreeMultiMap {
         return {from_array(p.m_pCoords)};
     }
 
-
-
-        template <pht::dimension_t DIM2 = DIM>
-        typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const IShape* shape) const {
-            //Point** p = static_cast<Point**>(shape);
-            Point p{};
-            shape->getCenter(p);
-            Key key;
-            for (pht::dimension_t d = 0; d < DIM; ++d) {
-                key[d] = p.m_pCoords[d];
-            }
-            return key;
+    template <pht::dimension_t DIM2 = DIM>
+    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const IShape* shape) const {
+        // Point** p = static_cast<Point**>(shape);
+        Point p{};
+        shape->getCenter(p);
+        Key key;
+        for (pht::dimension_t d = 0; d < DIM; ++d) {
+            key[d] = p.m_pCoords[d];
         }
+        return key;
+    }
 
-        template <pht::dimension_t DIM2 = DIM>
-        typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(IShape* shape) const {
-            Region r;
-            shape->getMBR(r);
-           // PhPointD<DIM> lo{*r.m_pLow};
-            //PhPointD<DIM> hi{*r.m_pHigh};
-            //PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
-            pht::PhBoxD<DIM> box;
-            for (pht::dimension_t d = 0; d < DIM; ++d) {
-                box.min()[d] = r.m_pLow[d];
-                box.max()[d] = r.m_pHigh[d];
-            }
-            //return PhBoxD<DIM>{from_array(r.m_pLow), from_array(r.m_pHigh)};
-            return box;
+    template <pht::dimension_t DIM2 = DIM>
+    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
+        IShape* shape) const {
+        Region r;
+        shape->getMBR(r);
+        // PhPointD<DIM> lo{*r.m_pLow};
+        // PhPointD<DIM> hi{*r.m_pHigh};
+        // PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
+        pht::PhBoxD<DIM> box;
+        for (pht::dimension_t d = 0; d < DIM; ++d) {
+            box.min()[d] = r.m_pLow[d];
+            box.max()[d] = r.m_pHigh[d];
         }
+        return box;
+    }
 
     SpatialIndex::ISpatialIndex* tree_;
     CONVERTER converter_;
@@ -639,22 +505,14 @@ class PhTreeMultiMap {
     std::vector<T> result_{};  /// Dirty Hack!!!! TODO
 };
 
-template <
-    pht::dimension_t DIM,
-    typename T,
-    typename CONVERTER = pht::ConverterIEEE<DIM>,
-    typename BUCKET = std::set<T>>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER, BUCKET>;
+template <pht::dimension_t DIM, typename T, typename CONVERTER = pht::ConverterIEEE<DIM>>
+using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX, typename BUCKET = std::set<T>>
-using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, BUCKET, false, pht::QueryIntersect>;
+template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX>
+using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, false, pht::QueryIntersect>;
 
-template <
-    pht::dimension_t DIM,
-    typename T,
-    typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>,
-    typename BUCKET = std::set<T>>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX, BUCKET>;
+template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>>
+using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX>;
 
 }  // namespace si
 

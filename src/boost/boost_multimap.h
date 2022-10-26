@@ -271,7 +271,7 @@ class PhTreeMultiMap {
 
     using Geom = typename std::conditional_t<POINT_KEYS, point_car, box_car>;
     using Entry = std::pair<Geom, T>;
-    using TREE = rtree<Entry, bgi::rstar<16>>;
+    using TREE = rtree<Entry, bgi::rstar<16>>; // 9; 16; 25;
     using ITER = decltype(TREE().qend());
 
     friend IteratorBase<PHTREE>;

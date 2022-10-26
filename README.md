@@ -77,7 +77,7 @@ Some notable issues:
 * Boost RT is used with `std::array` coordinates instead of it's native coordinates. This appears to cause
   a small but measurable slowdown.
 * liSpatialIndex uses a dirty hack for queries: results are buffered in a member field of the wrapper class.
-* The coordinate conversion for libSpatialIndex and MCXME may cost performance when using FILTERs or CALLBACKs.
+* For `insert()`/`emplace()` the coordinate conversion for libSpatialIndex and MCXME may cost performance.
 
 # Usage
 
