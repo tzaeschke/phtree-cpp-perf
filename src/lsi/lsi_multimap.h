@@ -192,87 +192,6 @@ class PhTreeMultiMap {
         return 1;
     }
 
-    //    template <typename PREDICATE>
-    //    size_t relocate_if(
-    //        const Key& old_key, const Key& new_key, PREDICATE&& predicate, bool count_equals =
-    //        true) { auto pair = tree_->_find_or_create_two_mm(
-    //            converter_.pre(old_key), converter_.pre(new_key), count_equals);
-    //        auto& iter_old = pair.first;
-    //        auto& iter_new = pair.second;
-    //
-    //        if (iter_old.IsEnd()) {
-    //            assert(iter_new.IsEnd() || !iter_new->empty());  // Otherwise remove iter_new
-    //            return 0;
-    //        }
-    //
-    //        // Are we inserting in same node and same quadrant? Or are the keys equal?
-    //        if (iter_old == iter_new) {
-    //            assert(old_key == new_key);
-    //            return 1;
-    //        }
-    //
-    //        size_t n = 0;
-    //        auto it = iter_old->begin();
-    //        while (it != iter_old->end()) {
-    //            if (predicate(*it) && iter_new->emplace(std::move(*it)).second) {
-    //                it = iter_old->erase(it);
-    //                ++n;
-    //            } else {
-    //                ++it;
-    //            }
-    //        }
-    //
-    //        if (iter_old->empty()) {
-    //            [[maybe_unused]] auto found = tree_->erase(iter_old);
-    //            assert(found);
-    //        } else if (iter_new->empty()) {
-    //            [[maybe_unused]] auto found = tree_->erase(iter_new);
-    //            assert(found);
-    //        }
-    //        return n;
-    //    }
-
-    //    auto relocate_all(const Key& old_key, const Key& new_key) {
-    //        return tree_->relocate(old_key, new_key);
-    //    }
-
-    //    template <typename CALLBACK, typename FILTER = FilterNoOp>
-    //    void for_each(CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-    //        class MyVisitor : public IVisitor {
-    //          public:
-    //            void visitNode(const INode& /* n */) override {}
-    //            void visitData(const IData& d) override {
-    //                if (d.getIdentifier() == value) {
-    //                    result.push_back(d.getIdentifier());
-    //                }
-    //                // std::cout << d.getIdentifier() << std::endl;
-    //                //  the ID of this data entry is an answer to the query. I will just print it
-    //                to
-    //                //  stdout.
-    //            }
-    //            void visitData(std::vector<const IData*>& /* v */) override {}
-    //            CALLBACK callback_;
-    //            FILTER filter_;
-    //        };
-    //        MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter)};
-    //
-    //
-    //        PhBox<DIM> box = static_cast<PhBox<DIM>>(key);
-    //        Region r = Region(box.min(), box.max(), DIM);
-    //        return r;
-    //        tree_->intersectsWithQuery();
-    //
-    //        tree_->pointLocationQuery(key, v);
-    //        return v.result.begin();
-    //
-    //
-    //
-    //        tree_->for_each(
-    //            NoOpCallback{},
-    //            WrapCallbackFilter<CALLBACK, FILTER>{
-    //                std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), converter_});
-    //    }
-
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
         using TREE = decltype(this);
@@ -307,6 +226,7 @@ class PhTreeMultiMap {
         //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
+        RTree::IntersectionQuery;
         tree_->intersectsWithQuery(query_to_region(query_box), v);
     }
 
@@ -429,6 +349,7 @@ class PhTreeMultiMap {
 
     Region query_to_region(const pht::PhBoxD<DIM>& box) const {
         Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+        //std::cout << "q: " << r.
         return r;
     }
 

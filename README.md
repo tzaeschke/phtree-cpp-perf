@@ -78,6 +78,8 @@ Some notable issues:
   a small but measurable slowdown.
 * liSpatialIndex uses a dirty hack for queries: results are buffered in a member field of the wrapper class.
 * For `insert()`/`emplace()` the coordinate conversion for libSpatialIndex and MCXME may cost performance.
+* There must be a bug: when using libSpatialIndex with WEB (box or points) it only finds 1 result on average where it 
+  should find 3 (as all other indexes do). This probelm does not occur with CUBE/CLUSTER or in tests.  
 
 # Usage
 

@@ -135,18 +135,19 @@ void InsertEntry(
     bucket.emplace(data);
 }
 
-bool CheckPosition(const PhBoxD<3>& box, const QueryBox& query) {
-    //   const auto& box = entity;
-    bool result = true;
-    for (int d = 0; d < 3; ++d) {
-        result = query.min()[d] <= box.max()[0] && query.max()[d] >= box.min()[d];
-    }
-    return result;
-}
+//bool CheckPosition(const PhBoxD<3>& box, const QueryBox& query) {
+//    //   const auto& box = entity;
+//    bool result = true;
+//    for (int d = 0; d < 3; ++d) {
+//        result = query.min()[d] <= box.max()[0] && query.max()[d] >= box.min()[d];
+//    }
+//    return result;
+//}
 
 struct CounterTreeWithMap {
     void operator()(const PhBoxD<3>&, const BucketType& value) {
         for (auto& x : value) {
+            (void) x;
             n_ += 1;  // CheckPosition(boxes_[x], box_); // TODO
         }
     }
@@ -157,6 +158,7 @@ struct CounterTreeWithMap {
 
 struct CounterMultiMap {
     void operator()(const PhBoxD<3>&, const payload_t& value) {
+        (void) value;
         n_ += 1;  // CheckPosition(boxes_[value], box_); // TODO
     }
     // std::vector<PhBoxD<3>> boxes_;
@@ -268,11 +270,11 @@ BENCHMARK_CAPTURE(PhTree3D, WEB, DUMMY)
 //    ->RangeMultiplier(10)
 //    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
 //    ->Unit(benchmark::kMillisecond);
-//
-//BENCHMARK_CAPTURE(BoostRT, WEB, DUMMY)
-//    ->RangeMultiplier(10)
-//    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
-//    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BoostRT, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
 
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(LibSI, WEB, DUMMY)

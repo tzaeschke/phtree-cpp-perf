@@ -271,7 +271,11 @@ class PhTreeMultiMap {
 
     using Geom = typename std::conditional_t<POINT_KEYS, point_car, box_car>;
     using Entry = std::pair<Geom, T>;
-    using TREE = rtree<Entry, bgi::rstar<16>>; // 9; 16; 25;
+    // For queries the best node capacity appears to be ¨rstar" around 16 (20 is also good).
+    // THis was tested with WEB data with points and boxes.
+    // TODO test insert()
+    // TODO test other strategies
+    using TREE = rtree<Entry, bgi::rstar<16>>; // 9; 16; 20; 25;
     using ITER = decltype(TREE().qend());
 
     friend IteratorBase<PHTREE>;
