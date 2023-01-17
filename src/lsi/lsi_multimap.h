@@ -226,7 +226,7 @@ class PhTreeMultiMap {
         //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
-        RTree::IntersectionQuery;
+        //RTree::IntersectionQuery;
         tree_->intersectsWithQuery(query_to_region(query_box), v);
     }
 

@@ -40,7 +40,7 @@ class PhTreeMultiMap {
 
   public:
     // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
-    using KeyInternal = IData;
+    using KeyInternal = std::vector<float>;
     using QueryBox = typename CONVERTER::QueryBoxExternal;
 
     explicit PhTreeMultiMap(CONVERTER converter = CONVERTER()) : converter_{converter}, size_{0} {
@@ -54,7 +54,7 @@ class PhTreeMultiMap {
     ~PhTreeMultiMap() noexcept = default;
 
     void emplace(const Key& key, const T& id) {
-        tree_->insertData(0, 0, to_shape(key), id);
+        tree_->InsertObject(to_shape(key), id);
         ++size_;  // TODO this is bad..!
     }
 
@@ -77,94 +77,25 @@ class PhTreeMultiMap {
     }
 
     size_t count(const Key& key) const {
-        class MyVisitor : public IVisitor {
-          public:
-            void visitNode(const INode& /* n */) override {}
-            void visitData(const IData&) override {
-                ++count;
-                // std::cout << d.getIdentifier() << std::endl;
-                //  the ID of this data entry is an answer to the query. I will just print it to
-                //  stdout.
-            }
-            void visitData(std::vector<const IData*>& /* v */) override {}
-            size_t count;
-        };
-        MyVisitor v{};
-
-        Region r = to_region(key);
-        Point p{};
-        r.getCenter(p);  // TODO we are just using the center here....
-        // TODO for boxes we should also compare the shape!
-
-        tree_->pointLocationQuery(p, v);
-        return v.count;
+        return tree_->SearchObject(to_shape(key));
     }
 
-    //    template <typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
-    //    size_t estimate_count(QueryBox query_box, QUERY_TYPE query_type = QUERY_TYPE()) const {
-    //        size_t n = 0;
-    //        auto counter_lambda = [&](const Key&, const BUCKET& bucket) { n += bucket.size(); };
-    //        tree_->for_each(query_type(converter_.pre_query(query_box)), counter_lambda);
-    //        return n;
-    //    }
-
     auto find(const Key& key) {
-        class MyVisitor : public IVisitor {
-          public:
-            MyVisitor(std::vector<T>& r) : result{r} {};
-            void visitNode(const INode& /* n */) override {}
-            void visitData(const IData& d) override {
-                result.push_back(d.getIdentifier());
-                // std::cout << d.getIdentifier() << std::endl;
-                //  the ID of this data entry is an answer to the query. I will just print it to
-                //  stdout.
-            }
-            void visitData(std::vector<const IData*>& /* v */) override {}
-            std::vector<T>& result;
-        };
+        auto&r = tree_->SearchObject(to_shape(key));
         result_.clear();
-        MyVisitor v{result_};
-
-        Region r = to_region(key);
-        Point p{};
-        r.getCenter(p);  // TODO we are just using the center here....
-        // TODO for boxes we should also compare the shape!
-
-        tree_->pointLocationQuery(p, v);
-        return v.result.begin();
+        result_.emplace_back(r);
+        return result_.begin();
     }
 
     auto find(const Key& key, const T& value) {
-        class MyVisitor : public IVisitor {
-          public:
-            MyVisitor(const T& v, std::vector<T>& r) : value{v}, result{r} {};
-            void visitNode(const INode& /* n */) override {}
-            void visitData(const IData& d) override {
-                if (d.getIdentifier() == value) {
-                    result.push_back(d.getIdentifier());
-                }
-                // std::cout << d.getIdentifier() << std::endl;
-                //  the ID of this data entry is an answer to the query. I will just print it to
-                //  stdout.
-            }
-            void visitData(std::vector<const IData*>& /* v */) override {}
-            T value;
-            std::vector<T>& result;
-        };
+        auto&r = tree_->SearchObject(to_shape(key));
         result_.clear();
-        MyVisitor v{value, result_};
-
-        Region r = to_region(key);
-        Point p{};
-        r.getCenter(p);  // TODO we are just using the center here....
-        // TODO for boxes we should also compare the shape!
-
-        tree_->pointLocationQuery(p, v);
-        return v.result.begin();
+        result_.emplace_back(r);  // TODO
+        return result_.begin();
     }
 
     size_t erase(const Key& key, const T& value) {
-        tree_->deleteData(to_shape(key), value);
+        tree_->DeleteObject(to_shape(key));
         --size_;   // TODO this is bad..!
         return 1;  // TODO
     }
@@ -198,85 +129,22 @@ class PhTreeMultiMap {
 
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        using TREE = decltype(this);
-        class MyVisitor : public IVisitor {
-          public:
-            MyVisitor(CALLBACK&& cb, FILTER&& f, const TREE tree)
-            : callback_{std::forward<CALLBACK>(cb)}
-            , filter_{std::forward<FILTER>(f)}
-            , tree_{tree} {};
-            void visitNode(const INode& /* n */) override {}
-            void visitData(const IData& d) override {
-                // KeyInternal ki{};  // TODO
-                //  std::cout << d.getIdentifier() << std::endl;
-                if (filter_.IsBucketEntryValid(d, d.getIdentifier())) {
-                    // TODO Disabling coordinate conversion improves query/WEB performance by ~5%
-                    //                    Key k{};
-                    IShape* shape;
-                    d.getShape(&shape);
-                    Key k = tree_->from_shape(shape);
-                    callback_(k, d.getIdentifier());
-                }
-                //  the ID of this data entry is an answer to the query. I will just print it to
-                //  stdout.
-            }
-            void visitData(std::vector<const IData*>& /* v */) override {}
-            CALLBACK callback_;
-            FILTER filter_;
-            const TREE tree_;
-        };
-        static MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), this};
-
-        //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
-        //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        //        tree_->intersectsWithQuery(r, v);
-        RTree::IntersectionQuery;
-        tree_->intersectsWithQuery(query_to_region(query_box), v);
+        //tree_->SearchRangeMT();
+        auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
+        for (auto& r: results) {
+            Key k{}; // TODO
+            filter.IsBucketEntryValid(k, r);
+        }
     }
-
-    //    template <typename FILTER = FilterNoOp>
-    //    auto begin(FILTER&& filter = FILTER()) const {
-    //        return CreateIterator(tree_->begin(std::forward<FILTER>(filter)));
-    //    }
 
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         using TREE = decltype(this);
-        class MyVisitor : public IVisitor {
-          public:
-            MyVisitor(FILTER&& f, std::vector<T>& r, TREE tree)
-            : filter_{std::forward<FILTER>(f)}, result{r}, tree_{tree} {};
-            void visitNode(const INode& /* n */) override {}
-            void visitData(const IData& d) override {
-                // Key k{};      // TODO
-                //                IShape* shape;
-                //                d.getShape(&shape);
-                //                Key k = tree_->from_shape(shape);
-                //                auto id = d.getIdentifier();
-                //                if (filter_.IsBucketEntryValid(k, id)) {
-                //                    result.push_back(id);
-                //                }
-                //                IShape* shape;
-                //                d.getShape(&shape);
-                //                Key k = tree_->from_shape(shape);
-                auto id = d.getIdentifier();
-                if (filter_.IsBucketEntryValid(d, id)) {
-                    result.push_back(id);
-                }
-                // std::cout << d.getIdentifier() << std::endl;
-                //  the ID of this data entry is an answer to the query. I will just print it to
-                //  stdout.
-            }
-            void visitData(std::vector<const IData*>& /* v */) override {}
-            FILTER filter_;
-            std::vector<T>& result;
-            const TREE tree_;
-        };
+
+        auto results = tree_->SearchRange(to_shape(query_box.min), to_shape(query_box.max()));
         result_.clear();
-        MyVisitor v{std::forward<FILTER>(filter), result_, this};
-
-        tree_->intersectsWithQuery(query_to_region(query_box), v);
-
+        result_ = results;
+        //std::copy_n(shape.begin(), DIM, key.begin());
         return result_.begin();
     }
 
@@ -328,78 +196,77 @@ class PhTreeMultiMap {
         return tree;
     }
 
-    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
-        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        //std::cout << "q: " << r.
-        return r;
-    }
+//    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
+//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+//        //std::cout << "q: " << r.
+//        return r;
+//    }
+//
+//    template <bool DUMMY = POINT_KEYS>
+//    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
+//        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
+//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+//        return r;
+//    }
 
     template <bool DUMMY = POINT_KEYS>
-    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
-        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        return r;
-    }
-
-    template <bool DUMMY = POINT_KEYS>
-    typename std::enable_if<DUMMY, Point>::type to_shape(const Key& key) const {
-        Point p = Point(&*key.begin(), DIM);
+    typename std::enable_if<DUMMY, KeyInternal>::type to_shape(const Key& key) const {
+        KeyInternal p = std::vector<float>(key.begin(), key.end());
         return p;
     }
 
-    template <bool DUMMY = POINT_KEYS>
-    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
-        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        return r;
-    }
-
-    template <bool DUMMY2 = POINT_KEYS>
-    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
-        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
-        Region r = Region(&*key.begin(), &*key.begin(), DIM);
-        return r;
-    }
-
-    Key from_array(const double* a) const {
-        Key key;
-        for (pht::dimension_t d = 0; d < DIM; ++d) {
-            key[d] = a[d];
-        }
-        return key;
-    }
-
-    Key from_point(const Point& p) const {
-        return {from_array(p.m_pCoords)};
-    }
+//    template <bool DUMMY = POINT_KEYS>
+//    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
+//        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
+//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+//        return r;
+//    }
+//
+//    template <bool DUMMY2 = POINT_KEYS>
+//    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
+//        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
+//        Region r = Region(&*key.begin(), &*key.begin(), DIM);
+//        return r;
+//    }
+//
+//    Key from_array(const double* a) const {
+//        Key key;
+//        for (pht::dimension_t d = 0; d < DIM; ++d) {
+//            key[d] = a[d];
+//        }
+//        return key;
+//    }
+//
+//    Key from_point(const Point& p) const {
+//        return {from_array(p.m_pCoords)};
+//    }
 
     template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const IShape* shape) const {
+    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const KeyInternal& shape) const {
         // Point** p = static_cast<Point**>(shape);
-        Point p{};
-        shape->getCenter(p);
         Key key;
-        for (pht::dimension_t d = 0; d < DIM; ++d) {
-            key[d] = p.m_pCoords[d];
-        }
+        std::copy_n(shape.begin(), DIM, key.begin());
+//        for (pht::dimension_t d = 0; d < DIM; ++d) {
+//            key[d] = p.m_pCoords[d];
+//        }
         return key;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
-        IShape* shape) const {
-        Region r;
-        shape->getMBR(r);
-        // PhPointD<DIM> lo{*r.m_pLow};
-        // PhPointD<DIM> hi{*r.m_pHigh};
-        // PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
-        pht::PhBoxD<DIM> box;
-        for (pht::dimension_t d = 0; d < DIM; ++d) {
-            box.min()[d] = r.m_pLow[d];
-            box.max()[d] = r.m_pHigh[d];
-        }
-        return box;
-    }
+//    template <pht::dimension_t DIM2 = DIM>
+//    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
+//        IShape* shape) const {
+//        Region r;
+//        shape->getMBR(r);
+//        // PhPointD<DIM> lo{*r.m_pLow};
+//        // PhPointD<DIM> hi{*r.m_pHigh};
+//        // PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
+//        pht::PhBoxD<DIM> box;
+//        for (pht::dimension_t d = 0; d < DIM; ++d) {
+//            box.min()[d] = r.m_pLow[d];
+//            box.max()[d] = r.m_pHigh[d];
+//        }
+//        return box;
+//    }
 
     BBTree* tree_;
     CONVERTER converter_;

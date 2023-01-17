@@ -18,6 +18,7 @@
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
 #include "phtree/phtree_multimap2.h"
+#include "src/bb-tree/bb_multimap.h"
 #include "src/boost/boost_multimap.h"
 #include "src/robin_hood/robin_hood.h"
 #include <benchmark/benchmark.h>
@@ -35,7 +36,7 @@ namespace {
 const double GLOBAL_MAX = 10000;
 const double AVG_QUERY_RESULT_SIZE = 3;
 
-enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2 };
+enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2, BB };
 
 using payload_t = int64_t;
 
@@ -55,26 +56,28 @@ template <Scenario SCENARIO, dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
 template <Scenario SCENARIO, dimension_t DIM>
-using TestMap = typename std::conditional_t<
-    SCENARIO == BOOST_RT,
-    b::PhTreeMultiMapD<DIM, payload_t>,
-    typename std::conditional_t<
-        //        SCENARIO == LSI,
-        //        si::PhTreeMultiMapD<DIM, payload_t>,
-        //        typename std::conditional_t<
-        SCENARIO == TREE_WITH_MAP,
-        PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
-        typename std::conditional_t<
-            SCENARIO == MULTI_MAP,
-            PhTreeMultiMap<
-                DIM,
-                payload_t,
-                CONVERTER<SCENARIO, DIM>,
-                b_plus_tree_hash_set<payload_t>>,
-            typename std::conditional_t<
-                SCENARIO == PHTREE2,
-                PhTreeMultiMap2D<DIM, payload_t>,
-                PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>;
+using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
+      b::PhTreeMultiMapD<DIM, payload_t>,
+      typename std::conditional_t<
+          //        SCENARIO == LSI,
+          //        si::PhTreeMultiMapD<DIM, payload_t>,
+          //        typename std::conditional_t<
+          SCENARIO == TREE_WITH_MAP,
+          PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
+          typename std::conditional_t<
+              SCENARIO == MULTI_MAP,
+              PhTreeMultiMap<
+                  DIM,
+                  payload_t,
+                  CONVERTER<SCENARIO, DIM>,
+                  b_plus_tree_hash_set<payload_t>>,
+              typename std::conditional_t<
+                  SCENARIO == PHTREE2,
+                  PhTreeMultiMap2D<DIM, payload_t>,
+                  typename std::conditional_t<
+                      SCENARIO == BB,
+                      bb::PhTreeMultiMapD<DIM, payload_t>,
+                      PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -85,8 +88,8 @@ class IndexBenchmark {
 
   private:
     void SetupWorld(benchmark::State& state);
-    void QueryWorld(benchmark::State& state, const Query& query);
-    void CreateQuery(Query& query);
+    void QueryWorld(benchmark::State& state, const QueryBox& query);
+    void CreateQuery(QueryBox& query);
 
     const TestGenerator data_type_;
     const size_t num_entities_;
@@ -117,7 +120,7 @@ IndexBenchmark<DIM, SCENARIO>::IndexBenchmark(benchmark::State& state, double av
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
-    Query query{};
+    QueryBox query{};
     for (auto _ : state) {
         state.PauseTiming();
         CreateQuery(query);
@@ -127,93 +130,117 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
     }
 }
 
-template <dimension_t DIM>
+
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO != Scenario::TREE_WITH_MAP), int> = 0>
+void InsertEntry(TestMap<SCENARIO, DIM>& tree, const TestPoint& point, const payload_t& data) {
+    tree.emplace(point, data);
+}
+
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO == Scenario::TREE_WITH_MAP), int> = 0>
 void InsertEntry(
     TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
     BucketType& bucket = tree.emplace(point).first;
     bucket.emplace(data);
 }
 
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::BOOST_RT, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    tree.emplace(point, data);
-}
 
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::MULTI_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    tree.emplace(point, data);
-}
-
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::PHTREE2, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    tree.emplace(point, data);
-}
-
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    tree.emplace(point, data);
-}
+//
+//template <dimension_t DIM>
+//void InsertEntry(
+//    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
+//    BucketType& bucket = tree.emplace(point).first;
+//    bucket.emplace(data);
+//}
+//
+//template <dimension_t DIM>
+//void InsertEntry(
+//    TestMap<Scenario::BOOST_RT, DIM>& tree, const TestPoint& point, const payload_t& data) {
+//    tree.emplace(point, data);
+//}
+//
+//template <dimension_t DIM>
+//void InsertEntry(
+//    TestMap<Scenario::MULTI_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
+//    tree.emplace(point, data);
+//}
+//
+//template <dimension_t DIM>
+//void InsertEntry(
+//    TestMap<Scenario::PHTREE2, DIM>& tree, const TestPoint& point, const payload_t& data) {
+//    tree.emplace(point, data);
+//}
+//
+//template <dimension_t DIM>
+//void InsertEntry(
+//    TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const TestPoint& point, const payload_t& data) {
+//    tree.emplace(point, data);
+//}
 
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
-            // n_ += (x.entity_id_ >= 0);
-            n_ += 1;  // CheckPosition(x, center_, radius_);
+            n_ += 1;
         }
     }
-    const TestPoint& center_;
-    double radius_;
     size_t n_;
 };
 
 struct CounterMultiMap {
     void operator()(const TestPoint&, const payload_t& value) {
-        n_ += 1;  // CheckPosition(value, center_, radius_);
+        n_ += 1;
     }
-    const TestPoint& center_;
-    double radius_;
     size_t n_;
 };
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO == Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const Query& query) {
-    CounterTreeWithMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
+    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const QueryBox& query) {
+    CounterTreeWithMap counter{0};
+    tree.for_each(query, counter);
     return counter.n_;
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
-size_t CountEntries(TestMap<Scenario::BOOST_RT, DIM>& tree, const Query& query) {
-    CounterMultiMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
+typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
+    TestMap<SCENARIO, DIM>& tree, const QueryBox& query) {
+    CounterMultiMap counter{0};
+    tree.for_each(query, counter);
     return counter.n_;
 }
-
-template <dimension_t DIM, Scenario SCENARIO>
-size_t CountEntries(TestMap<Scenario::MULTI_MAP, DIM>& tree, const Query& query) {
-    CounterMultiMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
-    return counter.n_;
-}
-
-template <dimension_t DIM, Scenario SCENARIO>
-size_t CountEntries(TestMap<Scenario::PHTREE2, DIM>& tree, const Query& query) {
-    CounterMultiMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
-    return counter.n_;
-}
-
-template <dimension_t DIM, Scenario SCENARIO>
-size_t CountEntries(TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const Query& query) {
-    CounterMultiMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
-    return counter.n_;
-}
+//
+//template <dimension_t DIM, Scenario SCENARIO>
+//size_t CountEntries(TestMap<Scenario::BOOST_RT, DIM>& tree, const Query& query) {
+//    CounterMultiMap counter{query.center, query.radius, 0};
+//    tree.for_each(query.box, counter);
+//    return counter.n_;
+//}
+//
+//template <dimension_t DIM, Scenario SCENARIO>
+//size_t CountEntries(TestMap<Scenario::MULTI_MAP, DIM>& tree, const Query& query) {
+//    CounterMultiMap counter{query.center, query.radius, 0};
+//    tree.for_each(query.box, counter);
+//    return counter.n_;
+//}
+//
+//template <dimension_t DIM, Scenario SCENARIO>
+//size_t CountEntries(TestMap<Scenario::PHTREE2, DIM>& tree, const Query& query) {
+//    CounterMultiMap counter{query.center, query.radius, 0};
+//    tree.for_each(query.box, counter);
+//    return counter.n_;
+//}
+//
+//template <dimension_t DIM, Scenario SCENARIO>
+//size_t CountEntries(TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const Query& query) {
+//    CounterMultiMap counter{query.center, query.radius, 0};
+//    tree.for_each(query.box, counter);
+//    return counter.n_;
+//}
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
@@ -221,7 +248,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     // create data with about 10% duplicate coordinates
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX, 0.1);
     for (size_t i = 0; i < num_entities_; ++i) {
-        InsertEntry<DIM>(tree_, points_[i], (payload_t)i);
+        InsertEntry<DIM, SCENARIO>(tree_, points_[i], (payload_t)i);
     }
 
     state.counters["query_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);
@@ -231,7 +258,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
-void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const Query& query) {
+void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const QueryBox& query) {
     size_t n = CountEntries<DIM, SCENARIO>(tree_, query);
 
     state.counters["query_rate"] += 1;
@@ -240,14 +267,14 @@ void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const Qu
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
-void IndexBenchmark<DIM, SCENARIO>::CreateQuery(Query& query) {
+void IndexBenchmark<DIM, SCENARIO>::CreateQuery(QueryBox& query) {
     double length = query_edge_length();
     // shift to ensure query lies within boundary
     double shift = (GLOBAL_MAX - (double)length) / GLOBAL_MAX;
     for (dimension_t d = 0; d < DIM; ++d) {
         auto x = shift * cube_distribution_(random_engine_);
-        query.box.min()[d] = x;
-        query.box.max()[d] = x + length;
+        query.min()[d] = x;
+        query.max()[d] = x + length;
     }
 }
 
@@ -264,6 +291,12 @@ void BoostRT(benchmark::State& state, Arguments&&... arguments) {
 //     IndexBenchmark<3, Scenario::LSI> benchmark{state, arguments...};
 //     benchmark.Benchmark(state);
 // }
+
+template <typename... Arguments>
+void BBTree3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::BB> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
 
 template <typename... Arguments>
 void PhTree3D(benchmark::State& state, Arguments&&... arguments) {
@@ -315,6 +348,11 @@ BENCHMARK_CAPTURE(PhTreeMultiMapStd3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BoostRT, WQ0, AVG_QUERY_RESULT_SIZE)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BBTree3D, WQ0, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
