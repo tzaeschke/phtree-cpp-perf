@@ -49,12 +49,6 @@ using BucketType = std::set<payload_t>;
 // using BucketType = std::unordered_set<payload_t>;
 // using BucketType = robin_hood::unordered_set<payload_t>;
 
-struct Query {
-    QueryBox box{};
-    TestPoint center{};
-    double radius{};
-};
-
 template <Scenario SCENARIO, dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
@@ -62,28 +56,29 @@ template <Scenario SCENARIO, dimension_t DIM>
 using CONVERTER_MUL = ConverterMultiply<DIM, 1, 30>;
 
 template <Scenario SCENARIO, dimension_t DIM>
-using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
-      b::PhTreeMultiMapD<DIM, payload_t>,
-      typename std::conditional_t<
-          SCENARIO == LSI,
-          si::PhTreeMultiMapD<DIM, payload_t>,
-          typename std::conditional_t<
-              SCENARIO == TREE_WITH_MAP,
-              PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
-              typename std::conditional_t<
-                  SCENARIO == MULTI_MAP,
-                  PhTreeMultiMap<
-                      DIM,
-                      payload_t,
-                      CONVERTER<SCENARIO, DIM>,
-                      b_plus_tree_hash_set<payload_t>>,
-                  typename std::conditional_t<
-                      SCENARIO == MULTIPLY_MAP,
-                      PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<SCENARIO, DIM>>,
-                      typename std::conditional_t<
-                          SCENARIO == PHTREE2,
-                          PhTreeMultiMap2D<DIM, payload_t>,
-                          PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>;
+using TestMap = typename std::conditional_t<
+    SCENARIO == BOOST_RT,
+    b::PhTreeMultiMapD<DIM, payload_t>,
+    typename std::conditional_t<
+        SCENARIO == LSI,
+        si::PhTreeMultiMapD<DIM, payload_t>,
+        typename std::conditional_t<
+            SCENARIO == TREE_WITH_MAP,
+            PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
+            typename std::conditional_t<
+                SCENARIO == MULTI_MAP,
+                PhTreeMultiMap<
+                    DIM,
+                    payload_t,
+                    CONVERTER<SCENARIO, DIM>,
+                    b_plus_tree_hash_set<payload_t>>,
+                typename std::conditional_t<
+                    SCENARIO == MULTIPLY_MAP,
+                    PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<SCENARIO, DIM>>,
+                    typename std::conditional_t<
+                        SCENARIO == PHTREE2,
+                        PhTreeMultiMap2D<DIM, payload_t>,
+                        PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -94,8 +89,8 @@ class IndexBenchmark {
 
   private:
     void SetupWorld(benchmark::State& state);
-    void QueryWorld(benchmark::State& state, const Query& query);
-    void CreateQuery(Query& query);
+    void QueryWorld(benchmark::State& state, const QueryBox& query);
+    void CreateQuery(QueryBox& query);
 
     const TestGenerator data_type_;
     const size_t num_entities_;
@@ -121,7 +116,7 @@ IndexBenchmark<DIM, SCENARIO>::IndexBenchmark(benchmark::State& state, int)
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
-    Query query{};
+    QueryBox query{};
     for (auto _ : state) {
         state.PauseTiming();
         CreateQuery(query);
@@ -144,68 +139,56 @@ typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, void>::type InsertE
     tree.emplace(point, data);
 }
 
-// int CheckPosition(const payload_t& entity, const TestPoint& center, double radius) {
-//     const auto& point = entity;
-//     bool dx = abs(center[0] - point[0]) <= radius;
-//     bool dy = abs(center[1] - point[1]) <= radius;
-//     bool dz = abs(center[2] - point[2]) <= radius;
-//     return dx && dy && dz ? 1 : -100000000;
-// }
-
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto it = value.begin(); it != value.end(); ++it) {
-            n_ += 1;  // CheckPosition(*it), center_, radius_);
+            n_ += 1;
         }
     }
-    const TestPoint& center_;
-    double radius_;
     size_t n_;
 };
 
 struct CounterMultiMap {
     void operator()(const TestPoint&, const payload_t& value) {
         (void)value;
-        n_ += 1;  // CheckPosition(value, center_, radius_);
+        n_ += 1;
     }
-    const TestPoint& center_;
-    double radius_;
     size_t n_;
 };
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO == Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const Query& query) {
-    CounterTreeWithMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
+    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const QueryBox& query) {
+    CounterTreeWithMap counter{0};
+    tree.for_each(query, counter);
     return counter.n_;
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<SCENARIO, DIM>& tree, const Query& query) {
-    CounterMultiMap counter{query.center, query.radius, 0};
-    tree.for_each(query.box, counter);
+    TestMap<SCENARIO, DIM>& tree, const QueryBox& query) {
+    CounterMultiMap counter{0};
+    tree.for_each(query, counter);
     return counter.n_;
 }
 
 // template <dimension_t DIM, Scenario SCENARIO>
-// size_t CountEntries(TestMap<Scenario::BOOST_RT, DIM>& tree, const Query& query) {
-//     CounterMultiMap counter{query.center, query.radius, 0};
+// size_t CountEntries(TestMap<Scenario::BOOST_RT, DIM>& tree, const QueryBox& query) {
+//     CounterMultiMap counter{0};
 //     tree.for_each(query.box, counter);
 //     return counter.n_;
 // }
 //
 // template <dimension_t DIM, Scenario SCENARIO>
-// size_t CountEntries(TestMap<Scenario::MULTI_MAP, DIM>& tree, const Query& query) {
-//     CounterMultiMap counter{query.center, query.radius, 0};
+// size_t CountEntries(TestMap<Scenario::MULTI_MAP, DIM>& tree, const QueryBox& query) {
+//     CounterMultiMap counter{0};
 //     tree.for_each(query.box, counter);
 //     return counter.n_;
 // }
 //
 // template <dimension_t DIM, Scenario SCENARIO>
-// size_t CountEntries(TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const Query& query) {
-//     CounterMultiMap counter{query.center, query.radius, 0};
+// size_t CountEntries(TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const QueryBox& query) {
+//     CounterMultiMap counter{0};
 //     tree.for_each(query.box, counter);
 //     return counter.n_;
 // }
@@ -226,7 +209,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
-void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const Query& query) {
+void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const QueryBox& query) {
     size_t n = CountEntries<DIM, SCENARIO>(tree_, query);
 
     state.counters["query_rate"] += 1;
@@ -235,15 +218,15 @@ void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const Qu
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
-void IndexBenchmark<DIM, SCENARIO>::CreateQuery(Query& query) {
+void IndexBenchmark<DIM, SCENARIO>::CreateQuery(QueryBox& query) {
     size_t id = id_distribution_(random_engine_);
     auto& point = points_[id];
+    // Use BOX_LEN i.o. BOX_LEN/2 because we are querying for (center-)points, not boxes.
     double radius = BOX_LEN + QUERY_SHELL_RADIUS;
     for (dimension_t d = 0; d < DIM; ++d) {
-        query.box.min()[d] = point[d] - radius;
-        query.box.max()[d] = point[d] + radius;
+        query.min()[d] = point[d] - radius;
+        query.max()[d] = point[d] + radius;
     }
-    query.radius = radius;
 }
 
 }  // namespace
