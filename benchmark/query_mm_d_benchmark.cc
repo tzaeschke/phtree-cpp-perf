@@ -88,7 +88,7 @@ class IndexBenchmark {
     const size_t num_entities_;
     const double avg_query_result_size_;
 
-    constexpr double query_endge_length() {
+    constexpr double query_edge_length() {
         return GLOBAL_MAX * pow(avg_query_result_size_ / (double)num_entities_, 1. / (double)DIM);
     };
 
@@ -151,14 +151,6 @@ void InsertEntry(
     const payload_t& data) {
     tree.emplace(point, data);
 }
-
-// int CheckPosition(const payload_t& entity, const TestPoint& center, double radius) {
-//     const auto& point = entity;
-//     bool dx = abs(center[0] - point[0]) <= radius;
-//     bool dy = abs(center[1] - point[1]) <= radius;
-//     bool dz = abs(center[2] - point[2]) <= radius;
-//     return dx && dy && dz ? 1 : -100000000;
-// }
 
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
@@ -236,14 +228,14 @@ void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const Qu
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::CreateQuery(Query& query) {
-    double radius = query_endge_length() * 0.5;
+    double length = query_edge_length();
+    // shift to ensure query lies within boundary
+    double shift = (GLOBAL_MAX - (double)length) / GLOBAL_MAX;
     for (dimension_t d = 0; d < DIM; ++d) {
-        auto x = cube_distribution_(random_engine_);
-        query.box.min()[d] = x - radius;
-        query.box.max()[d] = x + radius;
-        query.center[d] = x;
+        auto x = shift * cube_distribution_(random_engine_);
+        query.box.min()[d] = x;
+        query.box.max()[d] = x + length;
     }
-    query.radius = radius;
 }
 
 }  // namespace

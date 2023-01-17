@@ -57,19 +57,17 @@ http_archive(
 #    url = "https://github.com/tzaeschke/phtree-cpp/tree/fix/75-enable-cmake-import-of-phtree",
 #)
 
-git_repository(
-    name = "phtree",
-    branch = "main",
-#    commit = "8822dbd367eee7e3904d824b780b99009a4a9915",
-    remote = "https://github.com/tzaeschke/phtree-cpp",
-)
-
-#local_repository(
+#git_repository(
 #    name = "phtree",
-#    path = "/home/xxxx/phtree-cpp",
+#    branch = "main",
+##    commit = "8822dbd367eee7e3904d824b780b99009a4a9915",
+#    remote = "https://github.com/tzaeschke/phtree-cpp",
 #)
 
-
+local_repository(
+    name = "phtree",
+    path = "/home/franky/work/phtree-cpp-2",
+)
 
 # Development environment tooling
 
@@ -103,8 +101,6 @@ http_archive(
     url = "https://github.com/grailbio/bazel-compilation-database/archive/0.3.5.tar.gz",
 )
 
-
-
 #################################################3
 
 #load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -128,14 +124,13 @@ http_archive(
 #        urls = ["https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz"],
 #)
 
-
 #load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-_RULES_BOOST_COMMIT = "652b21e35e4eeed5579e696da0facbe8dba52b1f"
+_RULES_BOOST_COMMIT = "96e9b631f104b43a53c21c87b01ac538ad6f3b48"
 
 http_archive(
     name = "com_github_nelhage_rules_boost",
-    sha256 = "c1b8b2adc3b4201683cf94dda7eef3fc0f4f4c0ea5caa3ed3feffe07e1fb5b15",
+    sha256 = "5ea00abc70cdf396a23fb53201db19ebce2837d28887a08544429d27783309ed",
     strip_prefix = "rules_boost-%s" % _RULES_BOOST_COMMIT,
     urls = [
         "https://github.com/nelhage/rules_boost/archive/%s.tar.gz" % _RULES_BOOST_COMMIT,
@@ -143,6 +138,7 @@ http_archive(
 )
 
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+
 boost_deps()
 
 ### libSpatialIndex
