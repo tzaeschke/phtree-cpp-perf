@@ -78,8 +78,8 @@ Some notable issues:
   a small but measurable slowdown.
 * liSpatialIndex uses a dirty hack for queries: results are buffered in a member field of the wrapper class.
 * For `insert()`/`emplace()` the coordinate conversion for libSpatialIndex and MCXME may cost performance.
-* There must be a bug: when using libSpatialIndex with WEB (box or points) it only finds 1 result on average where it 
-  should find 3 (as all other indexes do). This probelm does not occur with CUBE/CLUSTER or in tests.  
+* There must be a bug: when using libSpatialIndex with WEB (box or points) it only finds 1 result on average where it
+  should find 3 (as all other indexes do). This probelm does not occur with CUBE/CLUSTER or in tests.
 
 # Usage
 
@@ -99,6 +99,8 @@ This project contains libraries form other projects:
 * PH-tree C++ 1.4.0, licensed under Apache 2.0: https://github.com/tzaeschke/phtree
   and https://github.com/improbable-eng/phtree-cpp
 * robin_hood 3.11.5, licensed under MIT: https://github.com/martinus/robin-hood-hashing
+* BB-tree, no license, Authors: Stefan Sprenger, Patrick Schäfer and Ulf Leser, Contact: sprengsz (at) informatik (dot)
+  hu-berlin (dot) de: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
 
 This projects depends on the following other projects:
 
