@@ -16,6 +16,7 @@
 #include "benchmark_util.h"
 #include "logging.h"
 #include "phtree/phtree_multimap.h"
+#include "phtree/phtree_multimap2.h"
 #include "src/boost/boost_multimap.h"
 #include "src/lsi/lsi_multimap.h"
 #include "src/mcxme/mcxme_map.h"
@@ -34,6 +35,7 @@ enum Scenario {
     LSI,
     MCXME,
     PHTREE,
+    PHTREE2,
     EMPLACE,
     SQUARE_BR,
 };
@@ -55,7 +57,10 @@ using TestMap = typename std::conditional_t<
         typename std::conditional_t<
             SCENARIO == MCXME,
             mcxme::PhTreeD<DIM, payload_t>,
-            improbable::phtree::PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>>>>>;
+            typename std::conditional_t<
+                SCENARIO == PHTREE2,
+                improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
+                improbable::phtree::PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>>>>>>;
 
 /*
  * Benchmark for adding entries to the index.
@@ -151,8 +156,19 @@ void PhTree3D(benchmark::State& state, Arguments&&...) {
     benchmark.Benchmark(state);
 }
 
+template <typename... Arguments>
+void PhTreeMM2_3D(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, PHTREE2> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
 // index type, scenario name, data_generator, num_entities
 BENCHMARK_CAPTURE(PhTree3D, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(PhTreeMM2_3D, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

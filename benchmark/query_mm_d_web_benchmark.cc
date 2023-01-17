@@ -17,6 +17,7 @@
 #include "logging.h"
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
+#include "phtree/phtree_multimap2.h"
 #include "src/boost/boost_multimap.h"
 #include "src/lsi/lsi_multimap.h"
 #include "src/robin_hood/robin_hood.h"
@@ -38,7 +39,7 @@ const double QUERY_SHELL_RADIUS = BOX_LEN * 0.1;
 
 const int DUMMY = 0;
 
-enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, MULTIPLY_MAP };
+enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, MULTIPLY_MAP, PHTREE2 };
 
 using payload_t = int64_t;
 
@@ -61,26 +62,28 @@ template <Scenario SCENARIO, dimension_t DIM>
 using CONVERTER_MUL = ConverterMultiply<DIM, 1, 30>;
 
 template <Scenario SCENARIO, dimension_t DIM>
-using TestMap = typename std::conditional_t<
-    SCENARIO == BOOST_RT,
-    b::PhTreeMultiMapD<DIM, payload_t>,
-    typename std::conditional_t<
-        SCENARIO == LSI,
-        si::PhTreeMultiMapD<DIM, payload_t>,
-        typename std::conditional_t<
-            SCENARIO == TREE_WITH_MAP,
-            PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
-            typename std::conditional_t<
-                SCENARIO == MULTI_MAP,
-                PhTreeMultiMap<
-                    DIM,
-                    payload_t,
-                    CONVERTER<SCENARIO, DIM>,
-                    b_plus_tree_hash_set<payload_t>>,
-                typename std::conditional_t<
-                    SCENARIO == MULTIPLY_MAP,
-                    PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<SCENARIO, DIM>>,
-                    PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>;
+using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
+      b::PhTreeMultiMapD<DIM, payload_t>,
+      typename std::conditional_t<
+          SCENARIO == LSI,
+          si::PhTreeMultiMapD<DIM, payload_t>,
+          typename std::conditional_t<
+              SCENARIO == TREE_WITH_MAP,
+              PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
+              typename std::conditional_t<
+                  SCENARIO == MULTI_MAP,
+                  PhTreeMultiMap<
+                      DIM,
+                      payload_t,
+                      CONVERTER<SCENARIO, DIM>,
+                      b_plus_tree_hash_set<payload_t>>,
+                  typename std::conditional_t<
+                      SCENARIO == MULTIPLY_MAP,
+                      PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<SCENARIO, DIM>>,
+                      typename std::conditional_t<
+                          SCENARIO == PHTREE2,
+                          PhTreeMultiMap2D<DIM, payload_t>,
+                          PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -162,7 +165,7 @@ struct CounterTreeWithMap {
 
 struct CounterMultiMap {
     void operator()(const TestPoint&, const payload_t& value) {
-        (void) value;
+        (void)value;
         n_ += 1;  // CheckPosition(value, center_, radius_);
     }
     const TestPoint& center_;
@@ -270,6 +273,12 @@ void PhTreeMultiMap3D(benchmark::State& state, Arguments&&... arguments) {
 }
 
 template <typename... Arguments>
+void PhTreeMultiMap2_3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::PHTREE2> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTreeMultiMapStd3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::MULTI_MAP_STD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -290,6 +299,12 @@ BENCHMARK_CAPTURE(PhTree3D, WEB, DUMMY)
 
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTreeMultiMap
+BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, WEB, DUMMY)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
     ->Unit(benchmark::kMillisecond);
