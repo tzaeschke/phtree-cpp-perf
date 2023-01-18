@@ -55,6 +55,7 @@ class PhTreeMultiMap {
 
     void emplace(const Key& key, const T& id) {
         tree_->InsertObject(to_shape(key), id);
+        // TODO verify: Is this a multimap?!?!?
         ++size_;  // TODO this is bad..!
     }
 
@@ -77,16 +78,11 @@ class PhTreeMultiMap {
     }
 
     size_t count(const Key& key) const {
-        //return tree_->SearchObject(to_shape(key));
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
         return results.size();
      }
 
     auto find(const Key& key) {
-//        auto r = tree_->SearchObject(to_shape(key));
-//        result_.clear();
-//        result_.emplace_back(r);
-//        return result_.begin();
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
         result_.clear();
         result_ = results;
@@ -94,10 +90,6 @@ class PhTreeMultiMap {
     }
 
     auto find(const Key& key, const T& value) {
-//        auto r = tree_->SearchObject(to_shape(key));
-//        result_.clear();
-//        result_.emplace_back(r);  // TODO
-//        return result_.begin();
         result_.clear();
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
         for (auto r: results) {
@@ -144,7 +136,6 @@ class PhTreeMultiMap {
 
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        //tree_->SearchRangeMT();
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         for (auto& r: results) {
             Key k{}; // TODO
@@ -154,8 +145,6 @@ class PhTreeMultiMap {
 
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
-        using TREE = decltype(this);
-
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         result_.clear();
         result_ = results;
@@ -194,6 +183,11 @@ class PhTreeMultiMap {
     }
 
     [[nodiscard]] size_t size() const {
+        // TODO we probably should rebalance() the tree after loading. One HACK could be to
+        //  do this after loading via a call to size()
+        //  -->
+        //  The same could be used to do a bulk-build.
+        tree_->RebuildDelimiters();
         return size_;
     }
 
