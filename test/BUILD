@@ -29,6 +29,20 @@ cc_test(
 )
 
 cc_test(
+    name = "bbtree_multimap_d_test",
+    timeout = "long",
+    srcs = [
+        "bbtree_multimap_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/bb-tree:ph-bb-tree",
+        "@gtest//:gtest_main",
+        "@phtree",
+    ],
+)
+
+cc_test(
     name = "boost_rtree_multimap_d_test",
     timeout = "long",
     srcs = [

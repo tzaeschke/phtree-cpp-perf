@@ -27,12 +27,12 @@ namespace pht = improbable::phtree;
  */
 template <
     pht::dimension_t DIM,
-    typename T,
+    typename T = std::uint32_t,
     typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
     bool POINT_KEYS = true,
     typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
 class PhTreeMultiMap {
-    static_assert(std::is_same_v<int64_t, T>);
+    static_assert(std::is_same_v<uint32_t, T>);
 
     // using KeyInternal = typename CONVERTER::KeyInternal;
     using Key = typename CONVERTER::KeyExternal;
@@ -77,21 +77,36 @@ class PhTreeMultiMap {
     }
 
     size_t count(const Key& key) const {
-        return tree_->SearchObject(to_shape(key));
-    }
+        //return tree_->SearchObject(to_shape(key));
+        auto results = tree_->SearchRange(to_shape(key), to_shape(key));
+        return results.size();
+     }
 
     auto find(const Key& key) {
-        auto&r = tree_->SearchObject(to_shape(key));
+//        auto r = tree_->SearchObject(to_shape(key));
+//        result_.clear();
+//        result_.emplace_back(r);
+//        return result_.begin();
+        auto results = tree_->SearchRange(to_shape(key), to_shape(key));
         result_.clear();
-        result_.emplace_back(r);
+        result_ = results;
         return result_.begin();
     }
 
     auto find(const Key& key, const T& value) {
-        auto&r = tree_->SearchObject(to_shape(key));
+//        auto r = tree_->SearchObject(to_shape(key));
+//        result_.clear();
+//        result_.emplace_back(r);  // TODO
+//        return result_.begin();
         result_.clear();
-        result_.emplace_back(r);  // TODO
-        return result_.begin();
+        auto results = tree_->SearchRange(to_shape(key), to_shape(key));
+        for (auto r: results) {
+            if (r == value) {
+                result_.emplace_back(r);
+                return result_.begin();
+            }
+        }
+        return result_.end();
     }
 
     size_t erase(const Key& key, const T& value) {
@@ -141,7 +156,7 @@ class PhTreeMultiMap {
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         using TREE = decltype(this);
 
-        auto results = tree_->SearchRange(to_shape(query_box.min), to_shape(query_box.max()));
+        auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         result_.clear();
         result_ = results;
         //std::copy_n(shape.begin(), DIM, key.begin());
@@ -182,9 +197,9 @@ class PhTreeMultiMap {
         return size_;
     }
 
-    //    [[nodiscard]] bool empty() const {
-    //        return empty();
-    //    }
+    [[nodiscard]] bool empty() const {
+        return tree_->getCount() == 0;
+    }
 
     [[nodiscard]] const CONVERTER& converter() const {
         return converter_;
