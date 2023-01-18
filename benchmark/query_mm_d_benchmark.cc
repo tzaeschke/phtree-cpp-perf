@@ -39,6 +39,7 @@ const double AVG_QUERY_RESULT_SIZE = 3;
 enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2, BB };
 
 using payload_t = int64_t;
+using payload2_t = uint32_t;
 
 using TestPoint = PhPointD<3>;
 using QueryBox = PhBoxD<3>;
@@ -76,7 +77,7 @@ using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
                   PhTreeMultiMap2D<DIM, payload_t>,
                   typename std::conditional_t<
                       SCENARIO == BB,
-                      bb::PhTreeMultiMapD<DIM, payload_t>,
+                      bb::PhTreeMultiMapD<DIM, payload2_t>,
                       PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
@@ -325,6 +326,11 @@ void PhTreeMultiMapStd3D(benchmark::State& state, Arguments&&... arguments) {
 // index type, scenario name, data_type, num_entities, avg_query_result_size
 // PhTree
 BENCHMARK_CAPTURE(PhTree3D, WQ, AVG_QUERY_RESULT_SIZE)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BBTree3D, WQ0, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
