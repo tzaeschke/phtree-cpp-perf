@@ -28,7 +28,7 @@ namespace phtree_multimap_d_test {
 
 // Number of entries that have the same coordinate
 static const size_t NUM_DUPL = 4;
-static const double WORLD_MIN = 0;
+static const double WORLD_MIN = -1000;
 static const double WORLD_MAX = 1000;
 
 using Id = uint32_t;
@@ -793,7 +793,7 @@ void testQuery(TestPoint<DIM>& min, TestPoint<DIM>& max, size_t N, int& result) 
     result = 0;
     for (auto it = tree.begin_query({min, max}); it != tree.end(); ++it) {
         auto& x = *it;
-        ASSERT_GE(x, 0);
+        ASSERT_GE(x, 0u);
         ASSERT_EQ(referenceResult.count(x), 1);
         result++;
     }

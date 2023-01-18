@@ -139,7 +139,9 @@ class PhTreeMultiMap {
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         for (auto& r: results) {
             Key k{}; // TODO
-            filter.IsBucketEntryValid(k, r);
+            if (filter.IsBucketEntryValid(k, r)) {
+                callback(k, r);
+            }
         }
     }
 
