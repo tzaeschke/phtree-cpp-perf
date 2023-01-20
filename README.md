@@ -101,6 +101,7 @@ This project contains libraries form other projects:
 * robin_hood 3.11.5, licensed under MIT: https://github.com/martinus/robin-hood-hashing
 * BB-tree, no license, Authors: Stefan Sprenger, Patrick Schäfer and Ulf Leser, Contact: sprengsz (at) informatik (dot)
   hu-berlin (dot) de: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
+* PCL 1.13.0, licensed under BSD, Point Cloud Library (PCL): www.pointclouds.org
 
 This projects depends on the following other projects:
 
@@ -110,5 +111,6 @@ This projects depends on the following other projects:
 * GoogleTest, licensed under BSD 3-clause: https://github.com/google/googletest
 * Bazel, licensed under Apache 2.0: https://github.com/bazelbuild/bazel
 * CMake, licensed under BSD 3-clause: https://cmake.org
-
+* rules_boost, licensed under Apache 2.0: https://github.com/nelhage/rules_boost
+* rules_pcl, licensed under Apache 2.0: https://github.com/kgreenek/rules_pcl
 

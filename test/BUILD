@@ -97,3 +97,18 @@ cc_test(
         "@phtree",
     ],
 )
+
+cc_test(
+    name = "pcl_kd_tree_d_test",
+    timeout = "long",
+    srcs = [
+        "pcl_kd_tree_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/pcl:ph-pcl",
+        "@gtest//:gtest_main",
+        "@pcl//:common",
+        "@phtree",
+    ],
+)

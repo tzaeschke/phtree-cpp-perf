@@ -155,3 +155,22 @@ boost_deps()
 #)
 #""",
 #)
+
+### libPCL
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_pcl",
+    sha256 = "987dd22ac4637093414ff2b9291d0e9e29f3ef156a12d5471eedaa2d5beb0a93",
+    strip_prefix = "rules_pcl-1.1.0",
+    url = "https://github.com/kgreenek/rules_pcl/archive/v1.1.0.tar.gz",
+)
+
+load("@rules_pcl//bzl:repositories.bzl", "pcl_repositories")
+
+pcl_repositories()
+
+# NOTE: This must be loaded after the call to pcl_repositories().
+load("@rules_pcl//bzl:init_deps.bzl", "pcl_init_deps")
+
+pcl_init_deps()

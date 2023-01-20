@@ -330,11 +330,6 @@ BENCHMARK_CAPTURE(PhTree3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BBTree3D, WQ0, AVG_QUERY_RESULT_SIZE)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
 // PhTreeMultiMap2
 BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)

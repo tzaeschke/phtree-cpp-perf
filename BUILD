@@ -69,3 +69,8 @@ filegroup(
     name = "dot_clang_format",
     srcs = [".clang-format"],
 )
+
+# libPCL
+load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
+
+pcl_config()
