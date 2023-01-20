@@ -182,20 +182,6 @@ struct BoxConverter {
 };
 #endif
 
-template <typename PHTREE>
-class IteratorBase {
-  public:
-    friend bool operator==(
-        const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
-        return left.current_value_ptr_ == right.current_value_ptr_;
-    }
-
-    friend bool operator!=(
-        const IteratorBase<PHTREE>& left, const IteratorBase<PHTREE>& right) noexcept {
-        return left.current_value_ptr_ != right.current_value_ptr_;
-    }
-};
-
 template <typename ITER, typename PHTREE>
 class IteratorNormal {
     friend PHTREE;
@@ -277,8 +263,6 @@ class PhTreeMultiMap {
     // TODO test other strategies
     using TREE = rtree<Entry, bgi::rstar<16>>; // 9; 16; 20; 25;
     using ITER = decltype(TREE().qend());
-
-    friend IteratorBase<PHTREE>;
 
   public:
     using QueryBox = pht::PhBox<DIM, Scalar>;

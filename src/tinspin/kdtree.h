@@ -17,7 +17,7 @@ using namespace improbable::phtree;
 namespace {
 template <typename Key>
 static bool isEnclosed(const Key& point, const Key& min, const Key& max) {
-    for (int i = 0; i < point.length; i++) {
+    for (int i = 0; i < point.size(); ++i) {
         if (point[i] < min[i] || point[i] > max[i]) {
             return false;
         }
@@ -110,7 +110,7 @@ class Node {
         }
     }
 
-    Node* getClosestNodeOrAddPoint(const Coord& p, const T& value, int dims) const {
+    Node* getClosestNodeOrAddPoint(const Coord& p, const T& value, int dims) {
         // Find best sub-node.
         // If there is no node, we create one and return null
         if (p[dim_] >= coordinate_[dim_]) {
@@ -197,6 +197,47 @@ class Node {
     int dim_;
 };
 
+template <typename ITER, typename TREE>
+class IteratorNormal {
+    friend TREE;
+
+  public:
+    template <typename ITER_PH>
+    IteratorNormal(ITER_PH&& iter_ph) noexcept : iter_{std::forward<ITER_PH>(iter_ph)} {}
+
+    IteratorNormal& operator++() noexcept {
+        ++iter_;
+        return *this;
+    }
+
+    IteratorNormal operator++(int) noexcept {
+        IteratorNormal iterator(*this);
+        ++(*this);
+        return iterator;
+    }
+
+    auto& operator*() const noexcept {
+        return iter_->second;
+    }
+
+    auto* operator->() const noexcept {
+        return &iter_->second;
+    }
+
+    friend bool operator==(
+        const IteratorNormal<ITER, TREE>& left, const IteratorNormal<ITER, TREE>& right) noexcept {
+        return left.iter_ == right.iter_;
+    }
+
+    friend bool operator!=(
+        const IteratorNormal<ITER, TREE>& left, const IteratorNormal<ITER, TREE>& right) noexcept {
+        return left.iter_ != right.iter_;
+    }
+
+  private:
+    ITER iter_;
+};
+
 /**
  * iterator.
  */
@@ -207,10 +248,11 @@ class KDIterator {
         int depth_;
         bool doLeft, doKey, doRight;
 
-        void set(Node<Key, T>* node, const Key& min, const Key& max, int depth, int dims) {
+        void set(Node<Key, T>* node, const Key& min, const Key& max, int depth) {
             node_ = node;
             depth_ = depth;
             const Key& key = node_->getKey();
+            auto dims = min.size();
             int pos = depth % dims;
             doLeft = min[pos] < key[pos];
             doRight = max[pos] > key[pos];
@@ -221,29 +263,28 @@ class KDIterator {
     // TODO use std::stack instead. (perf test!)
     class IteratorStack {
       public:
-        IteratorStack() {}
+        IteratorStack(size_t size = 10) : stack(size) {}
 
         bool isEmpty() {
-            return size == 0;
+            return size == 0u;
         }
 
-        IteratorPos prepareAndPush(
-            Node<Key, T>* node, const Key& min, const Key& max, int depth, int dims) {
+        IteratorPos prepareAndPush(Node<Key, T>* node, const Key& min, const Key& max, int depth) {
             if (size == stack.size()) {
-                stack.emplace_back();
+                stack.emplace_back(IteratorPos{});  // TODO ?
             }
-            IteratorPos& ni = stack.get(size++);
+            IteratorPos& ni = stack[size++];
 
-            ni.set(node, min, max, depth, dims);
+            ni.set(node, min, max, depth);
             return ni;
         }
 
         IteratorPos& peek() {
-            return stack.get(size - 1);
+            return stack[size - 1];
         }
 
         IteratorPos& pop() {
-            return stack.get(--size);
+            return stack[--size];
         }
 
         void clear() {
@@ -251,46 +292,75 @@ class KDIterator {
         }
 
       private:
-        const std::vector<IteratorPos> stack{};
-        int size = 0;
+        std::vector<IteratorPos> stack{};
+        size_t size = 0;
     };
 
   public:
-    KDIterator(KDTree<T>* tree, const Key& min, const Key& max) : tree_{tree}, stack_{} {
-        reset(min, max);
+    // end()
+    KDIterator() : stack_(0), next_{nullptr}, min_{}, max_{} {}
+
+    // find()
+    KDIterator(Node<Key, T>* node) : stack_(0), next_{node}, min_{}, max_{} {}
+
+    // begin_query()
+    KDIterator(Node<Key, T>* root, const Key& min, const Key& max) : stack_{} {
+        min_ = min;
+        max_ = max;
+        next_ = nullptr;
+        assert(root != nullptr);
+        stack_.prepareAndPush(root, min, max, 0);
+        findNext();
     }
 
+    KDIterator& operator++() noexcept {
+        assert(hasNext());
+        findNext();
+        return *this;
+    }
+
+    KDIterator operator++(int) noexcept {
+        assert(hasNext());
+        IteratorNormal iterator(*this);
+        ++(*this);
+        return iterator;
+    }
+
+    auto& operator*() const noexcept {
+        return next_->value();
+    }
+
+    auto* operator->() const noexcept {
+        return &next_->value();
+    }
+
+    friend bool operator==(
+        const KDIterator<Key, T>& left, const KDIterator<Key, T>& right) noexcept {
+        // TODO we need to compare the stack.peak()! (or not?)
+        return left.next_ == right.next_;
+    }
+
+    friend bool operator!=(
+        const KDIterator<Key, T>& left, const KDIterator<Key, T>& right) noexcept {
+        return left.next_ != right.next_;
+    }
+
+    auto _node() {
+        return next_;
+    }
+
+  private:
     bool hasNext() {
         return next_ != nullptr;
     }
 
-    Node<Key, T>* next() {
-        assert(hasNext());
-        Node<Key, T>* ret = next_;
-        findNext();
-        return ret;
-    }
-
-    void reset(const Key& min, const Key& max) {
-        stack_.clear();
-        min_ = min;
-        max_ = max;
-        next_ = nullptr;
-        if (tree_->getRoot() != nullptr) {
-            stack_.prepareAndPush(tree_->getRoot(), min, max, 0, tree_->getDims());
-            findNext();
-        }
-    }
-
-  private:
     void findNext() {
         while (!stack_.isEmpty()) {
             IteratorPos itPos = stack_.peek();
-            Node<Key, T>* node = itPos.node;
+            Node<Key, T>* node = itPos.node_;
             if (itPos.doLeft && node->getLo() != nullptr) {
                 itPos.doLeft = false;
-                stack_.prepareAndPush(
-                    node->getLo(), min_, max_, itPos.depth_ + 1, tree_->getDims());
+                stack_.prepareAndPush(node->getLo(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             if (itPos.doKey) {
@@ -302,8 +372,7 @@ class KDIterator {
             }
             if (itPos.doRight && node->getHi() != nullptr) {
                 itPos.doRight = false;
-                stack_.prepareAndPush(
-                    node->getHi(), min_, max_, itPos.depth_ + 1, tree_->getDims());
+                stack_.prepareAndPush(node->getHi(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             stack_.pop();
@@ -312,11 +381,10 @@ class KDIterator {
     }
 
   private:
-    const KDTree<T>* tree_;
     IteratorStack stack_;
     Node<Key, T>* next_ = nullptr;
-    const Key& min_;
-    const Key& max_;
+    Key min_;
+    Key max_;
 };
 
 /**
@@ -336,6 +404,7 @@ class KDTree {
         : std::numeric_limits<SCALAR>::min();
 
     using Key = PhPoint<3, SCALAR>;
+    using QueryBox = PhBox<3, SCALAR>;
 
     static const bool DEBUG = false;
 
@@ -350,6 +419,9 @@ class KDTree {
         double best;
         int pos;
     };
+
+  public:
+    using KeyInternal = Key;
 
     //  public:
     //    void main(char* args) {
@@ -413,7 +485,7 @@ class KDTree {
     //    }
 
   public:
-    KDTree(int dims) : dims_{dims} {
+    KDTree(int dims = 3) : dims_{dims} {
         if (DEBUG) {
             std::cout << "Warning: DEBUG enabled" << std::endl;
         }
@@ -424,14 +496,26 @@ class KDTree {
      * @param key the key
      * @param value the value
      */
+    void emplace(const Key& key, const T& value) {
+        size_++;
+        modCount_++;
+        if (root_ == nullptr) {
+            root_ = new Node(key, value, 0);
+            return;
+        }
+        Node<Key, T>* n = root_;
+        while ((n = n->getClosestNodeOrAddPoint(key, value, dims_)) != nullptr)
+            ;
+    }
+
     void insert(const Key& key, const T& value) {
         size_++;
         modCount_++;
-        if (root == nullptr) {
-            root = new Node(key, value, 0);
+        if (root_ == nullptr) {
+            root_ = new Node(key, value, 0);
             return;
         }
-        Node<Key, T>* n = root;
+        Node<Key, T>* n = root_;
         while ((n = n->getClosestNodeOrAddPoint(key, value, dims_)) != nullptr)
             ;
     }
@@ -451,24 +535,33 @@ class KDTree {
      * @param key the key to look up
      * @return the value for the key or 'null' if the key was not found
      */
-    const T& find(const Key& key) {
+    auto find(const Key& key) {
         RemoveResult dummy;  // TODO?
         Node<Key, T>* e = findNodeExact(key, dummy);
-        return e == nullptr ? nullptr : e->getValue();
+        return KDIterator<Key, T>(e);
+        // return e == nullptr ? nullptr : e->getValue();
+    }
+
+    auto find(const Key& key, const T& value) {
+        RemoveResult dummy;  // TODO?
+        // TODO!!! use value!!!
+        Node<Key, T>* e = findNodeExact(key, dummy);
+        // return e == nullptr ? nullptr : e->getValue();
+        return KDIterator<Key, T>(e);
     }
 
   private:
     Node<Key, T>* findNodeExact(const Key& key, RemoveResult& resultDepth) {
-        if (root == nullptr) {
+        if (root_ == nullptr) {
             return nullptr;
         }
-        return invariantBroken ? findNodeExactSlow(key, root, nullptr, resultDepth)
+        return invariantBroken ? findNodeExactSlow(key, root_, nullptr, resultDepth)
                                : findNodeExactFast(key, nullptr, resultDepth);
     }
 
     Node<Key, T>* findNodeExactFast(
         const Key& key, Node<Key, T>* parent, RemoveResult& resultDepth) {
-        Node<Key, T>* n = root;
+        Node<Key, T>* n = root_;
         do {
             const Key& nodeKey = n->getKey();
             double nodeX = nodeKey[n->getDim()];
@@ -516,23 +609,27 @@ class KDTree {
      * @return the value associated with the key or 'null' if the key was not found
      */
   public:
-    const T& remove(const Key& key) {
-        if (root == nullptr) {
-            return nullptr;
+    size_t erase(const Key& key, const T& value) {
+        return erase(key);  // TODO!!!
+    }
+
+    size_t erase(const Key& key) {
+        if (root_ == nullptr) {
+            return 0;
         }
 
         // find
         RemoveResult removeResult{};
         Node<Key, T>* eToRemove = findNodeExact(key, removeResult);
         if (eToRemove == nullptr) {
-            return nullptr;
+            return 0;
         }
 
         // remove
         modCount_++;
         const T& value = eToRemove->getValue();
-        if (eToRemove == root && size_ == 1) {
-            root = nullptr;
+        if (eToRemove == root_ && size_ == 1) {
+            root_ = nullptr;
             size_ = 0;
             invariantBroken = false;
         }
@@ -580,7 +677,7 @@ class KDTree {
             }
         }
         size_--;
-        return value;
+        return 1;
     }
 
   private:
@@ -616,7 +713,6 @@ class KDTree {
         }
     }
 
-  private:
     void removeMaxLeaf(Node<Key, T>* node, Node<Key, T>* parent, int pos, RemoveResult& result) {
         // Split in 'interesting' dimension
         if (pos == node->getDim()) {
@@ -657,8 +753,8 @@ class KDTree {
      * @return the value associated with the key or 'null' if the key was not found.
      */
   public:
-    const T& update(const Key& oldKey, const Key& newKey) {
-        if (root == nullptr) {
+    const T& relocate(const Key& oldKey, const Key& newKey) {
+        if (root_ == nullptr) {
             return nullptr;
         }
         const T& value = remove(oldKey);
@@ -670,20 +766,36 @@ class KDTree {
      * Get the number of key-value pairs in the tree.
      * @return the size
      */
-  public:
     int size() {
         return size_;
+    }
+
+    bool empty() {
+        return size_ == 0;
     }
 
     /**
      * Removes all elements from the tree.
      */
-  public:
     void clear() {
         size_ = 0;
-        root = nullptr;
+        root_ = nullptr;
         invariantBroken = false;
         modCount_++;
+    }
+
+    template <typename CALLBACK, typename FILTER = FilterNoOp>
+    void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
+        auto it = begin_query(query_box, std::forward<FILTER>(filter));
+        // TODO move FILTER into begin_query
+        auto end = this->end();
+        while (it != end) {
+            Key k = it._node()->point();
+            if (filter.IsEntryValid(k, *it)) {
+                callback(k, *it);
+            }
+            ++it;
+        }
     }
 
     /**
@@ -692,9 +804,13 @@ class KDTree {
      * @param max upper right corner of query
      * @return all entries in the rectangle
      */
-  public:
-    KDIterator<Key, T> query(const Key& min, const Key& max) {
-        return new KDIterator(this, min, max);
+    template <typename FILTER = FilterNoOp>
+    KDIterator<Key, T> begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) const {
+        return KDIterator(root_, query_box.min(), query_box.max());
+    }
+
+    KDIterator<Key, T> end() const {
+        return KDIterator<Key, T>();
     }
 
     /**
@@ -702,13 +818,12 @@ class KDTree {
      * @param center The point for which the nearest neighbors are requested
      * @return Nearest neighbor
      */
-  public:
     KDEntryDist<Key, T> nnQuery(const Key& center) {
-        if (root == nullptr) {
+        if (root_ == nullptr) {
             return nullptr;
         }
         KDEntryDist<Key, T> candidate = new KDEntryDist(nullptr, SCALAR_MAX);
-        rangeSearch1NN(root, center, candidate, SCALAR_MAX);
+        rangeSearch1NN(root_, center, candidate, SCALAR_MAX);
         return candidate;
     }
 
@@ -744,7 +859,6 @@ class KDTree {
         return maxRange;
     }
 
-  private:
     double addCandidate(
         Node<Key, T>* node,
         const Key& center,
@@ -763,11 +877,11 @@ class KDTree {
 
   public:
     auto knnQuery(const Key& center, int k) {
-        if (root == nullptr) {
+        if (root_ == nullptr) {
             return std::vector<KDEntryDist<Key, T>>(0);
         }
         std::vector<KDEntryDist<Key, T>> candidates(k);
-        rangeSearchKNN(root, center, candidates, k, SCALAR_MAX);
+        rangeSearchKNN(root_, center, candidates, k, SCALAR_MAX);
         return candidates;
     }
 
@@ -873,11 +987,11 @@ class KDTree {
   public:
     template <unsigned int DIM>
     std::ostream& operator<<(std::ostream& out) {
-        if (root == nullptr) {
+        if (root_ == nullptr) {
             out << "empty tree";
         } else {
             // TODO this is weird, just use << ?!?
-            toStringTree(out, root, 0);
+            toStringTree(out, root_, 0);
         }
         return out;
     }
@@ -916,8 +1030,8 @@ class KDTree {
   public:
     KDStats getStats() {
         KDStats s(this);
-        if (root != nullptr) {
-            root->checkNode(s, 0);
+        if (root_ != nullptr) {
+            root_->checkNode(s, 0);
         }
         return s;
     }
@@ -926,14 +1040,9 @@ class KDTree {
         return dims_;
     }
 
-    auto iterator() {
-        if (root == nullptr) {
-            // TODO ??????? What is this?
-            return query(new double[dims_], new double[dims_]);
-        }
-        // return query(root.);
-        // TODO
-        assert(false);
+    auto begin() {
+        return begin_query(
+            {SCALAR_MIN, SCALAR_MIN, SCALAR_MIN}, {SCALAR_MAX, SCALAR_MAX, SCALAR_MAX});
     }
 
     auto query1NN(const Key& center) {
@@ -953,7 +1062,7 @@ class KDTree {
     }
 
     Node<Key, T>* getRoot() {
-        return root;
+        return root_;
     }
 
   private:
@@ -982,7 +1091,7 @@ class KDTree {
     // results).
     bool invariantBroken = false;
 
-    Node<Key, T>* root = nullptr;
+    Node<Key, T>* root_ = nullptr;
 };
 
 }  // namespace tinspin

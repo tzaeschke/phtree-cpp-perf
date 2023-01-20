@@ -112,3 +112,17 @@ cc_test(
         "@phtree",
     ],
 )
+
+cc_test(
+    name = "tinspin_kd_tree_d_test",
+    timeout = "long",
+    srcs = [
+        "tinspin_kd_tree_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/tinspin:tinspin",
+        "@gtest//:gtest_main",
+        "@phtree",
+    ],
+)

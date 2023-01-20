@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:private"])
 
 cc_library(
-    name = "tz-kdtree",
+    name = "tinspin",
     testonly = True,
     hdrs = [
         "kdtree.h",
