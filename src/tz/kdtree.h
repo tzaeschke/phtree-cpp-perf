@@ -15,7 +15,7 @@ namespace tinspin {
 using namespace improbable::phtree;
 
 namespace {
-template<typename Key>
+template <typename Key>
 static bool isEnclosed(const Key& point, const Key& min, const Key& max) {
     for (int i = 0; i < point.length; i++) {
         if (point[i] < min[i] || point[i] > max[i]) {
@@ -24,8 +24,7 @@ static bool isEnclosed(const Key& point, const Key& min, const Key& max) {
     }
     return true;
 }
-}
-
+}  // namespace
 
 template <typename Key, typename T>
 class Node;
@@ -39,14 +38,7 @@ struct KDStats {
 };
 
 template <typename Key, typename T>
-class KDEntryDist {  // implements PointEntryDist<T> {
-
-  private:
-    Node<Key, T>* entry_;
-
-  private:
-    double distance_;
-
+class KDEntryDist {
   public:
     KDEntryDist(Node<Key, T>* node, double dist) {
         entry_ = node;
@@ -58,34 +50,32 @@ class KDEntryDist {  // implements PointEntryDist<T> {
         distance_ = dist;
     }
 
-  public:
     double dist() {
         return distance_;
     }
 
-  public:
-    static const QEntryComparator COMP = new QEntryComparator();
+    //  public:
+    //    static const QEntryComparator COMP = new QEntryComparator();
+    //
+    //    static class QEntryComparator implements Comparator < KDEntryDist < ? >> {
+    //        /**
+    //         * Compares the two specified MBRs according to
+    //         * the sorting dimension and the sorting co-ordinate for the dimension
+    //         * of this Comparator.
+    //         *
+    //         * @param o1 the first SpatialPoint
+    //         * @param o2 the second SpatialPoint
+    //         * @return a negative integer, zero, or a positive integer as the
+    //         *         first argument is less than, equal to, or greater than the
+    //         *         second.
+    //         */
+    //      public: int compare(KDEntryDist<?> o1, KDEntryDist<?> o2) {
+    //            double d = o1.dist() - o2.dist();
+    //            return d < 0 ? -1 : (d > 0 ? 1 : 0);
+    //        }
+    //    }
 
-    static class QEntryComparator implements Comparator < KDEntryDist < ? >> {
-        /**
-         * Compares the two specified MBRs according to
-         * the sorting dimension and the sorting co-ordinate for the dimension
-         * of this Comparator.
-         *
-         * @param o1 the first SpatialPoint
-         * @param o2 the second SpatialPoint
-         * @return a negative integer, zero, or a positive integer as the
-         *         first argument is less than, equal to, or greater than the
-         *         second.
-         */
-      public: int compare(KDEntryDist<?> o1, KDEntryDist<?> o2) {
-            double d = o1.dist() - o2.dist();
-            return d < 0 ? -1 : (d > 0 ? 1 : 0);
-        }
-    }
-
-    public : const Key&
-             point() {
+    const Key& point() {
         return entry_->point();
     }
 
@@ -93,27 +83,31 @@ class KDEntryDist {  // implements PointEntryDist<T> {
     const T& value() {
         return entry_->value();
     }
+
+  private:
+    Node<Key, T>* entry_;
+    double distance_;
 };
 
 /**
  * Node class for the kdtree.
  */
 template <typename Coord, typename T>
-class Node {  //: PointEntry<T> {
-  private:
-    Coord coordinate_;
-
-  private:
-    T value_;
-    Node* left_ = nullptr;
-    Node* right_ = nullptr;
-    int dim_;
-
+class Node {
   public:
     Node(const Coord& p, const T& value, int dim) {
         coordinate_ = p;
         value_ = value;
         dim_ = dim;
+    }
+
+    ~Node() {
+        if (left_ != nullptr) {
+            delete left_;
+        }
+        if (right_ != nullptr) {
+            delete right_;
+        }
     }
 
     Node* getClosestNodeOrAddPoint(const Coord& p, const T& value, int dims) const {
@@ -194,17 +188,21 @@ class Node {  //: PointEntry<T> {
     int getDim() const noexcept {
         return dim_;
     }
+
+  private:
+    Coord coordinate_;
+    T value_;
+    Node* left_ = nullptr;
+    Node* right_ = nullptr;
+    int dim_;
 };
 
 /**
- * Resetable query iterator.
- *
- * @param <T> Value type
+ * iterator.
  */
 template <typename Key, typename T>
-class KDIterator {  //}; implements QueryIterator<PointEntry<T>> {
-
-    class IteratorPos {
+class KDIterator {
+    struct IteratorPos {
         Node<Key, T>* node_;
         int depth_;
         bool doLeft, doKey, doRight;
@@ -220,14 +218,9 @@ class KDIterator {  //}; implements QueryIterator<PointEntry<T>> {
         }
     };
 
-  private:
+    // TODO use std::stack instead. (perf test!)
     class IteratorStack {
-      private:
-        const std::vector<IteratorPos> stack{};
-
-      private:
-        int size = 0;
-
+      public:
         IteratorStack() {}
 
         bool isEmpty() {
@@ -253,55 +246,24 @@ class KDIterator {  //}; implements QueryIterator<PointEntry<T>> {
             return stack.get(--size);
         }
 
-      public:
         void clear() {
             size = 0;
         }
+
+      private:
+        const std::vector<IteratorPos> stack{};
+        int size = 0;
     };
 
-    const KDTree<T>* tree_;
-    IteratorStack stack_;
-    Node<Key, T>* next_ = nullptr;
-    const Key& min_;
-    const Key& max_;
-
+  public:
     KDIterator(KDTree<T>* tree, const Key& min, const Key& max) : tree_{tree}, stack_{} {
         reset(min, max);
     }
 
-  private:
-    void findNext() {
-        while (!stack_.isEmpty()) {
-            IteratorPos itPos = stack_.peek();
-            Node<Key, T>* node = itPos.node;
-            if (itPos.doLeft && node->getLo() != nullptr) {
-                itPos.doLeft = false;
-                stack_.prepareAndPush(node->getLo(), min_, max_, itPos.depth_ + 1, tree_->getDims());
-                continue;
-            }
-            if (itPos.doKey) {
-                itPos.doKey = false;
-                if (KDTree.isEnclosed(node->getKey(), min, max)) {
-                    next_ = node;
-                    return;
-                }
-            }
-            if (itPos.doRight && node->getHi() != nullptr) {
-                itPos.doRight = false;
-                stack_.prepareAndPush(node->getHi(), min_, max_, itPos.depth_ + 1, tree_->getDims());
-                continue;
-            }
-            stack_.pop();
-        }
-        next_ = nullptr;
-    }
-
-  public:
     bool hasNext() {
         return next_ != nullptr;
     }
 
-  public:
     Node<Key, T>* next() {
         assert(hasNext());
         Node<Key, T>* ret = next_;
@@ -309,14 +271,6 @@ class KDIterator {  //}; implements QueryIterator<PointEntry<T>> {
         return ret;
     }
 
-    /**
-     * Reset the iterator. This iterator can be reused in order to reduce load on the
-     * garbage collector.
-     * @param min lower left corner of query
-     * @param max upper right corner of query
-     */
-
-  public:
     void reset(const Key& min, const Key& max) {
         stack_.clear();
         min_ = min;
@@ -327,55 +281,75 @@ class KDIterator {  //}; implements QueryIterator<PointEntry<T>> {
             findNext();
         }
     }
+
+  private:
+    void findNext() {
+        while (!stack_.isEmpty()) {
+            IteratorPos itPos = stack_.peek();
+            Node<Key, T>* node = itPos.node;
+            if (itPos.doLeft && node->getLo() != nullptr) {
+                itPos.doLeft = false;
+                stack_.prepareAndPush(
+                    node->getLo(), min_, max_, itPos.depth_ + 1, tree_->getDims());
+                continue;
+            }
+            if (itPos.doKey) {
+                itPos.doKey = false;
+                if (isEnclosed(node->getKey(), min_, max_)) {
+                    next_ = node;
+                    return;
+                }
+            }
+            if (itPos.doRight && node->getHi() != nullptr) {
+                itPos.doRight = false;
+                stack_.prepareAndPush(
+                    node->getHi(), min_, max_, itPos.depth_ + 1, tree_->getDims());
+                continue;
+            }
+            stack_.pop();
+        }
+        next_ = nullptr;
+    }
+
+  private:
+    const KDTree<T>* tree_;
+    IteratorStack stack_;
+    Node<Key, T>* next_ = nullptr;
+    const Key& min_;
+    const Key& max_;
 };
 
 /**
  * A simple KD-Tree implementation.
  *
- * @author T. Zäschke
- *
- * @param <T> Value type
+ * By T. Zäschke
  */
 template <typename T, typename SCALAR>
-class KDTree {  //: PointIndex<T> {
-
-    // TODO we could use integers but would need to fix use of infinity.
+class KDTree {
     static_assert(std::is_floating_point_v<SCALAR>);
+    // TODO this should be infinity for floats.
+    static constexpr SCALAR SCALAR_MAX = std::is_floating_point_v<SCALAR>
+        ? std::numeric_limits<SCALAR>::infinity()
+        : std::numeric_limits<SCALAR>::max();
+    static constexpr SCALAR SCALAR_MIN = std::is_floating_point_v<SCALAR>
+        ? -std::numeric_limits<SCALAR>::infinity()
+        : std::numeric_limits<SCALAR>::min();
 
     using Key = PhPoint<3, SCALAR>;
 
-  public:
     static const bool DEBUG = false;
 
-  private:
-    const int dims_;
-    int size_ = 0;
-    int modCount_ = 0;
-    long nDist1NN = 0;
-    long nDistKNN = 0;
-    // During insertion, the tree maintains an invariant that if two points have the
-    // same value in any dimension, then one key is never in the 'lower' branch of the other.
-    // This allows very efficient look-up because we have to follow only a single path.
-    // Unfortunately, removing keys (and moving up keys in the tree) may break this invariant.
-    //
-    // The cost of breaking the invariant is that there may be two branches that contain the same
-    // key. This makes searches more expensive simply because the code gets more complex.
-    //
-    // One solution to maintain the invariant is to repair the invariant by moving all points
-    // with the same value into the 'upper' part of the point that was moved up.
-    // Identifying these points is relatively cheap, we can do this while searching for
-    // the min/max during removal. However, _moving_ these point may be very expensive.
-    //
-    // Our (pragmatic) solution is identify when the invariant gets broken.
-    // When it is not broken, we use the simple search. If it gets broken, we use the slower search.
-    // This is especially useful in scenarios where 'remove()' is not required or where
-    // points have never the same values (such as for physical measurements or other experimental
-    // results).
-    bool invariantBroken = false;
+    struct PointEntry {
+        Key& first;
+        T& second;
+    };
 
-    Node<Key, T>* root = nullptr;
-
-    const PointDistanceFunction dist;
+    struct RemoveResult {
+        Node<Key, T>* node = nullptr;
+        Node<Key, T>* nodeParent = nullptr;
+        double best;
+        int pos;
+    };
 
     //  public:
     //    void main(char* args) {
@@ -438,23 +412,11 @@ class KDTree {  //: PointIndex<T> {
     //        }
     //    }
 
-  private:
-    KDTree(int dims, PointDistanceFunction dist) {
+  public:
+    KDTree(int dims) : dims_{dims} {
         if (DEBUG) {
             std::cout << "Warning: DEBUG enabled" << std::endl;
         }
-        this.dims_ = dims;
-        this.dist = dist != nullptr ? dist : PointDistanceFunction.L2;
-    }
-
-  public:
-    static<T> KDTree<T> create(int dims) {
-        return new KDTree<>(dims, PointDistanceFunction.L2);
-    }
-
-  public:
-    static<T> KDTree<T> create(int dims, PointDistanceFunction dist) {
-        return new KDTree<>(dims, dist);
     }
 
     /**
@@ -465,12 +427,12 @@ class KDTree {  //: PointIndex<T> {
     void insert(const Key& key, const T& value) {
         size_++;
         modCount_++;
-        if (root == null) {
-            root = new Node<>(key, value, 0);
+        if (root == nullptr) {
+            root = new Node(key, value, 0);
             return;
         }
         Node<Key, T>* n = root;
-        while ((n = n.getClosestNodeOrAddPoint(key, value, dims_)) != null)
+        while ((n = n->getClosestNodeOrAddPoint(key, value, dims_)) != nullptr)
             ;
     }
 
@@ -479,8 +441,9 @@ class KDTree {  //: PointIndex<T> {
      * @param key the key to check
      * @return true iff the key exists
      */
-    bool containsExact(const Key& key) {
-        return findNodeExcat(key, new RemoveResult<>()) != null;
+    bool count(const Key& key) {
+        RemoveResult dummy;  // TODO?
+        return findNodeExact(key, dummy) != nullptr;
     }
 
     /**
@@ -488,64 +451,62 @@ class KDTree {  //: PointIndex<T> {
      * @param key the key to look up
      * @return the value for the key or 'null' if the key was not found
      */
-  public
-    const T& queryExact(const Key& key) {
-        Node<Key, T>* e = findNodeExcat(key, new RemoveResult<>());
-        return e == null ? null : e.getValue();
+    const T& find(const Key& key) {
+        RemoveResult dummy;  // TODO?
+        Node<Key, T>* e = findNodeExact(key, dummy);
+        return e == nullptr ? nullptr : e->getValue();
     }
 
   private:
-    Node<Key, T>* findNodeExcat(const Key& key, RemoveResult<T> resultDepth) {
-        if (root == null) {
-            return null;
+    Node<Key, T>* findNodeExact(const Key& key, RemoveResult& resultDepth) {
+        if (root == nullptr) {
+            return nullptr;
         }
-        return invariantBroken ? findNodeExactSlow(key, root, null, resultDepth)
-                               : findNodeExcatFast(key, null, resultDepth);
+        return invariantBroken ? findNodeExactSlow(key, root, nullptr, resultDepth)
+                               : findNodeExactFast(key, nullptr, resultDepth);
     }
 
-  private:
-    Node<Key, T>* findNodeExcatFast(
-        const Key& key, Node<Key, T>* parent, RemoveResult<T> resultDepth) {
+    Node<Key, T>* findNodeExactFast(
+        const Key& key, Node<Key, T>* parent, RemoveResult& resultDepth) {
         Node<Key, T>* n = root;
         do {
-            const Key& nodeKey = n.getKey();
-            double nodeX = nodeKey[n.getDim()];
-            double keyX = key[n.getDim()];
-            if (keyX == nodeX && Arrays.equals(key, nodeKey)) {
-                resultDepth.pos = n.getDim();
+            const Key& nodeKey = n->getKey();
+            double nodeX = nodeKey[n->getDim()];
+            double keyX = key[n->getDim()];
+            if (keyX == nodeX && key == nodeKey) {
+                resultDepth.pos = n->getDim();
                 resultDepth.nodeParent = parent;
                 return n;
             }
             parent = n;
-            n = (keyX >= nodeX) ? n.getHi() : n.getLo();
-        } while (n != null);
+            n = (keyX >= nodeX) ? n->getHi() : n->getLo();
+        } while (n != nullptr);
         return n;
     }
 
-  private:
     Node<Key, T>* findNodeExactSlow(
-        const Key& key, Node<Key, T>* n, Node<Key, T>* parent, RemoveResult<T> resultDepth) {
+        const Key& key, Node<Key, T>* n, Node<Key, T>* parent, RemoveResult& resultDepth) {
         do {
-            auto& nodeKey = n.getKey();
-            double nodeX = nodeKey[n.getDim()];
-            double keyX = key[n.getDim()];
+            auto& nodeKey = n->getKey();
+            double nodeX = nodeKey[n->getDim()];
+            double keyX = key[n->getDim()];
             if (keyX == nodeX) {
-                if (Arrays.equals(key, nodeKey)) {
-                    resultDepth.pos = n.getDim();
+                if (key == nodeKey) {
+                    resultDepth.pos = n->getDim();
                     resultDepth.nodeParent = parent;
                     return n;
                 }
                 // Broken invariant? We need to check the 'lower' part as well...
-                if (n.getLo() != null) {
-                    Node<Key, T>* n2 = findNodeExactSlow(key, n.getLo(), parent, resultDepth);
-                    if (n2 != null) {
+                if (n->getLo() != nullptr) {
+                    Node<Key, T>* n2 = findNodeExactSlow(key, n->getLo(), parent, resultDepth);
+                    if (n2 != nullptr) {
                         return n2;
                     }
                 }
             }
             parent = n;
-            n = (keyX >= nodeX) ? n.getHi() : n.getLo();
-        } while (n != null);
+            n = (keyX >= nodeX) ? n->getHi() : n->getLo();
+        } while (n != nullptr);
         return n;
     }
 
@@ -556,32 +517,32 @@ class KDTree {  //: PointIndex<T> {
      */
   public:
     const T& remove(const Key& key) {
-        if (root == null) {
-            return null;
+        if (root == nullptr) {
+            return nullptr;
         }
 
         // find
-        RemoveResult<T> removeResult = new RemoveResult<>();
-        Node<Key, T>* eToRemove = findNodeExcat(key, removeResult);
-        if (eToRemove == null) {
-            return null;
+        RemoveResult removeResult{};
+        Node<Key, T>* eToRemove = findNodeExact(key, removeResult);
+        if (eToRemove == nullptr) {
+            return nullptr;
         }
 
         // remove
         modCount_++;
-        const T& value = eToRemove.getValue();
+        const T& value = eToRemove->getValue();
         if (eToRemove == root && size_ == 1) {
-            root = null;
+            root = nullptr;
             size_ = 0;
             invariantBroken = false;
         }
 
         // find replacement
-        removeResult.nodeParent = null;
-        while (eToRemove != null && !eToRemove.isLeaf()) {
+        removeResult.nodeParent = nullptr;
+        while (eToRemove != nullptr && !eToRemove->isLeaf()) {
             // recurse
             int pos = removeResult.pos;
-            removeResult.node = null;
+            removeResult.node = nullptr;
             // randomize search direction (modCount_)
             //			if (((modCount_ & 0x1) == 0 || eToRemove.getHi() == null) &&
             // eToRemove.getLo()
@@ -594,28 +555,28 @@ class KDTree {  //: PointIndex<T> {
             //				removeResult.best = Double.POSITIVE_INFINITY;
             //				removeMinLeaf(eToRemove.getHi(), eToRemove, pos, removeResult);
             //			}
-            if (eToRemove.getHi() != null) {
+            if (eToRemove->getHi() != nullptr) {
                 // get replacement from right
                 // This is preferable, because it cannot break the invariant
-                removeResult.best = Double.POSITIVE_INFINITY;
-                removeMinLeaf(eToRemove.getHi(), eToRemove, pos, removeResult);
-            } else if (eToRemove.getLo() != null) {
+                removeResult.best = SCALAR_MAX;
+                removeMinLeaf(eToRemove->getHi(), eToRemove, pos, removeResult);
+            } else if (eToRemove->getLo() != nullptr) {
                 // get replacement from left
-                removeResult.best = Double.NEGATIVE_INFINITY;
-                removeMaxLeaf(eToRemove.getLo(), eToRemove, pos, removeResult);
+                removeResult.best = SCALAR_MIN;
+                removeMaxLeaf(eToRemove->getLo(), eToRemove, pos, removeResult);
             }
-            eToRemove.setKeyValue(removeResult.node->getKey(), removeResult.node->getValue());
+            eToRemove->setKeyValue(removeResult.node->getKey(), removeResult.node->getValue());
             eToRemove = removeResult.node;
         }
         // leaf node
         Node<Key, T>* parent = removeResult.nodeParent;
-        if (parent != null) {
-            if (parent.getLo() == eToRemove) {
-                parent.setLeft(null);
-            } else if (parent.getHi() == eToRemove) {
-                parent.setRight(null);
+        if (parent != nullptr) {
+            if (parent->getLo() == eToRemove) {
+                parent->setLeft(nullptr);
+            } else if (parent->getHi() == eToRemove) {
+                parent->setRight(nullptr);
             } else {
-                throw new IllegalStateException();
+                assert(false);
             }
         }
         size_--;
@@ -623,21 +584,12 @@ class KDTree {  //: PointIndex<T> {
     }
 
   private:
-    static class RemoveResult<T> {
-        Node<Key, T>* node = null;
-        Node<Key, T>* nodeParent = null;
-        double best;
-        int pos;
-    }
-
-    private
-    : void
-      removeMinLeaf(Node<Key, T>* node, Node<Key, T>* parent, int pos, RemoveResult<T> result) {
+    void removeMinLeaf(Node<Key, T>* node, Node<Key, T>* parent, int pos, RemoveResult& result) {
         // Split in 'interesting' dimension
         if (pos == node->getDim()) {
             // We strictly look for leaf nodes with left==null
             //  -> left!=null means the left child is at least as small as the current node
-            if (node->getLo() != null) {
+            if (node->getLo() != nullptr) {
                 removeMinLeaf(node->getLo(), node, pos, result);
             } else if (node->getKey()[pos] <= result.best) {
                 result.node = node;
@@ -655,21 +607,21 @@ class KDTree {  //: PointIndex<T> {
                 result.best = localX;
                 result.pos = node->getDim();
             }
-            if (node->getLo() != null) {
+            if (node->getLo() != nullptr) {
                 removeMinLeaf(node->getLo(), node, pos, result);
             }
-            if (node->getHi() != null) {
+            if (node->getHi() != nullptr) {
                 removeMinLeaf(node->getHi(), node, pos, result);
             }
         }
     }
 
   private:
-    void removeMaxLeaf(Node<Key, T>* node, Node<Key, T>* parent, int pos, RemoveResult<T> result) {
+    void removeMaxLeaf(Node<Key, T>* node, Node<Key, T>* parent, int pos, RemoveResult& result) {
         // Split in 'interesting' dimension
         if (pos == node->getDim()) {
             // We strictly look for leaf nodes with left==null
-            if (node->getHi() != null) {
+            if (node->getHi() != nullptr) {
                 removeMaxLeaf(node->getHi(), node, pos, result);
             } else if (node->getKey()[pos] >= result.best) {
                 result.node = node;
@@ -689,10 +641,10 @@ class KDTree {  //: PointIndex<T> {
                 result.pos = node->getDim();
                 invariantBroken |= result.best == localX;
             }
-            if (node->getLo() != null) {
+            if (node->getLo() != nullptr) {
                 removeMaxLeaf(node->getLo(), node, pos, result);
             }
-            if (node->getHi() != null) {
+            if (node->getHi() != nullptr) {
                 removeMaxLeaf(node->getHi(), node, pos, result);
             }
         }
@@ -706,8 +658,8 @@ class KDTree {  //: PointIndex<T> {
      */
   public:
     const T& update(const Key& oldKey, const Key& newKey) {
-        if (root == null) {
-            return null;
+        if (root == nullptr) {
+            return nullptr;
         }
         const T& value = remove(oldKey);
         insert(newKey, value);
@@ -729,7 +681,7 @@ class KDTree {  //: PointIndex<T> {
   public:
     void clear() {
         size_ = 0;
-        root = null;
+        root = nullptr;
         invariantBroken = false;
         modCount_++;
     }
@@ -740,14 +692,9 @@ class KDTree {  //: PointIndex<T> {
      * @param max upper right corner of query
      * @return all entries in the rectangle
      */
-    public;
+  public:
     KDIterator<Key, T> query(const Key& min, const Key& max) {
         return new KDIterator(this, min, max);
-    }
-
-  private:
-    double distance(const Key& p1, const Key& p2) {
-        return dist.dist(p1, p2);
     }
 
     /**
@@ -760,8 +707,8 @@ class KDTree {  //: PointIndex<T> {
         if (root == nullptr) {
             return nullptr;
         }
-        KDEntryDist<Key, T> candidate = new KDEntryDist(nullptr, Double.POSITIVE_INFINITY);
-        rangeSearch1NN(root, center, candidate, Double.POSITIVE_INFINITY);
+        KDEntryDist<Key, T> candidate = new KDEntryDist(nullptr, SCALAR_MAX);
+        rangeSearch1NN(root, center, candidate, SCALAR_MAX);
         return candidate;
     }
 
@@ -820,7 +767,7 @@ class KDTree {  //: PointIndex<T> {
             return std::vector<KDEntryDist<Key, T>>(0);
         }
         std::vector<KDEntryDist<Key, T>> candidates(k);
-        rangeSearchKNN(root, center, candidates, k, std::numeric_limits<SCALAR>::infinity());
+        rangeSearchKNN(root, center, candidates, k, SCALAR_MAX);
         return candidates;
     }
 
@@ -861,13 +808,6 @@ class KDTree {  //: PointIndex<T> {
     }
 
   private:
-    static const Comparator < KDEntryDist < ? >>
-        compKnn = (KDEntryDist < ? > point1, KDEntryDist < ? > point2)->{
-        double deltaDist = point1.dist() - point2.dist();
-        return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
-    };
-
-  private:
     double addCandidate(
         Node<Key, T>* node,
         const Key& center,
@@ -892,137 +832,122 @@ class KDTree {  //: PointIndex<T> {
         } else {
             cand = new KDEntryDist(node, dist);
         }
-        int insertionPos = Collections.binarySearch(candidates, cand, compKnn);
+        auto compKnn = [](const KDEntryDist<Key, T>& p1, const KDEntryDist<Key, T>& p2) {
+            double deltaDist = p1.dist() - p2.dist();
+            return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
+        };
+        int insertionPos = std::binary_search(candidates.begin(), candidates.end(), cand, compKnn);
         insertionPos = insertionPos >= 0 ? insertionPos : -(insertionPos + 1);
         candidates.add(insertionPos, cand);
         return candidates.size() < k ? maxRange : candidates.get(candidates.size() - 1).dist();
     }
 
   private:
-    static class KDQueryIteratorKNN<T> implements QueryIteratorKNN<PointEntryDist<T>> {
-      private
-        Iterator < ? extends PointEntryDist<T> > it;
-      private
-        final KDTree<T> tree;
+    class KDQueryIteratorKNN {
+        // std::vector<KDEntryDist<Key, T>>().begin()
+        using IterT = decltype(KDTree<T, SCALAR>().knnQuery({}, 0));
 
-      public
+      public:
         KDQueryIteratorKNN(KDTree<T> tree, const Key& center, int k) {
-            this.tree = tree;
-            reset(center, k);
+            tree_ = tree;
+            it = tree.knnQuery(center, k).iterator();
         }
 
-      public
-        boolean hasNext() {
+        bool hasNext() {
             return it.hasNext();
         }
 
-      public
-        PointEntryDist<T> next() {
+        KDEntryDist<Key, T> next() {
             return it.next();
         }
 
-      public
-        KDQueryIteratorKNN<T> reset(const Key& center, int k) {
-            it = tree.knnQuery(center, k).iterator();
-            return this;
-        }
-    }
+      private:
+        IterT it;
+        KDTree<T, SCALAR>* tree_;
+    };
 
     /**
      * Returns a printable list of the tree.
      * @return the tree as String
      */
-    public : String
-             toStringTree() {
-        StringBuilder sb = new StringBuilder();
-        if (root == null) {
-            sb.append("empty tree");
+  public:
+    template <unsigned int DIM>
+    std::ostream& operator<<(std::ostream& out) {
+        if (root == nullptr) {
+            out << "empty tree";
         } else {
-            toStringTree(sb, root, 0);
+            // TODO this is weird, just use << ?!?
+            toStringTree(out, root, 0);
         }
-        return sb.toString();
+        return out;
     }
 
   private:
-    void toStringTree(StringBuilder sb, Node<Key, T>* node, int depth) {
-        String prefix = "";
+    void toStringTree(std::ostream& out, Node<Key, T>* node, int depth) {
+        std::string prefix = "";
         for (int i = 0; i < depth; i++) {
             prefix += ".";
         }
         // sb.append(prefix + " d=" + depth + NL);
         prefix += " ";
-        if (node->getLo() != null) {
-            toStringTree(sb, node->getLo(), depth + 1);
+        if (node->getLo() != nullptr) {
+            toStringTree(out, node->getLo(), depth + 1);
         }
-        sb.append(prefix + Arrays.toString(node->point()));
-        sb.append(" v=" + node->value());
-        sb.append(" l/r=");
-        sb.append(node->getLo() == null ? null : Arrays.toString(node->getLo().point()));
-        sb.append("/");
-        sb.append(node->getHi() == null ? null : Arrays.toString(node->getHi().point()));
-        sb.append(NL);
-        if (node->getHi() != null) {
-            toStringTree(sb, node->getHi(), depth + 1);
+        out << prefix << node->point();
+        out << " v=" << node->value();
+        out << " l/r=";
+        if (node->getLo() == nullptr) {
+            out << "nullptr";
+        } else {
+            out << node->getLo().point();
         }
-    }
-
-  public:
-    String toString() {
-        return "KDTree;size=" + size_ + ";DEBUG=" + DEBUG +
-            ";DistFn=" + PointDistanceFunction.getName(dist) +
-            ";center=" + (root == null ? "null" : Arrays.toString(root.getKey()));
+        out << "/";
+        if (node->getHi() == nullptr) {
+            out << "nullptr";
+        } else {
+            out << node->getHi().point();
+        }
+        out << std::endl;
+        if (node->getHi() != nullptr) {
+            toStringTree(out, node->getHi(), depth + 1);
+        }
     }
 
   public:
     KDStats getStats() {
-        KDStats s = new KDStats(this);
-        if (root != null) {
-            root.checkNode(s, 0);
+        KDStats s(this);
+        if (root != nullptr) {
+            root->checkNode(s, 0);
         }
         return s;
     }
 
-    /**
-     * Statistics container class.
-     */
-  public:
-    static class KDStats extends Stats {
-      public KDStats(KDTree<?> tree) {
-            super(tree.nDist1NN + tree.nDistKNN, tree.nDist1NN, tree.nDistKNN);
-        }
-    }
-
-    public : int
-             getDims() {
+    int getDims() {
         return dims_;
     }
 
-  public:
-    QueryIterator<PointEntry<T>> iterator() {
-        if (root == null) {
+    auto iterator() {
+        if (root == nullptr) {
+            // TODO ??????? What is this?
             return query(new double[dims_], new double[dims_]);
         }
         // return query(root.);
         // TODO
-        throw new UnsupportedOperationException();
+        assert(false);
     }
 
-  public:
-    KDEntryDist<T> query1NN(const Key& center) {
+    auto query1NN(const Key& center) {
         return nnQuery(center);
     }
 
-  public:
-    QueryIteratorKNN<PointEntryDist<T>> queryKNN(const Key& center, int k) {
-        return new KDQueryIteratorKNN<>(this, center, k);
+    auto queryKNN(const Key& center, int k) {
+        return new KDQueryIteratorKNN(this, center, k);
     }
 
-  public:
     int getNodeCount() {
         return getStats().getNodeCount();
     }
 
-  public:
     int getDepth() {
         return getStats().getMaxDepth();
     }
@@ -1030,6 +955,34 @@ class KDTree {  //: PointIndex<T> {
     Node<Key, T>* getRoot() {
         return root;
     }
+
+  private:
+    const int dims_;
+    int size_ = 0;
+    int modCount_ = 0;  // TODO remove?
+    long nDist1NN = 0;  // TODO remove?!
+    long nDistKNN = 0;
+    // During insertion, the tree maintains an invariant that if two points have the
+    // same value in any dimension, then one key is never in the 'lower' branch of the other.
+    // This allows very efficient look-up because we have to follow only a single path.
+    // Unfortunately, removing keys (and moving up keys in the tree) may break this invariant.
+    //
+    // The cost of breaking the invariant is that there may be two branches that contain the same
+    // key. This makes searches more expensive simply because the code gets more complex.
+    //
+    // One solution to maintain the invariant is to repair the invariant by moving all points
+    // with the same value into the 'upper' part of the point that was moved up.
+    // Identifying these points is relatively cheap, we can do this while searching for
+    // the min/max during removal. However, _moving_ these point may be very expensive.
+    //
+    // Our (pragmatic) solution is to identify situations when the invariant gets broken.
+    // When it is not broken, we use the simple search. If it gets broken, we use the slower search.
+    // This is especially useful in scenarios where 'remove()' is not required or where
+    // points have never the same values (such as for physical measurements or other experimental
+    // results).
+    bool invariantBroken = false;
+
+    Node<Key, T>* root = nullptr;
 };
 
 }  // namespace tinspin
