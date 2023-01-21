@@ -15,9 +15,31 @@ namespace tinspin {
 using namespace improbable::phtree;
 
 namespace {
+
+struct FilterNoOp {
+    /*
+     * @param key The key/coordinate of the entry.
+     * @param value The value of the entry. For MultiMaps, this is a container of values.
+     * @returns This default implementation always returns `true`.
+     */
+    template <typename KeyT, typename ValueT>
+    constexpr bool IsEntryValid(const KeyT& /*key*/, const ValueT& /*value*/) const noexcept {
+        return true;
+    }
+};
+
+template <typename T>
+struct FilterValue {
+    template <typename KeyT>
+    constexpr bool IsEntryValid(const KeyT& /*key*/, const T& value) const noexcept {
+        return value_ == value;
+    }
+    const T& value_;
+};
+
 template <typename Key>
 static bool isEnclosed(const Key& point, const Key& min, const Key& max) {
-    for (int i = 0; i < point.size(); ++i) {
+    for (size_t i = 0; i < point.size(); ++i) {
         if (point[i] < min[i] || point[i] > max[i]) {
             return false;
         }
@@ -53,27 +75,6 @@ class KDEntryDist {
     double dist() {
         return distance_;
     }
-
-    //  public:
-    //    static const QEntryComparator COMP = new QEntryComparator();
-    //
-    //    static class QEntryComparator implements Comparator < KDEntryDist < ? >> {
-    //        /**
-    //         * Compares the two specified MBRs according to
-    //         * the sorting dimension and the sorting co-ordinate for the dimension
-    //         * of this Comparator.
-    //         *
-    //         * @param o1 the first SpatialPoint
-    //         * @param o2 the second SpatialPoint
-    //         * @return a negative integer, zero, or a positive integer as the
-    //         *         first argument is less than, equal to, or greater than the
-    //         *         second.
-    //         */
-    //      public: int compare(KDEntryDist<?> o1, KDEntryDist<?> o2) {
-    //            double d = o1.dist() - o2.dist();
-    //            return d < 0 ? -1 : (d > 0 ? 1 : 0);
-    //        }
-    //    }
 
     const Key& point() {
         return entry_->point();
@@ -197,52 +198,58 @@ class Node {
     int dim_;
 };
 
-template <typename ITER, typename TREE>
-class IteratorNormal {
-    friend TREE;
-
+template <typename Key, typename T>
+class KDIteratorBase {
   public:
-    template <typename ITER_PH>
-    IteratorNormal(ITER_PH&& iter_ph) noexcept : iter_{std::forward<ITER_PH>(iter_ph)} {}
+    explicit KDIteratorBase() noexcept : node_{nullptr} {}
 
-    IteratorNormal& operator++() noexcept {
-        ++iter_;
-        return *this;
+    inline auto& operator*() const noexcept {
+        assert(node_ != nullptr);
+        return node_->getValue();
     }
 
-    IteratorNormal operator++(int) noexcept {
-        IteratorNormal iterator(*this);
-        ++(*this);
-        return iterator;
+    inline auto* operator->() const noexcept {
+        assert(node_ != nullptr);
+        return &node_->getValue();
     }
 
-    auto& operator*() const noexcept {
-        return iter_->second;
+    inline friend bool operator==(
+        const KDIteratorBase<Key, T>& left, const KDIteratorBase<Key, T>& right) noexcept {
+        // TODO compare stack status left/right/key
+        return left.node_ == right.node_;
     }
 
-    auto* operator->() const noexcept {
-        return &iter_->second;
+    inline friend bool operator!=(
+        const KDIteratorBase<Key, T>& left, const KDIteratorBase<Key, T>& right) noexcept {
+        return left.node_ != right.node_;
     }
 
-    friend bool operator==(
-        const IteratorNormal<ITER, TREE>& left, const IteratorNormal<ITER, TREE>& right) noexcept {
-        return left.iter_ == right.iter_;
+    //    auto& second() const {
+    //        return node_->GetValue();
+    //    }
+
+    auto _node() {
+        return node_;
     }
 
-    friend bool operator!=(
-        const IteratorNormal<ITER, TREE>& left, const IteratorNormal<ITER, TREE>& right) noexcept {
-        return left.iter_ != right.iter_;
+  protected:
+    void SetFinished() {
+        node_ = nullptr;
     }
 
-  private:
-    ITER iter_;
+    void SetCurrentResult(Node<Key, T>* node) {
+        node_ = node;
+    }
+
+  protected:
+    Node<Key, T>* node_ = nullptr;
 };
 
 /**
  * iterator.
  */
-template <typename Key, typename T>
-class KDIterator {
+template <typename Key, typename T, typename FILTER>
+class KDIterator : public KDIteratorBase<Key, T> {
     struct IteratorPos {
         Node<Key, T>* node_;
         int depth_;
@@ -255,7 +262,7 @@ class KDIterator {
             auto dims = min.size();
             int pos = depth % dims;
             doLeft = min[pos] < key[pos];
-            doRight = max[pos] > key[pos];
+            doRight = max[pos] >= key[pos];  // TODO backport to Java !!!!!!!!!!!!!!!!!!!!
             doKey = doLeft || doRight || key[pos] == min[pos] || key[pos] == max[pos];
         }
     };
@@ -298,16 +305,15 @@ class KDIterator {
 
   public:
     // end()
-    KDIterator() : stack_(0), next_{nullptr}, min_{}, max_{} {}
+    KDIterator() : KDIteratorBase<Key, T>(), stack_(0), min_{}, max_{} {}
 
     // find()
-    KDIterator(Node<Key, T>* node) : stack_(0), next_{node}, min_{}, max_{} {}
+    KDIterator(Node<Key, T>* node) : KDIteratorBase<Key, T>(), stack_(0), min_{}, max_{} {}
 
     // begin_query()
-    KDIterator(Node<Key, T>* root, const Key& min, const Key& max) : stack_{} {
-        min_ = min;
-        max_ = max;
-        next_ = nullptr;
+    template <typename F = FilterNoOp>
+    KDIterator(Node<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
+    : KDIteratorBase<Key, T>(), stack_{}, min_{min}, max_{max}, filter_(std::forward<F>(filter)) {
         assert(root != nullptr);
         stack_.prepareAndPush(root, min, max, 0);
         findNext();
@@ -321,42 +327,19 @@ class KDIterator {
 
     KDIterator operator++(int) noexcept {
         assert(hasNext());
-        IteratorNormal iterator(*this);
+        KDIterator iterator(*this);
         ++(*this);
         return iterator;
     }
 
-    auto& operator*() const noexcept {
-        return next_->value();
-    }
-
-    auto* operator->() const noexcept {
-        return &next_->value();
-    }
-
-    friend bool operator==(
-        const KDIterator<Key, T>& left, const KDIterator<Key, T>& right) noexcept {
-        // TODO we need to compare the stack.peak()! (or not?)
-        return left.next_ == right.next_;
-    }
-
-    friend bool operator!=(
-        const KDIterator<Key, T>& left, const KDIterator<Key, T>& right) noexcept {
-        return left.next_ != right.next_;
-    }
-
-    auto _node() {
-        return next_;
-    }
-
   private:
     bool hasNext() {
-        return next_ != nullptr;
+        return this->_node() != nullptr;
     }
 
     void findNext() {
         while (!stack_.isEmpty()) {
-            IteratorPos itPos = stack_.peek();
+            IteratorPos& itPos = stack_.peek();
             Node<Key, T>* node = itPos.node_;
             if (itPos.doLeft && node->getLo() != nullptr) {
                 itPos.doLeft = false;
@@ -365,8 +348,9 @@ class KDIterator {
             }
             if (itPos.doKey) {
                 itPos.doKey = false;
-                if (isEnclosed(node->getKey(), min_, max_)) {
-                    next_ = node;
+                if (isEnclosed(node->getKey(), min_, max_) &&
+                    filter_.IsEntryValid(node->getKey(), node->getValue())) {
+                    this->SetCurrentResult(node);
                     return;
                 }
             }
@@ -377,14 +361,14 @@ class KDIterator {
             }
             stack_.pop();
         }
-        next_ = nullptr;
+        this->SetFinished();
     }
 
   private:
     IteratorStack stack_;
-    Node<Key, T>* next_ = nullptr;
     Key min_;
     Key max_;
+    FILTER filter_;
 };
 
 /**
@@ -525,9 +509,12 @@ class KDTree {
      * @param key the key to check
      * @return true iff the key exists
      */
-    bool count(const Key& key) {
-        RemoveResult dummy;  // TODO?
-        return findNodeExact(key, dummy) != nullptr;
+    size_t count(const Key& key) {
+        //        RemoveResult dummy;  // TODO?
+        //        return findNodeExact(key, dummy) != nullptr;
+        size_t n = 0;
+        for_each({key, key}, [&n](const Key&, const T&) { ++n; });
+        return n;
     }
 
     /**
@@ -536,18 +523,19 @@ class KDTree {
      * @return the value for the key or 'null' if the key was not found
      */
     auto find(const Key& key) {
-        RemoveResult dummy;  // TODO?
-        Node<Key, T>* e = findNodeExact(key, dummy);
-        return KDIterator<Key, T>(e);
-        // return e == nullptr ? nullptr : e->getValue();
+        //        RemoveResult dummy;  // TODO?
+        //        Node<Key, T>* e = findNodeExact(key, dummy);
+        //        return KDIterator<Key, T>(e);
+        return begin_query({key, key});
     }
 
     auto find(const Key& key, const T& value) {
-        RemoveResult dummy;  // TODO?
-        // TODO!!! use value!!!
-        Node<Key, T>* e = findNodeExact(key, dummy);
-        // return e == nullptr ? nullptr : e->getValue();
-        return KDIterator<Key, T>(e);
+        //        RemoveResult dummy;  // TODO?
+        //        Node<Key, T>* e = findNodeExact(key, dummy);
+        //        return KDIterator<Key, T>(e);
+        // TODO implement special query on Key i.o. Box
+        // return begin_query({key, key}, [&value](const Key&, const T& v) { return value == v; });
+        return begin_query({key, key}, FilterValue<T>{value});
     }
 
   private:
@@ -805,12 +793,13 @@ class KDTree {
      * @return all entries in the rectangle
      */
     template <typename FILTER = FilterNoOp>
-    KDIterator<Key, T> begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) const {
-        return KDIterator(root_, query_box.min(), query_box.max());
+    auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) const {
+        return KDIterator<Key, T, FILTER>(
+            root_, query_box.min(), query_box.max(), std::forward<FILTER>(filter));
     }
 
-    KDIterator<Key, T> end() const {
-        return KDIterator<Key, T>();
+    auto end() const {
+        return KDIterator<Key, T, FilterNoOp>();
     }
 
     /**

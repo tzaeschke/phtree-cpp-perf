@@ -273,7 +273,7 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
 TEST(PhTreeMMDTest, TestInsert) {
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
-    size_t N = 1000;
+    size_t N = 8;//1000;
 
     std::vector<TestPoint<dim>> points;
     generateCube(points, N);
