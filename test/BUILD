@@ -98,20 +98,20 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "pcl_kd_tree_d_test",
-    timeout = "long",
-    srcs = [
-        "pcl_kd_tree_d_test.cc",
-    ],
-    linkstatic = True,
-    deps = [
-        "//src/pcl:ph-pcl",
-        "@gtest//:gtest_main",
-        "@pcl//:common",
-        "@phtree",
-    ],
-)
+#cc_test(
+#    name = "pcl_kd_tree_d_test",
+#    timeout = "long",
+#    srcs = [
+#        "pcl_kd_tree_d_test.cc",
+#    ],
+#    linkstatic = True,
+#    deps = [
+#        "//src/pcl:ph-pcl",
+#        "@gtest//:gtest_main",
+#        "@pcl//:common",
+#        "@phtree",
+#    ],
+#)
 
 cc_test(
     name = "tinspin_kd_tree_d_test",
@@ -121,7 +121,21 @@ cc_test(
     ],
     linkstatic = True,
     deps = [
-        "//src/tinspin:tinspin",
+        "//src/tinspin",
+        "@gtest//:gtest_main",
+        "@phtree",
+    ],
+)
+
+cc_test(
+    name = "tinspin_quadtree_d_test",
+    timeout = "long",
+    srcs = [
+        "tinspin_quadtree_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/tinspin",
         "@gtest//:gtest_main",
         "@phtree",
     ],

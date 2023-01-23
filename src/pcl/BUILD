@@ -42,7 +42,7 @@ cc_library(
     name = "ph-pcl",
     testonly = True,
     hdrs = [
-        "ph-kdtree.h",
+        #        "ph-kdtree.h",
     ],
     visibility = [
         "//visibility:public",

@@ -265,6 +265,7 @@ cc_binary(
         "//src/lsi:ph-lsi-mm",
         "//src/mcxme:ph-mcxme",
         "//src/robin_hood",
+        "//src/tinspin",
         "@gbenchmark//:benchmark",
         "@phtree",
         "@spdlog",

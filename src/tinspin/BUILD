@@ -5,6 +5,7 @@ cc_library(
     testonly = True,
     hdrs = [
         "kdtree.h",
+        "quadtree_point.h",
     ],
     visibility = [
         "//visibility:public",
