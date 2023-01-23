@@ -286,7 +286,7 @@ class KDIterator : public KDIteratorBase<Key, T> {
 
         IteratorPos prepareAndPush(Node<Key, T>* node, const Key& min, const Key& max, int depth) {
             if (size == stack.size()) {
-                stack.emplace_back(IteratorPos{});  // TODO ?
+                stack.emplace_back();
             }
             IteratorPos& ni = stack[size++];
 
@@ -322,9 +322,12 @@ class KDIterator : public KDIteratorBase<Key, T> {
     template <typename F = FilterNoOp>
     KDIterator(Node<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
     : KDIteratorBase<Key, T>(), stack_{}, min_{min}, max_{max}, filter_(std::forward<F>(filter)) {
-        assert(root != nullptr);
-        stack_.prepareAndPush(root, min, max, 0);
-        findNext();
+        if (root != nullptr) {
+            stack_.prepareAndPush(root, min, max, 0);
+            findNext();
+        } else {
+            this->SetFinished();
+        }
     }
 
     KDIterator& operator++() noexcept {
@@ -382,10 +385,8 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
   public:
     KDIteratorKnn(Candidates&& result) noexcept
     : KDIteratorBase<Key, T>(), result_{std::move(result)}, iter_{result_.begin()} {
-  //      this->SetCurrentResult(&node_);
         if (iter_ != result_.end()) {
             this->SetCurrentResult(iter_->_node());
-//            node_.setKeyValue(iter_->point(), iter_->value());
         } else {
             this->SetFinished();
         }
@@ -398,7 +399,6 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
     }
 
     KDIteratorKnn operator++(int) noexcept {
-        assert(!this->IsEnd());
         KDIteratorKnn iterator(*this);
         ++(*this);
         return iterator;
@@ -417,13 +417,11 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
         ++iter_;
         if (iter_ != result_.end()) {
             this->SetCurrentResult(iter_->_node());
-            //node_.setKeyValue(iter_->point(), iter_->value());
         } else {
             this->SetFinished();
         }
     }
 
-    //Node<Key, T> node_;
     Candidates result_;
     CandidatesIter iter_;
 };
@@ -596,22 +594,24 @@ class KDTree {
     }
 
   private:
-    Node<Key, T>* findNodeExact(const Key& key, RemoveResult& resultDepth) {
+    template <typename PRED>
+    Node<Key, T>* findNodeExact(const Key& key, RemoveResult& resultDepth, const PRED& pred_fn) {
         if (root_ == nullptr) {
             return nullptr;
         }
-        return invariantBroken ? findNodeExactSlow(key, root_, nullptr, resultDepth)
-                               : findNodeExactFast(key, nullptr, resultDepth);
+        return invariantBroken ? findNodeExactSlow(key, root_, nullptr, resultDepth, pred_fn)
+                               : findNodeExactFast(key, nullptr, resultDepth, pred_fn);
     }
 
+    template <typename PRED>
     Node<Key, T>* findNodeExactFast(
-        const Key& key, Node<Key, T>* parent, RemoveResult& resultDepth) {
+        const Key& key, Node<Key, T>* parent, RemoveResult& resultDepth, const PRED& pred_fn) {
         Node<Key, T>* n = root_;
         do {
             const Key& nodeKey = n->getKey();
             double nodeX = nodeKey[n->getDim()];
             double keyX = key[n->getDim()];
-            if (keyX == nodeX && key == nodeKey) {
+            if (keyX == nodeX && key == nodeKey && pred_fn(n->getValue())) {
                 resultDepth.pos = n->getDim();
                 resultDepth.nodeParent = parent;
                 return n;
@@ -622,21 +622,22 @@ class KDTree {
         return n;
     }
 
+    template <typename PRED>
     Node<Key, T>* findNodeExactSlow(
-        const Key& key, Node<Key, T>* n, Node<Key, T>* parent, RemoveResult& resultDepth) {
+        const Key& key, Node<Key, T>* n, Node<Key, T>* parent, RemoveResult& resultDepth, const PRED& pred_fn) {
         do {
             auto& nodeKey = n->getKey();
             double nodeX = nodeKey[n->getDim()];
             double keyX = key[n->getDim()];
             if (keyX == nodeX) {
-                if (key == nodeKey) {
+                if (key == nodeKey && pred_fn(n->getValue())) {
                     resultDepth.pos = n->getDim();
                     resultDepth.nodeParent = parent;
                     return n;
                 }
                 // Broken invariant? We need to check the 'lower' part as well...
                 if (n->getLo() != nullptr) {
-                    Node<Key, T>* n2 = findNodeExactSlow(key, n->getLo(), parent, resultDepth);
+                    Node<Key, T>* n2 = findNodeExactSlow(key, n->getLo(), parent, resultDepth, pred_fn);
                     if (n2 != nullptr) {
                         return n2;
                     }
@@ -655,24 +656,28 @@ class KDTree {
      */
   public:
     size_t erase(const Key& key, const T& value) {
-        return erase(key);  // TODO!!!
+        return erase_if(key, [&value](const T& v) { return v == value;});
     }
 
     size_t erase(const Key& key) {
+        return erase_if(key, [](const T&) { return true;});
+    }
+
+    template <typename PRED>
+    size_t erase_if(const Key& key, const PRED& pred_fn) {
         if (root_ == nullptr) {
             return 0;
         }
 
         // find
         RemoveResult removeResult{};
-        Node<Key, T>* eToRemove = findNodeExact(key, removeResult);
+        Node<Key, T>* eToRemove = findNodeExact(key, removeResult, pred_fn);
         if (eToRemove == nullptr) {
             return 0;
         }
 
         // remove
         modCount_++;
-        const T& value = eToRemove->getValue();
         if (eToRemove == root_ && size_ == 1) {
             root_ = nullptr;
             size_ = 0;
