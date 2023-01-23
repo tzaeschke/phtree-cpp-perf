@@ -62,6 +62,7 @@ struct KDStats {
 template <typename Key, typename T>
 class KDEntryDist {
   public:
+    KDEntryDist() {};
     KDEntryDist(Node<Key, T>* node, double dist) {
         entry_ = node;
         distance_ = dist;
@@ -72,17 +73,20 @@ class KDEntryDist {
         distance_ = dist;
     }
 
-    double dist() {
+    double dist() const noexcept {
         return distance_;
     }
 
-    const Key& point() {
+    const Key& point() const noexcept {
         return entry_->point();
     }
 
-  public:
-    const T& value() {
+    T& value() const noexcept {
         return entry_->value();
+    }
+
+    Node<Key, T>* _node() const noexcept {
+        return entry_;
     }
 
   private:
@@ -228,16 +232,20 @@ class KDIteratorBase {
     //        return node_->GetValue();
     //    }
 
-    auto _node() {
+    auto _node()  const noexcept {
         return node_;
     }
 
   protected:
-    void SetFinished() {
+    bool IsEnd() const noexcept {
+        return this->_node() == nullptr;
+    }
+
+    void SetFinished() noexcept {
         node_ = nullptr;
     }
 
-    void SetCurrentResult(Node<Key, T>* node) {
+    void SetCurrentResult(Node<Key, T>* node) noexcept {
         node_ = node;
     }
 
@@ -320,24 +328,20 @@ class KDIterator : public KDIteratorBase<Key, T> {
     }
 
     KDIterator& operator++() noexcept {
-        assert(hasNext());
+        assert(!this->IsEnd());
         findNext();
         return *this;
     }
 
     KDIterator operator++(int) noexcept {
-        assert(hasNext());
+        assert(!this->IsEnd());
         KDIterator iterator(*this);
         ++(*this);
         return iterator;
     }
 
   private:
-    bool hasNext() {
-        return this->_node() != nullptr;
-    }
-
-    void findNext() {
+     void findNext() {
         while (!stack_.isEmpty()) {
             IteratorPos& itPos = stack_.peek();
             Node<Key, T>* node = itPos.node_;
@@ -369,6 +373,59 @@ class KDIterator : public KDIteratorBase<Key, T> {
     Key min_;
     Key max_;
     FILTER filter_;
+};
+
+template <typename Key, typename T>
+class KDIteratorKnn : public KDIteratorBase<Key, T> {
+    using Candidates = std::vector<KDEntryDist<Key, T>>;
+    using CandidatesIter = decltype(Candidates{}.begin());
+  public:
+    KDIteratorKnn(Candidates&& result) noexcept
+    : KDIteratorBase<Key, T>(), result_{std::move(result)}, iter_{result_.begin()} {
+  //      this->SetCurrentResult(&node_);
+        if (iter_ != result_.end()) {
+            this->SetCurrentResult(iter_->_node());
+//            node_.setKeyValue(iter_->point(), iter_->value());
+        } else {
+            this->SetFinished();
+        }
+    }
+
+    KDIteratorKnn& operator++() noexcept {
+        assert(!this->IsEnd());
+        findNext();
+        return *this;
+    }
+
+    KDIteratorKnn operator++(int) noexcept {
+        assert(!this->IsEnd());
+        KDIteratorKnn iterator(*this);
+        ++(*this);
+        return iterator;
+    }
+
+    [[nodiscard]] double distance() const noexcept {
+        return iter_->dist();
+    }
+
+    const Key& first() const noexcept {
+        return iter_->point();
+    }
+  private:
+    void findNext() {
+        assert(iter_ != result_.end());
+        ++iter_;
+        if (iter_ != result_.end()) {
+            this->SetCurrentResult(iter_->_node());
+            //node_.setKeyValue(iter_->point(), iter_->value());
+        } else {
+            this->SetFinished();
+        }
+    }
+
+    //Node<Key, T> node_;
+    Candidates result_;
+    CandidatesIter iter_;
 };
 
 /**
@@ -802,6 +859,18 @@ class KDTree {
         return KDIterator<Key, T, FilterNoOp>();
     }
 
+    template <typename DISTANCE, typename FILTER = FilterNoOp>
+    auto begin_knn_query(
+        size_t k,
+        const Key& center,
+        DISTANCE&& distance_function = DISTANCE(),
+        FILTER&& filter = FILTER()) const {
+        auto result = knnQuery(
+            center, k, std::forward<DISTANCE>(distance_function), std::forward<FILTER>(filter));
+        // TODO pass in directly w/o move()
+        return KDIteratorKnn<Key, T>(std::move(result));
+    }
+
     /**
      * 1-nearest neighbor query.
      * @param center The point for which the nearest neighbors are requested
@@ -865,61 +934,72 @@ class KDTree {
     }
 
   public:
-    auto knnQuery(const Key& center, int k) {
+    template <typename DISTANCE, typename FILTER = FilterNoOp>
+    auto knnQuery(
+        const Key& center,
+        size_t k,
+        DISTANCE&& distance_fn = DISTANCE(),
+        FILTER&& filter_fn = FILTER()) const {
         if (root_ == nullptr) {
             return std::vector<KDEntryDist<Key, T>>(0);
         }
-        std::vector<KDEntryDist<Key, T>> candidates(k);
-        rangeSearchKNN(root_, center, candidates, k, SCALAR_MAX);
+        std::vector<KDEntryDist<Key, T>> candidates{};
+        candidates.reserve(k);
+        DISTANCE dist_fn{std::forward<DISTANCE>(distance_fn)};
+        FILTER filt_fn{std::forward<FILTER>(filter_fn)};
+        rangeSearchKNN(root_, center, candidates, k, SCALAR_MAX, dist_fn, filt_fn);
         return candidates;
     }
 
   private:
+    template <typename DISTANCE, typename FILTER = FilterNoOp>
     double rangeSearchKNN(
         Node<Key, T>* node,
         const Key& center,
         std::vector<KDEntryDist<Key, T>>& candidates,
-        int k,
-        double maxRange) {
+        size_t k,
+        double maxRange,
+        DISTANCE& dist_fn, FILTER& filter) const {
         int pos = node->getDim();
         if (node->getLo() != nullptr &&
             (center[pos] < node->getKey()[pos] || node->getHi() == nullptr)) {
             // go down
-            maxRange = rangeSearchKNN(node->getLo(), center, candidates, k, maxRange);
+            maxRange = rangeSearchKNN(node->getLo(), center, candidates, k, maxRange, dist_fn, filter);
             // refine result
             if (center[pos] + maxRange >= node->getKey()[pos]) {
-                maxRange = addCandidate(node, center, candidates, k, maxRange);
+                maxRange = addCandidate(node, center, candidates, k, maxRange, dist_fn, filter);
                 if (node->getHi() != nullptr) {
-                    maxRange = rangeSearchKNN(node->getHi(), center, candidates, k, maxRange);
+                    maxRange = rangeSearchKNN(node->getHi(), center, candidates, k, maxRange, dist_fn, filter);
                 }
             }
         } else if (node->getHi() != nullptr) {
             // go down
-            maxRange = rangeSearchKNN(node->getHi(), center, candidates, k, maxRange);
+            maxRange = rangeSearchKNN(node->getHi(), center, candidates, k, maxRange, dist_fn, filter);
             // refine result
             if (center[pos] <= node->getKey()[pos] + maxRange) {
-                maxRange = addCandidate(node, center, candidates, k, maxRange);
+                maxRange = addCandidate(node, center, candidates, k, maxRange, dist_fn, filter);
                 if (node->getLo() != nullptr) {
-                    maxRange = rangeSearchKNN(node->getLo(), center, candidates, k, maxRange);
+                    maxRange = rangeSearchKNN(node->getLo(), center, candidates, k, maxRange, dist_fn, filter);
                 }
             }
         } else {
             // leaf -> first (probably best) match!
-            maxRange = addCandidate(node, center, candidates, k, maxRange);
+            maxRange = addCandidate(node, center, candidates, k, maxRange, dist_fn, filter);
         }
         return maxRange;
     }
 
-  private:
+    template <typename DISTANCE, typename FILTER = FilterNoOp>
     double addCandidate(
         Node<Key, T>* node,
         const Key& center,
         std::vector<KDEntryDist<Key, T>>& candidates,
-        int k,
-        double maxRange) {
-        nDistKNN++;
+        size_t k,
+        double maxRange,
+        DISTANCE& dist_fn, FILTER& filter) const {
+//        nDistKNN++;
         // add ?
-        double dist = distance(center, node->getKey());
+        double dist = dist_fn(center, node->getKey());
         if (dist > maxRange) {
             // don't add if too far away
             return maxRange;
@@ -928,46 +1008,57 @@ class KDTree {
             // don't add if we already have enough equally good results.
             return maxRange;
         }
-        KDEntryDist<Key, T> cand;
-        if (candidates.size() >= k) {
-            cand = candidates.remove(k - 1);
-            cand.set(node, dist);
-        } else {
-            cand = new KDEntryDist(node, dist);
+        if (!filter.IsEntryValid(node->getKey(), node->getValue())) {
+            return maxRange;
         }
-        auto compKnn = [](const KDEntryDist<Key, T>& p1, const KDEntryDist<Key, T>& p2) {
-            double deltaDist = p1.dist() - p2.dist();
-            return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
-        };
-        int insertionPos = std::binary_search(candidates.begin(), candidates.end(), cand, compKnn);
-        insertionPos = insertionPos >= 0 ? insertionPos : -(insertionPos + 1);
-        candidates.add(insertionPos, cand);
-        return candidates.size() < k ? maxRange : candidates.get(candidates.size() - 1).dist();
+//        KDEntryDist<Key, T> cand{};
+        if (candidates.size() >= k) {
+//            cand = candidates.erase(candidates.end() - 1);
+            candidates.erase(candidates.end() - 1);
+//            cand.set(node, dist);
+//        } else {
+//            cand = new KDEntryDist(node, dist);
+        }
+//        auto compKnn = [](const KDEntryDist<Key, T>& p1, const KDEntryDist<Key, T>& p2) {
+//            double deltaDist = p1.dist() - p2.dist();
+//            return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
+//        };
+//        int insertionPos = std::binary_search(candidates.begin(), candidates.end(), cand, compKnn);
+//        insertionPos = insertionPos >= 0 ? insertionPos : -(insertionPos + 1);
+//        candidates.emplace(insertionPos, cand);
+//        return candidates.size() < k ? maxRange : candidates.get(candidates.size() - 1).dist();
+        // TODO upper_bound to avoid moving things?
+        auto insertionPos = std::lower_bound(candidates.begin(), candidates.end(), dist, [](const KDEntryDist<Key, T>& p1, double dist) {
+                return p1.dist() < dist;
+            }
+        );
+        //insertionPos = insertionPos >= 0 ? insertionPos : -(insertionPos + 1);
+        candidates.emplace(insertionPos, node, dist);
+        return candidates.size() < k ? maxRange : candidates.back().dist();
     }
 
   private:
-    class KDQueryIteratorKNN {
-        // std::vector<KDEntryDist<Key, T>>().begin()
-        using IterT = decltype(KDTree<T, SCALAR>().knnQuery({}, 0));
-
-      public:
-        KDQueryIteratorKNN(KDTree<T> tree, const Key& center, int k) {
-            tree_ = tree;
-            it = tree.knnQuery(center, k).iterator();
-        }
-
-        bool hasNext() {
-            return it.hasNext();
-        }
-
-        KDEntryDist<Key, T> next() {
-            return it.next();
-        }
-
-      private:
-        IterT it;
-        KDTree<T, SCALAR>* tree_;
-    };
+//    class KDQueryIteratorKNN {
+//        using IterT = decltype(KDTree<T, SCALAR>().knnQuery({}, 0));
+//
+//      public:
+//        KDQueryIteratorKNN(KDTree<T> tree, const Key& center, int k) {
+//            tree_ = tree;
+//            it = tree.knnQuery(center, k).iterator();
+//        }
+//
+//        bool hasNext() {
+//            return it.hasNext();
+//        }
+//
+//        KDEntryDist<Key, T> next() {
+//            return it.next();
+//        }
+//
+//      private:
+//        IterT it;
+//        KDTree<T, SCALAR>* tree_;
+//    };
 
     /**
      * Returns a printable list of the tree.
@@ -1031,16 +1122,16 @@ class KDTree {
 
     auto begin() {
         return begin_query(
-            {SCALAR_MIN, SCALAR_MIN, SCALAR_MIN}, {SCALAR_MAX, SCALAR_MAX, SCALAR_MAX});
+            {{SCALAR_MIN, SCALAR_MIN, SCALAR_MIN}, {SCALAR_MAX, SCALAR_MAX, SCALAR_MAX}});
     }
 
     auto query1NN(const Key& center) {
         return nnQuery(center);
     }
 
-    auto queryKNN(const Key& center, int k) {
-        return new KDQueryIteratorKNN(this, center, k);
-    }
+//    auto queryKNN(const Key& center, int k) {
+//        return new KDQueryIteratorKNN(this, center, k);
+//    }
 
     int getNodeCount() {
         return getStats().getNodeCount();
