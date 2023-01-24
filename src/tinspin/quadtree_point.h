@@ -879,6 +879,7 @@ class QIterator : public QIteratorBase<Key, T> {
                         if (findNextInNode()) {
                             return;
                         }
+                        stack_.pop();
                     } else {
                         IterNodeT it2 = node->getChildNodes().begin();
                         stack_.push(std::make_pair(node, it2));

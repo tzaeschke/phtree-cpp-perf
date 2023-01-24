@@ -464,7 +464,6 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
         ASSERT_EQ(1U, n);
         tree.emplace(pNew, Id(i));
         ASSERT_EQ(count_new + 1, tree.count(pNew));
-        assert(count_old - 1 == tree.count(pOld)); // TODO
         ASSERT_EQ(count_old - 1, tree.count(pOld));
         p = pNew;
         ++i;
