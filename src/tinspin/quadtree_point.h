@@ -602,7 +602,7 @@ class QNode {
         if (!is_leaf_) {
             QNode<Key, T>* sub = findSubNode(key);
             if (sub != nullptr) {
-                return sub->getExact(key);
+                return sub->getExact(key, value);
             }
             return nullptr;
         }
@@ -823,19 +823,26 @@ class QIterator : public QIteratorBase<Key, T> {
             return iterator;
     }
 
-  private: void findNext() {
+  private:
+    void findNext() {
         assert(!this->IsEnd());
         do {
-            // check current leaf
-            auto * current = this->node_;
-            if (current->isLeaf()) {
-                while (iter_leaf_ != current->getEntries().end()) {
-                    const QEntry<Key, T>& e = *iter_leaf_;
-                    ++iter_leaf_;
-                    if (e.enclosedBy(min, max) && filter_.IsEntryValid(e.point(), e.value())) {
-                        this->SetCurrentResult(const_cast<QEntry<Key, T>*>(&e));
-                        return;
-                    }
+            // Are we currently iterating a leaf?
+            if (this->node_->isLeaf()) {
+                if (findNextInNode()) {
+                    return;
+                }
+
+//                while (iter_leaf_ != current->getEntries().end()) {
+//                    const QEntry<Key, T>& e = *iter_leaf_;
+//                    ++iter_leaf_;
+//                    if (e.enclosedBy(min, max) && filter_.IsEntryValid(e.point(), e.value())) {
+//                        this->SetCurrentResult(const_cast<QEntry<Key, T>*>(&e));
+//                        return;
+//                    }
+//                }
+                if (!stack_.empty()) {
+                    ++stack_.top().second;
                 }
             }
             if (stack_.empty()) {
@@ -850,17 +857,34 @@ class QIterator : public QIteratorBase<Key, T> {
                 if (overlap(min, max, node->getCenter(), node->getRadius())) {
                     if (node->isLeaf()) {
                         iter_leaf_ = node->getChildEntryIterator();
+                        if (findNextInNode()) {
+                            return;
+                        }
                     } else {
                         IterNodeT it2 = node->getChildNodes().begin();
                         stack_.push(std::make_pair(node, it2));
+                        break;
                     }
-                    break;
                 }
                 ++it;
             }
             stack_.pop();
         } while (!stack_.empty());
         this->SetFinished();
+    }
+
+    bool findNextInNode() {
+        assert(!this->IsEnd());
+        assert(this->node_->isLeaf());
+        while (iter_leaf_ != this->node_->getEntries().end()) {
+            const QEntry<Key, T>& e = *iter_leaf_;
+            ++iter_leaf_;
+            if (e.enclosedBy(min, max) && filter_.IsEntryValid(e.point(), e.value())) {
+                this->SetCurrentResult(const_cast<QEntry<Key, T>*>(&e));
+                return true;
+            }
+        }
+        return false;
     }
 };
 
