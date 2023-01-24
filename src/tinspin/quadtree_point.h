@@ -279,7 +279,7 @@ class QStats {
 
 template <typename Key, typename T>
 class QEntry {
-    const Key& point_;
+    Key point_;
     T value_;
 
   public:
@@ -311,17 +311,30 @@ class QEntry {
 };
 
 template <typename Key, typename T>
-class QEntryDist : public QEntry<Key, T> {  // TODO inheritance???
-    double distance_;
-
+class QEntryDist {  // TODO inheritance???
   public:
-    QEntryDist(const QEntry<Key, T>& e, double dist) : QEntry<Key, T>(e.point(), e.value()) {
-        distance_ = dist;
+    QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {
     }
+
+        const Key& point() const {
+            return entry_->point();
+        }
+
+        const T& value() const {
+            return entry_->value();
+        }
 
     double dist() const {
         return distance_;
     }
+
+    QEntry<Key, T>* _entry() {
+        return entry_;
+    }
+
+  private:
+    QEntry<Key, T>* entry_;
+    double distance_;
 };
 
 /**
@@ -443,7 +456,7 @@ class QNode {
         for (size_t i = 0; i < values_.size(); i++) {
             QEntry<Key, T>& e = values_[i];
             if (isPointEqual(e.point(), key)) {
-                values_.erase(values_.begin + i);
+                values_.erase(values_.begin() + i);
                 ++n;
             }
         }
@@ -456,10 +469,10 @@ class QNode {
     }
 
     size_t remove(QNode<Key, T>* parent, const Key& key, int maxNodeSize, const T& value) {
-        if (values_ == nullptr) {
+        if (!is_leaf_) {
             QNode<Key, T>* sub = findSubNode(key);
             if (sub != nullptr) {
-                return sub->remove(this, key, maxNodeSize);
+                return sub->remove(this, key, maxNodeSize, value);
             }
             return 0;
         }
@@ -468,7 +481,7 @@ class QNode {
         for (size_t i = 0; i < values_.size(); i++) {
             QEntry<Key, T>& e = values_[i];
             if (isPointEqual(e.point(), key) && e.value() == value) {
-                values_.remove(i);
+                values_.erase(values_.begin() + i);
                 ++n;
             }
         }
@@ -551,7 +564,7 @@ class QNode {
         values_.reserve(nTotal);
         //values_ = new ArrayList<>(nTotal);
         for (size_t i = 0; i < subs_.size(); i++) {
-            values_.insert(subs_[i]->values_.begin(), subs_[i]->values_.end());
+            values_.insert(values_.begin(), subs_[i]->values_.begin(), subs_[i]->values_.end());
         }
         //subs = nullptr;
         subs_.clear();
@@ -559,11 +572,11 @@ class QNode {
     }
 
   public:
-    const Key& getCenter() {
+    const Key& getCenter() const noexcept {
         return center_;
     }
 
-    double getRadius() {
+    double getRadius() const noexcept {
         return radius_;
     }
 
@@ -603,9 +616,13 @@ class QNode {
         return nullptr;
     }
 
-    auto& getEntries() {
-        return values_;
-    }
+        auto& getEntries() {
+            return values_;
+        }
+
+                auto& getEntries() const {
+                    return values_;
+                }
 
 //    auto getChildIterator() {
 //        if (values_ != nullptr) {
@@ -692,9 +709,13 @@ class QNode {
         return is_leaf_;
     }
 
-    auto& getChildNodes() {
-        return subs_;
-    }
+        auto& getChildNodes() {
+            return subs_;
+        }
+
+                auto& getChildNodes() const {
+                    return subs_;
+                }
 };
 
 template <typename Key, typename T>
@@ -721,7 +742,7 @@ class QIteratorBase {
 
     inline friend bool operator!=(
         const QIteratorBase<Key, T>& left, const QIteratorBase<Key, T>& right) noexcept {
-        return left.node_ != right.node_ || left.entry_ == right.entry_;
+        return left.node_ != right.node_ || left.entry_ != right.entry_;
     }
 
         auto _node()  const noexcept {
@@ -739,6 +760,7 @@ class QIteratorBase {
 
     void SetFinished() noexcept {
         node_ = nullptr;
+        entry_ = nullptr;
     }
 
         void SetCurrentNode(QNode<Key, T>* node) noexcept {
@@ -754,14 +776,13 @@ class QIteratorBase {
     QEntry<Key, T>* entry_ = nullptr;
 };
 
-
 template <typename Key, typename T, typename FILTER>
 class QIterator : public QIteratorBase<Key, T> {
-    using IterNodeT = decltype(std::vector<QNode<Key, T>*>().begin());
-    using IterEntryT = decltype(std::vector<QEntry<Key, T>>().begin());
+    using IterNodeT = decltype(std::vector<QNode<Key, T>*>().cbegin());
+    using IterEntryT = decltype(std::vector<QEntry<Key, T>>().cbegin());
     using EntryInnerT = std::pair<QNode<Key, T>*, IterNodeT>;
     const QNode<Key, T>* root_;
-    std::stack <EntryInnerT> stack_; // TODO backport, Why is this a Deque????????
+    std::stack<EntryInnerT> stack_;  // TODO backport, Why is this a Deque????????
     IterEntryT iter_leaf_;
     Key min;
     Key max;
@@ -775,8 +796,8 @@ class QIterator : public QIteratorBase<Key, T> {
     , stack_{}
     , min(min)
     , max(max)
-    , filter_{std::forward<F>(filter)} {
-            if (root != nullptr) {
+    , filter_(std::forward<F>(filter)) {
+        if (root != nullptr) {
             this->SetCurrentNode(root);
             if (root->isLeaf()) {
                 iter_leaf_ = root->getChildEntryIterator();
@@ -784,9 +805,9 @@ class QIterator : public QIteratorBase<Key, T> {
                 stack_.emplace(std::make_pair(root, root->getChildNodeIterator()));
             }
             findNext();
-            } else {
+        } else {
             this->SetFinished();
-            }
+        }
     }
 
     QIterator& operator++() noexcept {
@@ -796,10 +817,10 @@ class QIterator : public QIteratorBase<Key, T> {
     }
 
     QIterator operator++(int) noexcept {
-        assert(!this->IsEnd());
-        QIterator iterator(*this);
-        ++(*this);
-        return iterator;
+            assert(!this->IsEnd());
+            QIterator iterator(*this);
+            ++(*this);
+            return iterator;
     }
 
   private: void findNext() {
@@ -809,10 +830,10 @@ class QIterator : public QIteratorBase<Key, T> {
             auto * current = this->node_;
             if (current->isLeaf()) {
                 while (iter_leaf_ != current->getEntries().end()) {
-                    QEntry<Key, T>& e = *iter_leaf_;
+                    const QEntry<Key, T>& e = *iter_leaf_;
                     ++iter_leaf_;
                     if (e.enclosedBy(min, max) && filter_.IsEntryValid(e.point(), e.value())) {
-                        this->entry_ = &e;
+                        this->SetCurrentResult(const_cast<QEntry<Key, T>*>(&e));
                         return;
                     }
                 }
@@ -830,8 +851,8 @@ class QIterator : public QIteratorBase<Key, T> {
                     if (node->isLeaf()) {
                         iter_leaf_ = node->getChildEntryIterator();
                     } else {
-                        auto it2 = node->getChildNodes().begin();
-                        stack_.push(it2);
+                        IterNodeT it2 = node->getChildNodes().begin();
+                        stack_.push(std::make_pair(node, it2));
                     }
                     break;
                 }
@@ -878,7 +899,7 @@ class QIteratorKnn : public QIteratorBase<Key, T> {
     QIteratorKnn(Candidates&& result) noexcept
     : QIteratorBase<Key, T>(), result_{std::move(result)}, iter_{result_.begin()} {
         if (iter_ != result_.end()) {
-            this->SetCurrentResult(iter_->_node());
+            this->SetCurrentResult(iter_->_entry());
         } else {
             this->SetFinished();
         }
@@ -908,7 +929,7 @@ class QIteratorKnn : public QIteratorBase<Key, T> {
         assert(iter_ != result_.end());
         ++iter_;
         if (iter_ != result_.end()) {
-            this->SetCurrentResult(iter_->_node());
+            this->SetCurrentResult(iter_->_entry());
         } else {
             this->SetFinished();
         }
@@ -1019,10 +1040,13 @@ class QuadTree {
 	 * @return true iff the key exists
      */
     size_t count(const Key& key) const {
-        if (root_ == nullptr) {
-            return 0;
-        }
-        return root_->getExact(key) != nullptr; // TODO
+//        if (root_ == nullptr) {
+//            return 0;
+//        }
+        size_t n = 0;
+        for_each({key, key}, [&n](const Key&, const T&) { ++n; });
+        return n;
+//        return root_->getExact(key) != nullptr; // TODO
     }
 
     /**
@@ -1080,7 +1104,7 @@ class QuadTree {
             }
             return 0;
         }
-        size_t n = root_->remove(nullptr, key, maxNodeSize);
+        size_t n = root_->remove(nullptr, key, maxNodeSize, value);
         if (n == 0) {
             if (DEBUG) {
                 std::cerr << "Failed remove 2: " << key << std::endl;
@@ -1186,8 +1210,8 @@ class QuadTree {
     template <typename DISTANCE, typename FILTER = FilterNoOp>
     std::vector<QEntryDist<Key, T>>
     knnQuery(const Key& center, size_t k,
-             DISTANCE&& distance_function = DISTANCE(),
-             FILTER&& filter = FILTER()) const {
+             DISTANCE&& distance_fn = DISTANCE(),
+             FILTER&& filter_fn = FILTER()) const {
         if (root_ == nullptr) {
             return std::vector<QEntryDist<Key, T>>{};
         }
@@ -1201,9 +1225,11 @@ class QuadTree {
         double distEstimate = distanceEstimate(root_, center, k, comp);
         std::vector<QEntryDist<Key, T>> candidates{};
         candidates.reserve(k);
+        DISTANCE dist_fn{std::forward<DISTANCE>(distance_fn)};
+        FILTER filt_fn{std::forward<FILTER>(filter_fn)};
         while (candidates.size() < k) {
             candidates.clear();
-            rangeSearchKNN(root_, center, candidates, k, distEstimate);
+            rangeSearchKNN(root_, center, candidates, k, distEstimate, dist_fn, filt_fn);
             distEstimate *= 2;
         }
         return candidates;
@@ -1211,7 +1237,7 @@ class QuadTree {
 
     private:
       template <typename COMP>
-      double distanceEstimate(QNode<Key, T>* node, const Key& point, size_t k, const COMP& comp) {
+      double distanceEstimate(QNode<Key, T>* node, const Key& point, size_t k, const COMP& comp) const {
         if (node->isLeaf()) {
             // This is a leaf that would contain the point.
             size_t n = node->getEntries().size();
@@ -1244,29 +1270,31 @@ class QuadTree {
       }
 
     private:
+      template <typename DISTANCE, typename FILTER = FilterNoOp>
     double rangeSearchKNN(
         const QNode<Key, T>* node,
         const Key& center,
         std::vector<QEntryDist<Key, T>>& candidates,
         size_t k,
-        double maxRange) {
+        double maxRange,
+          DISTANCE& dist_fn, FILTER& filter) const {
         if (node->isLeaf()) {
-            auto& points = node->getEntries();
-            for (size_t i = 0; i < points.size(); i++) {
-                QEntry<Key, T>& p = points[i];
-                double dist = distance(center, p.point());
-                if (dist < maxRange) {
-                    candidates.add(new QEntryDist<Key, T>(p, dist));
+            auto& entries = node->getEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                QEntry<Key, T>* p = const_cast<QEntry<Key, T>*>(&entries[i]);
+                double dist = distance(center, p->point());
+                if (dist < maxRange && filter.IsEntryValid(p->point(), p->value())) {
+                    candidates.emplace_back(p, dist);
                 }
             }
             maxRange = adjustRegionKNN(candidates, k, maxRange);
         } else {
-            std::vector<QNode<Key, T>>& nodes = node->getChildNodes();
+            const std::vector<QNode<Key, T>*>& nodes = node->getChildNodes();
             for (size_t i = 0; i < nodes.size(); i++) {
-                QNode<Key, T>* sub = nodes[i];
+                const QNode<Key, T>* sub = nodes[i];
                 if (sub != nullptr &&
                     distToRectNode(center, sub->getCenter(), sub->getRadius()) < maxRange) {
-                    maxRange = rangeSearchKNN(sub, center, candidates, k, maxRange);
+                    maxRange = rangeSearchKNN(sub, center, candidates, k, maxRange, dist_fn, filter);
                     // we set maxRange simply to the latest returned value.
                 }
             }
@@ -1275,7 +1303,7 @@ class QuadTree {
     }
 
   private:
-    double adjustRegionKNN(std::vector<QEntryDist<Key, T>>& candidates, size_t k, double maxRange) {
+    double adjustRegionKNN(std::vector<QEntryDist<Key, T>>& candidates, size_t k, double maxRange) const {
         if (candidates.size() < k) {
             // wait for more candidates
             return maxRange;
@@ -1395,7 +1423,7 @@ class QuadTree {
         // TODO move FILTER into begin_query
         auto end = this->end();
         while (it != end) {
-            Key k = it._entry()->point();
+            const Key& k = it._entry()->point();
             if (filter.IsEntryValid(k, *it)) {
                 callback(k, *it);
             }
