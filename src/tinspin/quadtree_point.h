@@ -617,6 +617,17 @@ class QNode {
         return nullptr;
     }
 
+    const QNode<Key, T>* getExactLeaf(const Key& key) const {
+        if (is_leaf_) {
+            return this;
+        }
+        QNode<Key, T>* sub = findSubNode(key);
+        if (sub != nullptr) {
+            return sub->getExactLeaf(key);
+        }
+        return nullptr;
+    }
+
     auto& getEntries() {
         return values_;
     }
@@ -902,27 +913,77 @@ class QIterator : public QIteratorBase<Key, T> {
     }
 };
 
-template <typename Key, typename T>
+struct FilterTrue {  // TODO remove this?
+    template <typename Key, typename T>
+    bool operator()(const QEntry<Key, T>&) {
+        return true;
+    };
+};
+
+template <typename Key, typename T, typename FILTER>
 class QIteratorFind : public QIteratorBase<Key, T> {
     using IterNodeT = decltype(std::vector<QNode<Key, T>>().begin());
     using IterEntryT = decltype(std::vector<QEntry<Key, T>>().begin());
     using EntryInnerT = std::pair<QNode<Key, T>*, IterNodeT>;
 
+    IterEntryT iter_;
+    FILTER filter_;
+
   public:
-    template <typename F = FilterNoOp>
-    QIteratorFind(QNode<Key, T>* root, QEntry<Key, T>* entry) : QIteratorBase<Key, T>() {
-        this->SetCurrentNode(root);
-        this->entry_ = entry;
+    template <typename F = FilterTrue>
+    QIteratorFind(QNode<Key, T>* leaf, F&& filter = F())
+    : QIteratorBase<Key, T>(), filter_(std::forward<F>(filter)) {
+        this->SetCurrentNode(leaf);
+        if (leaf != nullptr) {
+            iter_ = leaf->getEntries().begin();
+            findNext();
+        } else {
+            this->SetFinished();
+        }
     }
 
     QIteratorFind& operator++() noexcept {
         assert(!this->IsEnd());
-        this->SetFinished();  // TODO ....
+        findNext();
         return *this;
     }
 
     QIteratorFind operator++(int) noexcept {
         assert(!this->IsEnd());
+        QIterator iterator(*this);
+        ++(*this);
+        return iterator;
+    }
+
+  private:
+    void findNext() {
+        while (iter_ != this->node_->getEntries().end()) {
+            auto& entry = *iter_;
+            ++iter_;
+            if (filter_(entry)) {
+                this->SetCurrentResult(&entry);
+                return;
+            }
+        }
+        this->SetFinished();
+    }
+};
+
+template <typename Key, typename T>
+class QIteratorEnd : public QIteratorBase<Key, T> {
+  public:
+    template <typename F = FilterNoOp>
+    QIteratorEnd() : QIteratorBase<Key, T>() {
+        this->SetFinished();
+    }
+
+    QIteratorEnd& operator++() noexcept {
+        assert(false);
+        return *this;
+    }
+
+    QIteratorEnd operator++(int) noexcept {
+        assert(false);
         QIterator iterator(*this);
         ++(*this);
         return iterator;
@@ -1095,23 +1156,27 @@ class QuadTree {
      * @return the value for the key or 'nullptr' if the key was not found
      */
     auto find(const Key& key) const {
+        auto filter = [&key](const QEntry<Key, T>& e) { return key == e.point(); };
         if (root_ == nullptr) {
-            return QIteratorFind<Key, T>(nullptr, nullptr);
+            return QIteratorFind<Key, T, decltype(filter)>(nullptr, filter);
         }
-        QEntry<Key, T>* e = const_cast<QEntry<Key, T>*>(root_->getExact(key));
+        QNode<Key, T>* leaf = const_cast<QNode<Key, T>*>(root_->getExactLeaf(key));
         //        return e == nullptr ? nullptr : e.value();
 
-        return QIteratorFind<Key, T>(root_, e);
+        return QIteratorFind<Key, T, decltype(filter)>(leaf, filter);
     }
 
     auto find(const Key& key, const T& value) const {
+        auto filter = [&key, &value](const QEntry<Key, T>& e) {
+            return key == e.point() && value == e.value();
+        };
         if (root_ == nullptr) {
-            return QIteratorFind<Key, T>(nullptr, nullptr);
+            return QIteratorFind<Key, T, decltype(filter)>(nullptr, filter);
         }
-        QEntry<Key, T>* e = const_cast<QEntry<Key, T>*>(root_->getExact(key, value));
+        QNode<Key, T>* leaf = const_cast<QNode<Key, T>*>(root_->getExactLeaf(key));
         //        return e == nullptr ? nullptr : e.value();
         // TODO avoid using root
-        return QIteratorFind<Key, T>(root_, e);
+        return QIteratorFind<Key, T, decltype(filter)>(leaf, filter);
     }
 
     /**
@@ -1495,7 +1560,7 @@ class QuadTree {
     }
 
     auto end() const {
-        return QIteratorFind<Key, T>(nullptr, nullptr);
+        return QIteratorEnd<Key, T>();
     }
 
     template <typename DISTANCE, typename FILTER = FilterNoOp>
