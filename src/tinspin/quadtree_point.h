@@ -151,7 +151,7 @@ static bool isRectEnclosed(
 // template <typename Key>
 // static double distance(const Key& p1, const Key& p2) {
 //     double dist = 0;
-//     for (size_t i = 0; i < p1.size(); i++) {
+//     for (size_t i = 0; i < p1.size(); ++i) {
 //         double d = p1[i] - p2[i];
 //         dist += d * d;
 //     }
@@ -168,7 +168,7 @@ static bool isRectEnclosed(
 template <typename Key>
 static double distToRectCenter(const Key& p, const Key& rMin, const Key& rMax) {
     double dist = 0;
-    for (size_t i = 0; i < p.size(); i++) {
+    for (size_t i = 0; i < p.size(); ++i) {
         double d = (rMin[i] + rMax[i]) / 2. - p[i];
         dist += d * d;
     }
@@ -196,7 +196,7 @@ static double distToRectCenter(const Key& p, QREntry<Key, T> e) {
 template <typename Key>
 double distToRectEdge(const Key& center, const Key& rLower, const Key& rUpper) {
     double dist = 0;
-    for (size_t i = 0; i < center.size(); i++) {
+    for (size_t i = 0; i < center.size(); ++i) {
         double d = 0;
         if (center[i] > rUpper[i]) {
             d = center[i] - rUpper[i];
@@ -240,7 +240,7 @@ static double distToRectNode(
     }
     return dist_fn(point, closest);
     //    double dist = 0;
-    //    for (size_t i = 0; i < point.size(); i++) {
+    //    for (size_t i = 0; i < point.size(); ++i) {
     //        double d = 0;
     //        if (point[i] > nodeCenter[i] + nodeRadius) {
     //            d = point[i] - (nodeCenter[i] + nodeRadius);
@@ -319,7 +319,7 @@ class QEntry {
 };
 
 template <typename Key, typename T>
-class QEntryDist {  // TODO inheritance???
+class QEntryDist {
   public:
     QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {}
 
@@ -394,12 +394,12 @@ class QNode {
         }
 
         // split
-        std::vector<QEntry<Key, T>> vals = std::move(values_);  // TODO avoid move and erase later?
-        values_.clear();                                        // = nullptr;
-        values_.shrink_to_fit();
+//        std::vector<QEntry<Key, T>> vals = std::move(values_);  // TODO avoid move and erase later?
+//        values_.clear();                                        // = nullptr;
+//        values_.shrink_to_fit();
         assert(subs_.empty());
-        for (size_t i = 0; i < vals.size(); i++) {
-            QEntry<Key, T>& e2 = vals[i];
+        for (size_t i = 0; i < values_.size(); ++i) {
+            QEntry<Key, T>& e2 = values_[i];
             QNode<Key, T>* sub = getOrCreateSub(e2);
             while (sub != nullptr) {
                 // This may recurse if all entries fall
@@ -407,6 +407,8 @@ class QNode {
                 sub = sub->tryPut(e2, maxNodeSize, false);
             }
         }
+        values_.clear();
+        values_.shrink_to_fit();
         is_leaf_ = false;
         return getOrCreateSub(e);
     }
@@ -444,7 +446,7 @@ class QNode {
      * @return subnode position
      */
     QNode<Key, T>* findSubNode(const Key& p) const {
-        for (size_t i = 0; i < subs_.size(); i++) {
+        for (size_t i = 0; i < subs_.size(); ++i) {
             QNode<Key, T>* n = subs_[i];
             if (isPointEnclosed(p, n->center_, n->radius_)) {
                 return n;
@@ -464,7 +466,7 @@ class QNode {
         }
 
         size_t n = 0;
-        for (size_t i = 0; i < values_.size(); i++) {
+        for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e = values_[i];
             if (isPointEqual(e.point(), key)) {
                 values_.erase(values_.begin() + i);
@@ -489,7 +491,7 @@ class QNode {
         }
 
         size_t n = 0;
-        for (size_t i = 0; i < values_.size(); i++) {
+        for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e = values_[i];
             if (isPointEqual(e.point(), key) && e.value() == value) {
                 values_.erase(values_.begin() + i);
@@ -530,7 +532,7 @@ class QNode {
             return ret;
         }
 
-        for (size_t i = 0; i < values_.size(); i++) {
+        for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e = values_[i];
             if (isPointEqual(e.point(), keyOld)) {
                 values_.remove(i);
@@ -558,7 +560,7 @@ class QNode {
     void checkAndMergeLeafNodes(int maxNodeSize) {
         // check
         int nTotal = 0;
-        for (size_t i = 0; i < subs_.size(); i++) {
+        for (size_t i = 0; i < subs_.size(); ++i) {
             if (!subs_[i]->is_leaf_) {
                 // can't merge directory nodes.
                 return;
@@ -574,7 +576,7 @@ class QNode {
         assert(values_.empty());
         values_.reserve(nTotal);
         // values_ = new ArrayList<>(nTotal);
-        for (size_t i = 0; i < subs_.size(); i++) {
+        for (size_t i = 0; i < subs_.size(); ++i) {
             values_.insert(values_.begin(), subs_[i]->values_.begin(), subs_[i]->values_.end());
         }
         // subs = nullptr;
@@ -705,7 +707,7 @@ class QNode {
             }
         }
         if (values_ != nullptr) {
-            for (size_t i = 0; i < values_.size(); i++) {
+            for (size_t i = 0; i < values_.size(); ++i) {
                 QEntry<Key, T>& e = values_[i];
                 if (!isPointEnclosed(e.point(), center_, radius_ * EPS_MUL)) {
                     std::cout << "Node: " << radius_ << " " << center_ << std::endl;
@@ -732,7 +734,7 @@ class QNode {
                 assert(false);
             }
         } else {
-            for (size_t i = 0; i < subs_.size(); i++) {
+            for (size_t i = 0; i < subs_.size(); ++i) {
                 QNode<Key, T>& n = subs_[i];
                 n.checkNode(s, this, depth + 1);
             }
@@ -1089,7 +1091,7 @@ class QuadTree {
     void initializeRoot(const Key& key) {
         double lo = std::numeric_limits<double>::infinity();
         double hi = -std::numeric_limits<double>::infinity();
-        for (size_t d = 0; d < dims; d++) {
+        for (size_t d = 0; d < dims; ++d) {
             lo = lo > key[d] ? key[d] : lo;
             hi = hi < key[d] ? key[d] : hi;
         }
@@ -1104,7 +1106,7 @@ class QuadTree {
         // point is not exactly on the border of the quadrants:
         maxDistOrigin *= EPS_MUL * EPS_MUL;
         Key center{};
-        for (size_t d = 0; d < dims; d++) {
+        for (size_t d = 0; d < dims; ++d) {
             center[d] = key[d] > 0 ? maxDistOrigin : -maxDistOrigin;
             //			max[d] = key[d] < 0 ? 0 : (maxDistOrigin*2);
         }
@@ -1246,7 +1248,7 @@ class QuadTree {
             Key center2{};
             double radius2 = radius * 2;
             // TODO use DIM?
-            for (size_t d = 0; d < center.size(); d++) {
+            for (size_t d = 0; d < center.size(); ++d) {
                 if (p[d] < center[d] - radius) {
                     center2[d] = center[d] - radius;
                     // root will end up in upper quadrant in this
@@ -1344,7 +1346,7 @@ class QuadTree {
             return dist;
         } else {
             auto& nodes = node->getChildNodes();
-            for (size_t i = 0; i < nodes.size(); i++) {
+            for (size_t i = 0; i < nodes.size(); ++i) {
                 QNode<Key, T>* sub = nodes[i];
                 if (isPointEnclosed(point, sub->getCenter(), sub->getRadius())) {
                     return distanceEstimate(sub, point, k, comp, dist_fn);
@@ -1369,7 +1371,7 @@ class QuadTree {
         FILTER& filter) const {
         if (node->isLeaf()) {
             auto& entries = node->getEntries();
-            for (size_t i = 0; i < entries.size(); i++) {
+            for (size_t i = 0; i < entries.size(); ++i) {
                 QEntry<Key, T>* p = const_cast<QEntry<Key, T>*>(&entries[i]);
                 double dist = dist_fn(center, p->point());
                 if (dist < maxRange && filter.IsEntryValid(p->point(), p->value())) {
@@ -1379,7 +1381,7 @@ class QuadTree {
             maxRange = adjustRegionKNN(candidates, k, maxRange);
         } else {
             const std::vector<QNode<Key, T>*>& nodes = node->getChildNodes();
-            for (size_t i = 0; i < nodes.size(); i++) {
+            for (size_t i = 0; i < nodes.size(); ++i) {
                 const QNode<Key, T>* sub = nodes[i];
                 if (sub != nullptr &&
                     distToRectNode(center, sub->getCenter(), sub->getRadius(), dist_fn) <
@@ -1457,7 +1459,7 @@ class QuadTree {
     //        StringBuilder sb, QNode<Key, T>* node, int depth, int posInParent) {
     //        Iterator < ? > it = node->getChildIterator();
     //        String prefix = "";
-    //        for (size_t i = 0; i < depth; i++) {
+    //        for (size_t i = 0; i < depth; ++i) {
     //            prefix += ".";
     //        }
     //        sb.append(prefix + posInParent + " d=" + depth);
