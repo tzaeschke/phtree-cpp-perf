@@ -22,6 +22,7 @@
 #include "src/boost/boost_multimap.h"
 #include "src/robin_hood/robin_hood.h"
 #include "src/tinspin/kdtree.h"
+#include "src/tinspin/quadtree_point.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -37,7 +38,7 @@ namespace {
 const double GLOBAL_MAX = 10000;
 const double AVG_QUERY_RESULT_SIZE = 3;
 
-enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2, BB, TS_KD };
+enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2, BB, TS_KD, TS_QT };
 
 using payload_t = int64_t;
 using payload2_t = uint32_t;
@@ -82,7 +83,10 @@ using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
                       typename std::conditional_t<
                           SCENARIO == TS_KD,
                           tinspin::KDTree<payload2_t, double>,
-                          PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>;
+                          typename std::conditional_t<
+                              SCENARIO == TS_QT,
+                              tinspin::QuadTree<payload2_t>,
+                              PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -310,6 +314,12 @@ void KDTree3D(benchmark::State& state, Arguments&&... arguments) {
 }
 
 template <typename... Arguments>
+void Quadtree3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::TS_QT> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTree3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::TREE_WITH_MAP> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -342,6 +352,12 @@ BENCHMARK_CAPTURE(PhTree3D, WQ, AVG_QUERY_RESULT_SIZE)
 
 // PhTreeMultiMap2
 BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, WQ, AVG_QUERY_RESULT_SIZE)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// QUadtree
+BENCHMARK_CAPTURE(Quadtree3D, WQ, AVG_QUERY_RESULT_SIZE)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
