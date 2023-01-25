@@ -207,6 +207,23 @@ cc_binary(
 )
 
 cc_binary(
+    name = "knn_mm_d_benchmark",
+    testonly = True,
+    srcs = [
+        "knn_mm_d_benchmark.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        ":benchmark",
+        "//src/boost:ph-boost-mm",
+        "//src/tinspin",
+        "@gbenchmark//:benchmark",
+        "@phtree",
+        "@spdlog",
+    ],
+)
+
+cc_binary(
     name = "query_benchmark",
     testonly = True,
     srcs = [
