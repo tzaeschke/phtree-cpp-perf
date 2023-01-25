@@ -744,32 +744,24 @@ class QNode {
 template <typename Key, typename T>
 class QIteratorBase {
   public:
-    explicit QIteratorBase() noexcept : node_{nullptr} {}
+    explicit QIteratorBase() noexcept : entry_{nullptr} {}
 
     inline auto& operator*() const noexcept {
-        assert(node_ != nullptr);
         return entry_->value();
     }
 
     inline auto* operator->() const noexcept {
-        assert(node_ != nullptr);
         return &entry_->value();
     }
 
     inline friend bool operator==(
         const QIteratorBase<Key, T>& left, const QIteratorBase<Key, T>& right) noexcept {
-        // TODO compare stack status left/right/key
-        // TODO do not compare node, compare only Entry*...!!!!!!!!!!!!!!!
-        return left.node_ == right.node_ && left.entry_ == right.entry_;
+        return left.entry_ == right.entry_;
     }
 
     inline friend bool operator!=(
         const QIteratorBase<Key, T>& left, const QIteratorBase<Key, T>& right) noexcept {
-        return left.node_ != right.node_ || left.entry_ != right.entry_;
-    }
-
-    auto _node() const noexcept {
-        return node_;
+        return left.entry_ != right.entry_;
     }
 
     auto _entry() const noexcept {
@@ -778,16 +770,11 @@ class QIteratorBase {
 
   protected:
     bool IsEnd() const noexcept {
-        return this->_node() == nullptr;
+        return entry_ == nullptr;
     }
 
     void SetFinished() noexcept {
-        node_ = nullptr;
         entry_ = nullptr;
-    }
-
-    void SetCurrentNode(QNode<Key, T>* node) noexcept {
-        node_ = node;
     }
 
     void SetCurrentResult(QEntry<Key, T>* entry) noexcept {
@@ -795,7 +782,6 @@ class QIteratorBase {
     }
 
   protected:
-    QNode<Key, T>* node_ = nullptr;
     QEntry<Key, T>* entry_ = nullptr;
 };
 
@@ -822,7 +808,6 @@ class QIterator : public QIteratorBase<Key, T> {
     , max(max)
     , filter_(std::forward<F>(filter)) {
         if (root != nullptr) {
-            this->SetCurrentNode(root);
             if (root->isLeaf()) {
                 iter_leaf_ = root->getChildEntryIterator();
                 stack_.emplace(std::make_pair(root, IterNodeT{}));
@@ -850,10 +835,8 @@ class QIterator : public QIteratorBase<Key, T> {
 
   private:
     void findNext() {
-        assert(!this->IsEnd());
         while (!stack_.empty()) {
             // Are we currently iterating a leaf?
-            // if (this->node_->isLeaf()) {
             if (stack_.top().first->isLeaf()) {
                 if (findNextInNode()) {
                     return;
@@ -871,7 +854,6 @@ class QIterator : public QIteratorBase<Key, T> {
             auto& it = ee.second;
             while (it != ee.first->getChildNodes().end()) {
                 auto* node = *it;
-                this->node_ = node;
                 if (overlap(min, max, node->getCenter(), node->getRadius())) {
                     if (node->isLeaf()) {
                         iter_leaf_ = node->getChildEntryIterator();
@@ -883,7 +865,6 @@ class QIterator : public QIteratorBase<Key, T> {
                     } else {
                         IterNodeT it2 = node->getChildNodes().begin();
                         stack_.push(std::make_pair(node, it2));
-                        this->node_ = node;
                         break;
                     }
                 }
@@ -900,9 +881,9 @@ class QIterator : public QIteratorBase<Key, T> {
     }
 
     bool findNextInNode() {
-        assert(!this->IsEnd());
-        assert(this->node_->isLeaf());
-        while (iter_leaf_ != this->node_->getEntries().end()) {
+        auto* node = stack_.top().first;
+        assert(node->isLeaf());
+        while (iter_leaf_ != node->getEntries().end()) {
             const QEntry<Key, T>& e = *iter_leaf_;
             ++iter_leaf_;
             if (e.enclosedBy(min, max) && filter_.IsEntryValid(e.point(), e.value())) {
@@ -928,13 +909,13 @@ class QIteratorFind : public QIteratorBase<Key, T> {
     using EntryInnerT = std::pair<QNode<Key, T>*, IterNodeT>;
 
     IterEntryT iter_;
+    QNode<Key, T>* leaf_;
     FILTER filter_;
 
   public:
     template <typename F = FilterTrue>
     QIteratorFind(QNode<Key, T>* leaf, F&& filter = F())
-    : QIteratorBase<Key, T>(), filter_(std::forward<F>(filter)) {
-        this->SetCurrentNode(leaf);
+    : QIteratorBase<Key, T>(), leaf_{leaf}, filter_(std::forward<F>(filter)) {
         if (leaf != nullptr) {
             iter_ = leaf->getEntries().begin();
             findNext();
@@ -958,7 +939,7 @@ class QIteratorFind : public QIteratorBase<Key, T> {
 
   private:
     void findNext() {
-        while (iter_ != this->node_->getEntries().end()) {
+        while (iter_ != leaf_->getEntries().end()) {
             auto& entry = *iter_;
             ++iter_;
             if (filter_(entry)) {
