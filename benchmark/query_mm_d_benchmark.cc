@@ -180,6 +180,7 @@ void InsertEntry(
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
+            (void) x;
             n_ += 1;
         }
     }
@@ -187,7 +188,7 @@ struct CounterTreeWithMap {
 };
 
 struct CounterMultiMap {
-    void operator()(const TestPoint&, const payload_t& value) {
+    void operator()(const TestPoint&, const payload_t&) {
         n_ += 1;
     }
     size_t n_;

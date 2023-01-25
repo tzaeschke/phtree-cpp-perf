@@ -315,9 +315,6 @@ class KDIterator : public KDIteratorBase<Key, T> {
     // end()
     KDIterator() : KDIteratorBase<Key, T>(), stack_(0), min_{}, max_{} {}
 
-    // find()
-    KDIterator(Node<Key, T>* node) : KDIteratorBase<Key, T>(), stack_(0), min_{}, max_{} {}
-
     // begin_query()
     template <typename F = FilterNoOp>
     KDIterator(Node<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
