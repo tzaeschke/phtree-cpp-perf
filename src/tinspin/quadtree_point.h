@@ -148,15 +148,15 @@ static bool isRectEnclosed(
     return true;
 }
 
-template <typename Key>
-static double distance(const Key& p1, const Key& p2) {
-    double dist = 0;
-    for (size_t i = 0; i < p1.size(); i++) {
-        double d = p1[i] - p2[i];
-        dist += d * d;
-    }
-    return std::sqrt(dist);
-}
+// template <typename Key>
+// static double distance(const Key& p1, const Key& p2) {
+//     double dist = 0;
+//     for (size_t i = 0; i < p1.size(); i++) {
+//         double d = p1[i] - p2[i];
+//         dist += d * d;
+//     }
+//     return std::sqrt(dist);
+// }
 
 /**
  * Calculates distance to center point of rectangle.
@@ -226,19 +226,30 @@ static double distToRectEdge(const Key& p, QREntry<Key, T> e) {
  * @param nodeRadius radius of the node
  * @return distance to edge of the node or 0 if the point is inside the node
  */
-template <typename Key>
-static double distToRectNode(const Key& point, const Key& nodeCenter, double nodeRadius) {
-    double dist = 0;
-    for (size_t i = 0; i < point.size(); i++) {
-        double d = 0;
+template <typename Key, typename DISTANCE>
+static double distToRectNode(
+    const Key& point, const Key& nodeCenter, double nodeRadius, DISTANCE& dist_fn) {
+    Key closest{point};
+    for (size_t i = 0; i < point.size(); ++i) {
         if (point[i] > nodeCenter[i] + nodeRadius) {
-            d = point[i] - (nodeCenter[i] + nodeRadius);
+            closest[i] = nodeCenter[i] + nodeRadius;
         } else if (point[i] < nodeCenter[i] - nodeRadius) {
-            d = nodeCenter[i] - nodeRadius - point[i];
+            // TODO precision??
+            closest[i] = nodeCenter[i] - nodeRadius;
         }
-        dist += d * d;
     }
-    return std::sqrt(dist);
+    return dist_fn(point, closest);
+    //    double dist = 0;
+    //    for (size_t i = 0; i < point.size(); i++) {
+    //        double d = 0;
+    //        if (point[i] > nodeCenter[i] + nodeRadius) {
+    //            d = point[i] - (nodeCenter[i] + nodeRadius);
+    //        } else if (point[i] < nodeCenter[i] - nodeRadius) {
+    //            d = nodeCenter[i] - nodeRadius - point[i];
+    //        }
+    //        dist += d * d;
+    //    }
+    //    return std::sqrt(dist);
 }
 
 /**
@@ -895,13 +906,6 @@ class QIterator : public QIteratorBase<Key, T> {
     }
 };
 
-struct FilterTrue {  // TODO remove this?
-    template <typename Key, typename T>
-    bool operator()(const QEntry<Key, T>&) {
-        return true;
-    };
-};
-
 template <typename Key, typename T, typename FILTER>
 class QIteratorFind : public QIteratorBase<Key, T> {
     using IterNodeT = decltype(std::vector<QNode<Key, T>>().begin());
@@ -913,7 +917,7 @@ class QIteratorFind : public QIteratorBase<Key, T> {
     FILTER filter_;
 
   public:
-    template <typename F = FilterTrue>
+    template <typename F>
     QIteratorFind(QNode<Key, T>* leaf, F&& filter = F())
     : QIteratorBase<Key, T>(), leaf_{leaf}, filter_(std::forward<F>(filter)) {
         if (leaf != nullptr) {
@@ -1046,15 +1050,6 @@ class QuadTree {
             std::cout << "Warning: DEBUG enabled" << std::endl;  // TODO
         }
     }
-
-    //    QuadTree<T> create(size_t dims, size_t maxNodeSize, const Key& center, double radius) {
-    //        QuadTree<T> t = new QuadTree<>(dims, maxNodeSize);
-    //        if (radius <= 0) {
-    //            throw new IllegalArgumentException("Radius must be > 0 but was " + radius);
-    //        }
-    //        t.root = new QNode<Key, T>(Arrays.copyOf(center, center.length), radius);
-    //        return t;
-    //    }
 
     /**
      * Insert a key-value pair.
@@ -1242,6 +1237,7 @@ class QuadTree {
      * @param e Entry to cover.
      */
   private:
+    // TODO backport : pass in Key only.
     void ensureCoverage(const QEntry<Key, T>& e) {
         const Key& p = e.point();
         while (!e.enclosedBy(root_->getCenter(), root_->getRadius())) {
@@ -1304,17 +1300,18 @@ class QuadTree {
         if (root_ == nullptr) {
             return std::vector<QEntryDist<Key, T>>{};
         }
-        auto comp = [&center](const QEntry<Key, T>& point1, const QEntry<Key, T>& point2) {
+        DISTANCE dist_fn{std::forward<DISTANCE>(distance_fn)};
+        FILTER filt_fn{std::forward<FILTER>(filter_fn)};
+        auto comp = [&dist_fn,
+                     &center](const QEntry<Key, T>& point1, const QEntry<Key, T>& point2) {
             //            double deltaDist =
             //                distance(center, point1.point()) - distance(center, point2.point());
             //            return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
-            return distance(center, point1.point()) < distance(center, point2.point());
+            return dist_fn(center, point1.point()) < dist_fn(center, point2.point());
         };
-        double distEstimate = distanceEstimate(root_, center, k, comp);
+        double distEstimate = distanceEstimate(root_, center, k, comp, dist_fn);
         std::vector<QEntryDist<Key, T>> candidates{};
         candidates.reserve(k);
-        DISTANCE dist_fn{std::forward<DISTANCE>(distance_fn)};
-        FILTER filt_fn{std::forward<FILTER>(filter_fn)};
         while (candidates.size() < k) {
             candidates.clear();
             rangeSearchKNN(root_, center, candidates, k, distEstimate, dist_fn, filt_fn);
@@ -1324,9 +1321,10 @@ class QuadTree {
     }
 
   private:
-    template <typename COMP>
+    template <typename COMP, typename DISTANCE>
     double distanceEstimate(
-        QNode<Key, T>* node, const Key& point, size_t k, const COMP& comp) const {
+        QNode<Key, T>* node, const Key& point, size_t k, const COMP& comp, DISTANCE& dist_fn)
+        const {
         if (node->isLeaf()) {
             // This is a leaf that would contain the point.
             size_t n = node->getEntries().size();
@@ -1335,7 +1333,7 @@ class QuadTree {
                 node->getEntries());  // TODO this is bad!!!! -> backport?
             std::sort(data.begin(), data.end(), comp);
             size_t pos = n < k ? n : k;
-            double dist = distance(point, data[pos - 1].point());
+            double dist = dist_fn(point, data[pos - 1].point());
             if (n < k) {
                 // scale search dist with dimensions.
                 dist = dist * std::pow(k / (double)n, 1 / (double)dims);
@@ -1349,7 +1347,7 @@ class QuadTree {
             for (size_t i = 0; i < nodes.size(); i++) {
                 QNode<Key, T>* sub = nodes[i];
                 if (isPointEnclosed(point, sub->getCenter(), sub->getRadius())) {
-                    return distanceEstimate(sub, point, k, comp);
+                    return distanceEstimate(sub, point, k, comp, dist_fn);
                 }
             }
             // okay, this directory node contains the point, but none of the leaves does.
@@ -1373,7 +1371,7 @@ class QuadTree {
             auto& entries = node->getEntries();
             for (size_t i = 0; i < entries.size(); i++) {
                 QEntry<Key, T>* p = const_cast<QEntry<Key, T>*>(&entries[i]);
-                double dist = distance(center, p->point());
+                double dist = dist_fn(center, p->point());
                 if (dist < maxRange && filter.IsEntryValid(p->point(), p->value())) {
                     candidates.emplace_back(p, dist);
                 }
@@ -1384,7 +1382,8 @@ class QuadTree {
             for (size_t i = 0; i < nodes.size(); i++) {
                 const QNode<Key, T>* sub = nodes[i];
                 if (sub != nullptr &&
-                    distToRectNode(center, sub->getCenter(), sub->getRadius()) < maxRange) {
+                    distToRectNode(center, sub->getCenter(), sub->getRadius(), dist_fn) <
+                        maxRange) {
                     maxRange =
                         rangeSearchKNN(sub, center, candidates, k, maxRange, dist_fn, filter);
                     // we set maxRange simply to the latest returned value.
