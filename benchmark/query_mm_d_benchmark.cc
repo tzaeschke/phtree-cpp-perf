@@ -177,39 +177,6 @@ void InsertEntry(
     bucket.emplace(data);
 }
 
-
-//
-//template <dimension_t DIM>
-//void InsertEntry(
-//    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//    BucketType& bucket = tree.emplace(point).first;
-//    bucket.emplace(data);
-//}
-//
-//template <dimension_t DIM>
-//void InsertEntry(
-//    TestMap<Scenario::BOOST_RT, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//    tree.emplace(point, data);
-//}
-//
-//template <dimension_t DIM>
-//void InsertEntry(
-//    TestMap<Scenario::MULTI_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//    tree.emplace(point, data);
-//}
-//
-//template <dimension_t DIM>
-//void InsertEntry(
-//    TestMap<Scenario::PHTREE2, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//    tree.emplace(point, data);
-//}
-//
-//template <dimension_t DIM>
-//void InsertEntry(
-//    TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//    tree.emplace(point, data);
-//}
-
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
@@ -241,34 +208,6 @@ typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, size_t>::type Count
     tree.for_each(query, counter);
     return counter.n_;
 }
-//
-//template <dimension_t DIM, Scenario SCENARIO>
-//size_t CountEntries(TestMap<Scenario::BOOST_RT, DIM>& tree, const Query& query) {
-//    CounterMultiMap counter{query.center, query.radius, 0};
-//    tree.for_each(query.box, counter);
-//    return counter.n_;
-//}
-//
-//template <dimension_t DIM, Scenario SCENARIO>
-//size_t CountEntries(TestMap<Scenario::MULTI_MAP, DIM>& tree, const Query& query) {
-//    CounterMultiMap counter{query.center, query.radius, 0};
-//    tree.for_each(query.box, counter);
-//    return counter.n_;
-//}
-//
-//template <dimension_t DIM, Scenario SCENARIO>
-//size_t CountEntries(TestMap<Scenario::PHTREE2, DIM>& tree, const Query& query) {
-//    CounterMultiMap counter{query.center, query.radius, 0};
-//    tree.for_each(query.box, counter);
-//    return counter.n_;
-//}
-//
-//template <dimension_t DIM, Scenario SCENARIO>
-//size_t CountEntries(TestMap<Scenario::MULTI_MAP_STD, DIM>& tree, const Query& query) {
-//    CounterMultiMap counter{query.center, query.radius, 0};
-//    tree.for_each(query.box, counter);
-//    return counter.n_;
-//}
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {

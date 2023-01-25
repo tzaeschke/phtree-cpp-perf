@@ -16,7 +16,7 @@ namespace tinspin {
 
 using namespace improbable::phtree;
 
-/**
+/*
  * A simple MX-quadtree implementation with configurable maximum depth, maximum nodes size, and
  * (if desired) automatic guessing of root rectangle.
  *
@@ -24,15 +24,9 @@ using namespace improbable::phtree;
  * distance (radius) to the edges.
  * This reduces space requirements but increases problems with numerical precision.
  * Overall it is more space efficient and slightly faster.
- *
- * @author ztilmann
- *
- * @param <T> Value type.
  */
 
 namespace {
-
-static const bool DEBUG = false;
 
 template <typename KEy, typename T>
 class QREntry;
@@ -148,76 +142,79 @@ static bool isRectEnclosed(
     return true;
 }
 
-// template <typename Key>
-// static double distance(const Key& p1, const Key& p2) {
-//     double dist = 0;
-//     for (size_t i = 0; i < p1.size(); ++i) {
-//         double d = p1[i] - p2[i];
-//         dist += d * d;
-//     }
-//     return std::sqrt(dist);
-// }
-
-/**
- * Calculates distance to center point of rectangle.
- * @param p point
- * @param rMin rectangle min
- * @param rMax rectangle max
- * @return distance to center point
- */
 template <typename Key>
-static double distToRectCenter(const Key& p, const Key& rMin, const Key& rMax) {
-    double dist = 0;
-    for (size_t i = 0; i < p.size(); ++i) {
-        double d = (rMin[i] + rMax[i]) / 2. - p[i];
-        dist += d * d;
-    }
-    return std::sqrt(dist);
-}
-
-/**
- * Calculates distance to center point of rectangle.
- * @param p point
- * @param e rectangle
- * @return distance to center point
- */
-template <typename Key, typename T>
-static double distToRectCenter(const Key& p, QREntry<Key, T> e) {
-    return distToRectCenter(p, e.lower(), e.upper());
-}
-
-/**
- * Calculates distance to the edge of rectangle.
- * @param p point
- * @param rMin rectangle min
- * @param rMax rectangle max
- * @return distance to edge
- */
-template <typename Key>
-double distToRectEdge(const Key& center, const Key& rLower, const Key& rUpper) {
-    double dist = 0;
-    for (size_t i = 0; i < center.size(); ++i) {
-        double d = 0;
-        if (center[i] > rUpper[i]) {
-            d = center[i] - rUpper[i];
-        } else if (center[i] < rLower[i]) {
-            d = rLower[i] - center[i];
+static bool isRectEnclosed(
+    const Key& centerEnclosed, double radiusEnclosed, const Key& minOuter, const Key& maxOuter) {
+    for (size_t d = 0; d < centerEnclosed.size(); ++d) {
+        double radEncl = radiusEnclosed;
+        if (maxOuter[d] < (centerEnclosed[d] + radEncl) ||
+            minOuter[d] > (centerEnclosed[d] - radEncl)) {
+            return false;
         }
-        dist += d * d;
     }
-    return std::sqrt(dist);
+    return true;
 }
 
-/**
- * Calculates distance to edge of rectangle.
- * @param p point
- * @param e rectangle
- * @return distance to edge point
- */
-template <typename Key, typename T>
-static double distToRectEdge(const Key& p, QREntry<Key, T> e) {
-    return distToRectEdge(p, e.lower(), e.upper());
-}
+// /**
+// * Calculates distance to center point of rectangle.
+// * @param p point
+// * @param rMin rectangle min
+// * @param rMax rectangle max
+// * @return distance to center point
+// */
+// template <typename Key>
+// static double distToRectCenter(const Key& p, const Key& rMin, const Key& rMax) {
+//    double dist = 0;
+//    for (size_t i = 0; i < p.size(); ++i) {
+//        double d = (rMin[i] + rMax[i]) / 2. - p[i];
+//        dist += d * d;
+//    }
+//    return std::sqrt(dist);
+//}
+//
+// /**
+// * Calculates distance to center point of rectangle.
+// * @param p point
+// * @param e rectangle
+// * @return distance to center point
+// */
+// template <typename Key, typename T>
+// static double distToRectCenter(const Key& p, QREntry<Key, T> e) {
+//    return distToRectCenter(p, e.lower(), e.upper());
+//}
+//
+// /**
+// * Calculates distance to the edge of rectangle.
+// * @param p point
+// * @param rMin rectangle min
+// * @param rMax rectangle max
+// * @return distance to edge
+// */
+// template <typename Key>
+// double distToRectEdge(const Key& center, const Key& rLower, const Key& rUpper) {
+//    double dist = 0;
+//    for (size_t i = 0; i < center.size(); ++i) {
+//        double d = 0;
+//        if (center[i] > rUpper[i]) {
+//            d = center[i] - rUpper[i];
+//        } else if (center[i] < rLower[i]) {
+//            d = rLower[i] - center[i];
+//        }
+//        dist += d * d;
+//    }
+//    return std::sqrt(dist);
+//}
+//
+///**
+// * Calculates distance to edge of rectangle.
+// * @param p point
+// * @param e rectangle
+// * @return distance to edge point
+// */
+// template <typename Key, typename T>
+// static double distToRectEdge(const Key& p, QREntry<Key, T> e) {
+//    return distToRectEdge(p, e.lower(), e.upper());
+//}
 
 /**
  * Calculates distance to the edge of a node.
@@ -346,10 +343,6 @@ class QEntryDist {
 
 /**
  * Node class for the quadtree.
- *
- * @author ztilmann
- *
- * @param <T> Value type.
  */
 template <typename Key, typename T>
 class QNode {
@@ -372,10 +365,7 @@ class QNode {
     }
 
     QNode<Key, T>* tryPut(const QEntry<Key, T>& e, size_t maxNodeSize, bool enforceLeaf) {
-        if (DEBUG && !e.enclosedBy(center_, radius_)) {
-            std::cerr << "ERROR: e=" << e.point() << " center/radius=" << center_ << "/" << radius_
-                      << std::endl;
-        }
+        assert(e.enclosedBy(center_, radius_));
 
         // traverse subs?
         if (!isLeaf()) {
@@ -393,10 +383,6 @@ class QNode {
             return nullptr;
         }
 
-        // split
-//        std::vector<QEntry<Key, T>> vals = std::move(values_);  // TODO avoid move and erase later?
-//        values_.clear();                                        // = nullptr;
-//        values_.shrink_to_fit();
         assert(subs_.empty());
         for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e2 = values_[i];
@@ -669,11 +655,6 @@ class QNode {
         assert(isLeaf());
         return values_.begin();
     }
-
-    //    public: String toString() {
-    //        return "center/radius=" + Arrays.toString(center) + "/" + radius + " " +
-    //            System.identityHashCode(this);
-    //    }
 
     void checkNode(QStats s, QNode<Key, T>* parent, int depth) {
         if (depth > s.maxDepth) {
@@ -1028,6 +1009,61 @@ class QIteratorKnn : public QIteratorBase<Key, T> {
     CandidatesIter iter_;
 };
 
+template <typename Key, typename T, typename CALLBACK, typename FILTER>
+class ForEach {
+  public:
+    template <typename CB, typename F>
+    ForEach(const Key& range_min, const Key& range_max, CB&& callback, F&& filter)
+    : range_min_{range_min}
+    , range_max_{range_max}
+    , callback_{std::forward<CB>(callback)}
+    , filter_(std::forward<F>(filter)) {}
+
+    void Traverse(const QNode<Key, T>* parent_node) {
+        if (parent_node != nullptr) {
+            if (parent_node->isLeaf()) {
+                TraverseLeaf(parent_node, false);
+
+            } else {
+                TraverseInner(parent_node, false);
+            }
+        }
+    }
+
+  private:
+    void TraverseInner(const QNode<Key, T>* parent_node, const bool is_enclosed) {
+        for (const auto node : parent_node->getChildNodes()) {
+            if (is_enclosed ||
+                overlap(range_min_, range_max_, node->getCenter(), node->getRadius())) {
+                bool is_node_enclosed = is_enclosed ||
+                    isRectEnclosed(node->getCenter(), node->getRadius(), range_min_, range_max_);
+                if (!node->isLeaf()) {
+                    TraverseInner(node, is_node_enclosed);
+                } else {
+                    TraverseLeaf(node, is_node_enclosed);
+                }
+            }
+        }
+    }
+
+    void TraverseLeaf(const QNode<Key, T>* node, const bool is_enclosed) {
+        for (auto& entry : node->getEntries()) {
+            const Key& key = entry.point();
+            const T& value = entry.value();
+            // TODO skip if node is fully enclosed!
+            if ((is_enclosed || isPointEnclosed(key, range_min_, range_max_)) &&
+                filter_.IsEntryValid(key, value)) {
+                callback_(key, value);
+            }
+        }
+    }
+
+    const Key range_min_;
+    const Key range_max_;
+    CALLBACK callback_;
+    FILTER filter_;
+};
+
 }  // namespace
 
 template <typename T>
@@ -1047,11 +1083,7 @@ class QuadTree {
     using KeyInternal = Key;
 
     QuadTree(size_t dims = 3, size_t maxNodeSize = DEFAULT_MAX_NODE_SIZE)
-    : dims{dims}, maxNodeSize{maxNodeSize} {
-        if (DEBUG) {
-            std::cout << "Warning: DEBUG enabled" << std::endl;  // TODO
-        }
-    }
+    : dims{dims}, maxNodeSize{maxNodeSize} {}
 
     /**
      * Insert a key-value pair.
@@ -1061,28 +1093,28 @@ class QuadTree {
     template <typename T2>
     void emplace(const Key& key, T2&& value) {
         size_++;
-        QEntry<Key, T> e(key, std::forward<T2>(value));  // TODO std::move into node
         if (root_ == nullptr) {
             initializeRoot(key);
         }
-        ensureCoverage(e);
+        ensureCoverage(key);
         auto* r = root_;
         int depth = 0;
-        while (r != nullptr) {  // TODO backport, r is always a QNode
+        QEntry<Key, T> e(key, std::forward<T2>(value));  // TODO std::move into node
+        while (r != nullptr) {                           // TODO backport, r is always a QNode
             r = r->tryPut(e, maxNodeSize, depth++ > MAX_DEPTH);
         }
     }
 
     void insert(const Key& key, const T& value) {
         size_++;
-        QEntry<Key, T> e(key, value);  // TODO std::move into node
         if (root_ == nullptr) {
             initializeRoot(key);
         }
-        ensureCoverage(e);
+        ensureCoverage(key);
         auto* r = root_;
         int depth = 0;
-        while (r != nullptr) {  // TODO backport, r is always a QNode
+        QEntry<Key, T> e(key, value);  // TODO std::move into node
+        while (r != nullptr) {         // TODO backport, r is always a QNode
             r = r->tryPut(e, maxNodeSize, depth++ > MAX_DEPTH);
         }
     }
@@ -1120,13 +1152,9 @@ class QuadTree {
      * @return true iff the key exists
      */
     size_t count(const Key& key) const {
-        //        if (root_ == nullptr) {
-        //            return 0;
-        //        }
         size_t n = 0;
         for_each({key, key}, [&n](const Key&, const T&) { ++n; });
         return n;
-        //        return root_->getExact(key) != nullptr; // TODO
     }
 
     /**
@@ -1140,8 +1168,6 @@ class QuadTree {
             return QIteratorFind<Key, T, decltype(filter)>(nullptr, filter);
         }
         QNode<Key, T>* leaf = const_cast<QNode<Key, T>*>(root_->getExactLeaf(key));
-        //        return e == nullptr ? nullptr : e.value();
-
         return QIteratorFind<Key, T, decltype(filter)>(leaf, filter);
     }
 
@@ -1153,8 +1179,6 @@ class QuadTree {
             return QIteratorFind<Key, T, decltype(filter)>(nullptr, filter);
         }
         QNode<Key, T>* leaf = const_cast<QNode<Key, T>*>(root_->getExactLeaf(key));
-        //        return e == nullptr ? nullptr : e.value();
-        // TODO avoid using root
         return QIteratorFind<Key, T, decltype(filter)>(leaf, filter);
     }
 
@@ -1165,16 +1189,10 @@ class QuadTree {
      */
     size_t erase(const Key& key) {
         if (root_ == nullptr) {
-            if (DEBUG) {
-                std::cerr << "Failed remove 1: " << key << std::endl;
-            }
             return 0;
         }
         size_t n = root_->remove(nullptr, key, maxNodeSize);
         if (n == 0) {
-            if (DEBUG) {
-                std::cerr << "Failed remove 2: " << key << std::endl;
-            }
             return 0;
         }
         size_ -= n;
@@ -1183,16 +1201,10 @@ class QuadTree {
 
     size_t erase(const Key& key, const T& value) {
         if (root_ == nullptr) {
-            if (DEBUG) {
-                std::cerr << "Failed remove 1: " << key << std::endl;
-            }
             return 0;
         }
         size_t n = root_->remove(nullptr, key, maxNodeSize, value);
         if (n == 0) {
-            if (DEBUG) {
-                std::cerr << "Failed remove 2: " << key << std::endl;
-            }
             return 0;
         }
         size_ -= n;
@@ -1214,17 +1226,11 @@ class QuadTree {
             root_->update(nullptr, oldKey, newKey, maxNodeSize, requiresReinsert, 0, MAX_DEPTH);
         if (e == nullptr) {
             // not found
-            if (DEBUG) {
-                std::cout << "Failed reinsert 1: " << oldKey << "/" << newKey << std::endl;
-            }
             return 0;
         }
         if (requiresReinsert) {
-            if (DEBUG) {
-                std::cout << "Failed reinsert 2: " << oldKey << "/" << newKey << std::endl;
-            }
             // does not fit in root node...
-            ensureCoverage(e);
+            ensureCoverage(e->point());
             auto* r = root_;
             int depth = 0;
             while (r != nullptr) {  // TODO backport, r is always a QNode
@@ -1240,9 +1246,8 @@ class QuadTree {
      */
   private:
     // TODO backport : pass in Key only.
-    void ensureCoverage(const QEntry<Key, T>& e) {
-        const Key& p = e.point();
-        while (!e.enclosedBy(root_->getCenter(), root_->getRadius())) {
+    void ensureCoverage(const Key& p) {
+        while (!isPointEnclosed(p, root_->getCenter(), root_->getRadius())) {
             const Key& center = root_->getCenter();
             double radius = root_->getRadius();
             Key center2{};
@@ -1258,10 +1263,7 @@ class QuadTree {
                     center2[d] = center[d] + radius;
                 }
             }
-            if (DEBUG && !isRectEnclosed(center, radius, center2, radius2)) {
-                std::cout << "e=" << e.point() << " center/radius=" << center2 << "/" << radius
-                          << std::endl;
-            }
+            assert(isRectEnclosed(center, radius, center2, radius2));
             root_ = new QNode<Key, T>(center2, radius2, root_);
         }
     }
@@ -1283,16 +1285,6 @@ class QuadTree {
         root_ = nullptr;
     }
 
-    /**
-     * Query the tree, returning all points in the axis-aligned rectangle between 'min' and 'max'.
-     * @param min lower left corner of query
-     * @param max upper right corner of query
-     * @return all entries in the rectangle
-     */
-    //    public: auto query(const Key& min, const Key& max) {
-    //        return QIterator<Key, T>(root_, min, max);
-    //    }
-
     template <typename DISTANCE, typename FILTER = FilterNoOp>
     std::vector<QEntryDist<Key, T>> knnQuery(
         const Key& center,
@@ -1306,9 +1298,6 @@ class QuadTree {
         FILTER filt_fn{std::forward<FILTER>(filter_fn)};
         auto comp = [&dist_fn,
                      &center](const QEntry<Key, T>& point1, const QEntry<Key, T>& point2) {
-            //            double deltaDist =
-            //                distance(center, point1.point()) - distance(center, point2.point());
-            //            return deltaDist < 0 ? -1 : (deltaDist > 0 ? 1 : 0);
             return dist_fn(center, point1.point()) < dist_fn(center, point2.point());
         };
         double distEstimate = distanceEstimate(root_, center, k, comp, dist_fn);
@@ -1421,73 +1410,6 @@ class QuadTree {
         return range;
     }
 
-    //  private:
-    //    class QQueryIteratorKNN { //implements QueryIteratorKNN<PointEntryDist<T>> {
-    //        using IterT = decltype(std::vector<QEntryDist<Key, T>>().begin());
-    //        IterT it;
-    //
-    //      public:
-    //        QQueryIteratorKNN(const Key& center, int k) {
-    //            it = knnQuery(center, k).begin();
-    //        }
-    //
-    //        public: bool hasNext() {
-    //            return it.hasNext();
-    //        }
-    //
-    //        public: const QEntryDist<Key, T>& next() {
-    //            return it.next();
-    //        }
-    //    };
-
-    /**
-     * Returns a printable list of the tree.
-     * @return the tree as String
-     */
-    //    public: String
-    //    toStringTree() {
-    //        StringBuilder sb = new StringBuilder();
-    //        if (root_ == nullptr) {
-    //            sb.append("empty tree");
-    //        } else {
-    //            toStringTree(sb, root, 0, 0);
-    //        }
-    //        return sb.toString();
-    //    }
-    //
-    //     private: void toStringTree(
-    //        StringBuilder sb, QNode<Key, T>* node, int depth, int posInParent) {
-    //        Iterator < ? > it = node->getChildIterator();
-    //        String prefix = "";
-    //        for (size_t i = 0; i < depth; ++i) {
-    //            prefix += ".";
-    //        }
-    //        sb.append(prefix + posInParent + " d=" + depth);
-    //        sb.append(" " + Arrays.toString(node->getCenter()));
-    //        sb.append("/" + node->getRadius() + NL);
-    //        prefix += " ";
-    //        int pos = 0;
-    //        while (it.hasNext()) {
-    //            Object o = it.next();
-    //            if (o instanceof QNode) {
-    //                QNode<Key, T>* sub = (QNode<Key, T>)o;
-    //                toStringTree(sb, sub, depth + 1, pos);
-    //            } else if (o instanceof QEntry) {
-    //                QEntry<Key, T>& e = (QEntry<Key, T>)o;
-    //                sb.append(prefix + Arrays.toString(e.point()));
-    //                sb.append(" v=" + e.value() + NL);
-    //            }
-    //            pos++;
-    //        }
-    //    }
-    //
-    //    public: String toString() {
-    //        return "QuadTreeKD0;maxNodeSize=" + maxNodeSize + ";maxDepth=" + MAX_DEPTH +
-    //            ";DEBUG=" + DEBUG + ";center/radius=" +
-    //            (root_ == nullptr ? "nullptr" : (Arrays.toString(root_->getCenter()) + "/" +
-    //            root_->getRadius()));
-    //    }
-
   public:
     QStats getStats() {
         QStats s{};
@@ -1497,12 +1419,10 @@ class QuadTree {
         return s;
     }
 
-  public:
     int getDims() {
         return dims;
     }
 
-  public:
     auto begin() {
         if (root_ == nullptr) {
             return begin_query({Key{}, Key{}});
@@ -1518,16 +1438,12 @@ class QuadTree {
 
     template <typename CALLBACK, typename FILTER = FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-        auto it = begin_query(query_box, std::forward<FILTER>(filter));
-        // TODO move FILTER into begin_query
-        auto end = this->end();
-        while (it != end) {
-            const Key& k = it._entry()->point();
-            if (filter.IsEntryValid(k, *it)) {
-                callback(k, *it);
-            }
-            ++it;
-        }
+        ForEach<Key, T, CALLBACK, FILTER>(
+            query_box.min(),
+            query_box.max(),
+            std::forward<CALLBACK>(callback),
+            std::forward<FILTER>(filter))
+            .Traverse(root_);
     }
 
     /**
@@ -1558,16 +1474,10 @@ class QuadTree {
         return QIteratorKnn<Key, T>(std::move(result));
     }
 
-    //    public: QQueryIteratorKNN queryKNN(const Key& center, int k) {
-    //        return new QQueryIteratorKNN(center, k);
-    //    }
-
-  public:
     int getNodeCount() {
         return getStats().getNodeCount();
     }
 
-  public:
     int getDepth() {
         return getStats().getMaxDepth();
     }
