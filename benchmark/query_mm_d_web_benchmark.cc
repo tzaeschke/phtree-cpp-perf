@@ -21,6 +21,8 @@
 #include "src/boost/boost_multimap.h"
 #include "src/lsi/lsi_multimap.h"
 #include "src/robin_hood/robin_hood.h"
+#include "src/tinspin/kdtree.h"
+#include "src/tinspin/quadtree_point.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -39,7 +41,17 @@ const double QUERY_SHELL_RADIUS = BOX_LEN * 0.1;
 
 const int DUMMY = 0;
 
-enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, MULTIPLY_MAP, PHTREE2 };
+enum Scenario {
+    BOOST_RT,
+    LSI,
+    TREE_WITH_MAP,
+    MULTI_MAP,
+    MULTI_MAP_STD,
+    MULTIPLY_MAP,
+    PHTREE2,
+    TS_KD,
+    TS_QT
+};
 
 using payload_t = int64_t;
 
@@ -49,10 +61,10 @@ using BucketType = std::set<payload_t>;
 // using BucketType = std::unordered_set<payload_t>;
 // using BucketType = robin_hood::unordered_set<payload_t>;
 
-template <Scenario SCENARIO, dimension_t DIM>
+template <dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
-template <Scenario SCENARIO, dimension_t DIM>
+template <dimension_t DIM>
 using CONVERTER_MUL = ConverterMultiply<DIM, 1, 30>;
 
 template <Scenario SCENARIO, dimension_t DIM>
@@ -64,21 +76,26 @@ using TestMap = typename std::conditional_t<
         si::PhTreeMultiMapD<DIM, payload_t>,
         typename std::conditional_t<
             SCENARIO == TREE_WITH_MAP,
-            PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
+            PhTreeD<DIM, BucketType, CONVERTER<DIM>>,
             typename std::conditional_t<
                 SCENARIO == MULTI_MAP,
-                PhTreeMultiMap<
-                    DIM,
-                    payload_t,
-                    CONVERTER<SCENARIO, DIM>,
-                    b_plus_tree_hash_set<payload_t>>,
+                PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, b_plus_tree_hash_set<payload_t>>,
                 typename std::conditional_t<
                     SCENARIO == MULTIPLY_MAP,
-                    PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<SCENARIO, DIM>>,
+                    PhTreeMultiMapD<DIM, payload_t, CONVERTER_MUL<DIM>>,
                     typename std::conditional_t<
                         SCENARIO == PHTREE2,
                         PhTreeMultiMap2D<DIM, payload_t>,
-                        PhTreeMultiMap<DIM, payload_t, CONVERTER<SCENARIO, DIM>, BucketType>>>>>>>;
+                        typename std::conditional_t<
+                            SCENARIO == MULTI_MAP_STD,
+                            PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>,
+                            typename std::conditional_t<
+                                SCENARIO == TS_KD,
+                                tinspin::KDTree<payload_t>,
+                                typename std::conditional_t<
+                                    SCENARIO == TS_QT,
+                                    tinspin::QuadTree<payload_t>,
+                                    void>>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -244,6 +261,18 @@ void LibSI(benchmark::State& state, Arguments&&... arguments) {
 }
 
 template <typename... Arguments>
+void TinspinKDTree(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::TS_KD> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void TinspinQuadtree(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::TS_QT> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
 void PhTree3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::TREE_WITH_MAP> benchmark{state, arguments...};
     benchmark.Benchmark(state);
@@ -288,6 +317,18 @@ BENCHMARK_CAPTURE(PhTreeMultiMap3D, WEB, DUMMY)
 
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTreeMultiMap
+BENCHMARK_CAPTURE(TinspinKDTree, WEB, DUMMY)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTreeMultiMap
+BENCHMARK_CAPTURE(TinspinQuadtree, WEB, DUMMY)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::WEB, TestGenerator::WEB}})
     ->Unit(benchmark::kMillisecond);

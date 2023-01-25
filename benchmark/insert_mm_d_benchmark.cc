@@ -20,6 +20,8 @@
 #include "src/boost/boost_multimap.h"
 #include "src/lsi/lsi_multimap.h"
 #include "src/mcxme/mcxme_map.h"
+#include "src/tinspin/kdtree.h"
+#include "src/tinspin/quadtree_point.h"
 #include <benchmark/benchmark.h>
 
 using namespace improbable;
@@ -38,13 +40,15 @@ enum Scenario {
     PHTREE2,
     EMPLACE,
     SQUARE_BR,
+    TS_KD,
+    TS_QT,
 };
 
 using payload_t = int64_t;
 
 using BucketType = std::set<payload_t>;
 
-template <Scenario SCENARIO, dimension_t DIM>
+template <dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
 template <Scenario SCENARIO, dimension_t DIM>
@@ -60,7 +64,16 @@ using TestMap = typename std::conditional_t<
             typename std::conditional_t<
                 SCENARIO == PHTREE2,
                 improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
-                improbable::phtree::PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>>>>>>;
+                typename std::conditional_t<
+                    SCENARIO == PHTREE,
+                    improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
+                    typename std::conditional_t<
+                        SCENARIO == TS_KD,
+                        tinspin::KDTree<payload_t>,
+                        typename std::conditional_t<
+                            SCENARIO == TS_QT,
+                            tinspin::QuadTree<payload_t>,
+                            void>>>>>>>;
 
 /*
  * Benchmark for adding entries to the index.
@@ -138,11 +151,11 @@ void BoostRT(benchmark::State& state, Arguments&&...) {
     benchmark.Benchmark(state);
 }
 
-//template <typename... Arguments>
-//void Lsi(benchmark::State& state, Arguments&&...) {
-//    IndexBenchmark<3, LSI> benchmark{state};
-//    benchmark.Benchmark(state);
-//}
+// template <typename... Arguments>
+// void Lsi(benchmark::State& state, Arguments&&...) {
+//     IndexBenchmark<3, LSI> benchmark{state};
+//     benchmark.Benchmark(state);
+// }
 
 template <typename... Arguments>
 void Mcxme(benchmark::State& state, Arguments&&...) {
@@ -162,6 +175,18 @@ void PhTreeMM2_3D(benchmark::State& state, Arguments&&...) {
     benchmark.Benchmark(state);
 }
 
+template <typename... Arguments>
+void TinspinKDTree(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, TS_KD> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void TinspinQuadtree(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, TS_QT> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
 // index type, scenario name, data_generator, num_entities
 BENCHMARK_CAPTURE(PhTree3D, INSERT, 0)
     ->RangeMultiplier(10)
@@ -173,15 +198,25 @@ BENCHMARK_CAPTURE(PhTreeMM2_3D, INSERT, 0)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(TinspinKDTree, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(TinspinQuadtree, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(BoostRT, BOOST, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-//BENCHMARK_CAPTURE(Lsi, LSI, 0)
-//    ->RangeMultiplier(10)
-//    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-//    ->Unit(benchmark::kMillisecond);
+// BENCHMARK_CAPTURE(Lsi, LSI, 0)
+//     ->RangeMultiplier(10)
+//     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+//     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(Mcxme, MCXME, 0)
     ->RangeMultiplier(10)
