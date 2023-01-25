@@ -1043,7 +1043,7 @@ TEST(PhTreeMMDTest, TestKnnQueryFilterAndDistanceL1) {
             // just read the entry
             auto& e = *q;
             sorted_results.emplace_back(q.distance(), e);
-            if (sorted_data[n]._id == e) {
+            if (sorted_data[n]._id == (int)e) {
                 ASSERT_EQ(points[sorted_data[n]._id], q.first());
                 ASSERT_EQ(sorted_data[n]._id, (*q));
             }

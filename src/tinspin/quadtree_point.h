@@ -9,6 +9,7 @@
 #include "include/phtree/filter.h"
 #include <cmath>
 #include <iostream>
+#include <queue>
 #include <stack>
 #include <unordered_set>
 
@@ -959,54 +960,119 @@ class QIteratorEnd : public QIteratorBase<Key, T> {
     }
 };
 
-template <typename Key, typename T>
-class QIteratorKnn : public QIteratorBase<Key, T> {
-    using Candidates = std::vector<QEntryDist<Key, T>>;
-    using CandidatesIter = decltype(Candidates{}.begin());
+template <typename Key, typename T, typename DISTANCE, typename FILTER>
+class IteratorKnnHS : public QIteratorBase<Key, T> {
+    static constexpr dimension_t DIM = 3;
+    using EntryT = QEntry<Key, T>;
+    struct EntryDistT {
+        double first;                  // distance
+        const QEntry<Key, T>* second;  // entry
+        const QNode<Key, T>* node;     // node
+
+        EntryDistT(double dist, const QEntry<Key, T>* e) : first{dist}, second{e}, node{nullptr} {}
+        EntryDistT(double dist, const QNode<Key, T>* node)
+        : first{dist}, second{nullptr}, node{node} {}
+
+        bool is_node() const {
+            return node != nullptr;
+        }
+    };
+
+    struct CompareEntryDistByDistance {
+        bool operator()(const EntryDistT& left, const EntryDistT& right) const {
+            return left.first > right.first;
+        };
+    };
 
   public:
-    QIteratorKnn(Candidates&& result) noexcept
-    : QIteratorBase<Key, T>(), result_{std::move(result)}, iter_{result_.begin()} {
-        if (iter_ != result_.end()) {
-            this->SetCurrentResult(iter_->_entry());
-        } else {
+    template <typename DIST, typename F>
+    explicit IteratorKnnHS(
+        const QNode<Key, T>* root,
+        size_t min_results,
+        const Key& center,
+        DIST&& dist_fn,
+        F&& filter_fn)
+    : QIteratorBase<Key, T>()
+    , center_{center}
+    , current_distance_{std::numeric_limits<double>::max()}
+    , num_found_results_(0)
+    , num_requested_results_(min_results)
+    , filter_(std::forward<F>(filter_fn))
+    , distance_(std::forward<DIST>(dist_fn)) {
+        if (min_results <= 0 || root == nullptr) {
             this->SetFinished();
+            return;
         }
+
+        double dist = distToRectNode(center, root->getCenter(), root->getRadius(), distance_);
+        queue_.emplace(dist, root);
+        FindNextElement();
     }
 
-    QIteratorKnn& operator++() noexcept {
-        assert(!this->IsEnd());
-        findNext();
+    [[nodiscard]] double distance() const {
+        return current_distance_;
+    }
+
+    const Key& first() const noexcept {
+        return this->entry_->point();
+    }
+
+    IteratorKnnHS& operator++() noexcept {
+        FindNextElement();
         return *this;
     }
 
-    QIteratorKnn operator++(int) noexcept {
-        QIteratorKnn iterator(*this);
+    IteratorKnnHS operator++(int) noexcept {
+        IteratorKnnHS iterator(*this);
         ++(*this);
         return iterator;
     }
 
-    [[nodiscard]] double distance() const noexcept {
-        return iter_->dist();
-    }
-
-    const Key& first() const noexcept {
-        return iter_->point();
+  private:
+    void FindNextElement() {
+        while (num_found_results_ < num_requested_results_ && !queue_.empty()) {
+            auto& candidate = queue_.top();
+            if (!candidate.is_node()) {
+                // data entry
+                ++num_found_results_;
+                this->SetCurrentResult(const_cast<QEntry<Key, T>*>(candidate.second));
+                current_distance_ = candidate.first;
+                // We need to pop() AFTER we processed the value, otherwise the reference is
+                // overwritten.
+                queue_.pop();
+                return;
+            } else {
+                // inner node
+                auto* node = candidate.node;
+                queue_.pop();
+                if (node->isLeaf()) {
+                    for (auto& entry : node->getEntries()) {
+                        if (filter_.IsEntryValid(entry.point(), entry.value())) {
+                            double d = distance_(center_, entry.point());
+                            queue_.emplace(d, &entry);
+                        }
+                    }
+                } else {
+                    for (auto* subnode : node->getChildNodes()) {
+                        double dist = distToRectNode(
+                            center_, subnode->getCenter(), subnode->getRadius(), distance_);
+                        queue_.emplace(dist, subnode);
+                    }
+                }
+            }
+        }
+        this->SetFinished();
+        current_distance_ = std::numeric_limits<double>::max();
     }
 
   private:
-    void findNext() {
-        assert(iter_ != result_.end());
-        ++iter_;
-        if (iter_ != result_.end()) {
-            this->SetCurrentResult(iter_->_entry());
-        } else {
-            this->SetFinished();
-        }
-    }
-
-    Candidates result_;
-    CandidatesIter iter_;
+    const Key center_;
+    double current_distance_;
+    std::priority_queue<EntryDistT, std::vector<EntryDistT>, CompareEntryDistByDistance> queue_;
+    size_t num_found_results_;
+    size_t num_requested_results_;
+    FILTER filter_;
+    DISTANCE distance_;
 };
 
 template <typename Key, typename T, typename CALLBACK, typename FILTER>
@@ -1285,132 +1351,6 @@ class QuadTree {
         root_ = nullptr;
     }
 
-    template <typename DISTANCE, typename FILTER = FilterNoOp>
-    std::vector<QEntryDist<Key, T>> knnQuery(
-        const Key& center,
-        size_t k,
-        DISTANCE&& distance_fn = DISTANCE(),
-        FILTER&& filter_fn = FILTER()) const {
-        if (root_ == nullptr) {
-            return std::vector<QEntryDist<Key, T>>{};
-        }
-        DISTANCE dist_fn{std::forward<DISTANCE>(distance_fn)};
-        FILTER filt_fn{std::forward<FILTER>(filter_fn)};
-        auto comp = [&dist_fn,
-                     &center](const QEntry<Key, T>& point1, const QEntry<Key, T>& point2) {
-            return dist_fn(center, point1.point()) < dist_fn(center, point2.point());
-        };
-        double distEstimate = distanceEstimate(root_, center, k, comp, dist_fn);
-        std::vector<QEntryDist<Key, T>> candidates{};
-        candidates.reserve(k);
-        while (candidates.size() < k) {
-            candidates.clear();
-            rangeSearchKNN(root_, center, candidates, k, distEstimate, dist_fn, filt_fn);
-            distEstimate *= 2;
-        }
-        return candidates;
-    }
-
-  private:
-    template <typename COMP, typename DISTANCE>
-    double distanceEstimate(
-        QNode<Key, T>* node, const Key& point, size_t k, const COMP& comp, DISTANCE& dist_fn)
-        const {
-        if (node->isLeaf()) {
-            // This is a leaf that would contain the point.
-            size_t n = node->getEntries().size();
-            // Create a copy!
-            std::vector<QEntry<Key, T>> data(
-                node->getEntries());  // TODO this is bad!!!! -> backport?
-            std::sort(data.begin(), data.end(), comp);
-            size_t pos = n < k ? n : k;
-            double dist = dist_fn(point, data[pos - 1].point());
-            if (n < k) {
-                // scale search dist with dimensions.
-                dist = dist * std::pow(k / (double)n, 1 / (double)dims);
-            }
-            if (dist <= 0.0) {
-                return node->getRadius();
-            }
-            return dist;
-        } else {
-            auto& nodes = node->getChildNodes();
-            for (size_t i = 0; i < nodes.size(); ++i) {
-                QNode<Key, T>* sub = nodes[i];
-                if (isPointEnclosed(point, sub->getCenter(), sub->getRadius())) {
-                    return distanceEstimate(sub, point, k, comp, dist_fn);
-                }
-            }
-            // okay, this directory node contains the point, but none of the leaves does.
-            // We just return the size of this node, because all it's leaf nodes should
-            // contain more than enough candidate in proximity of 'point'.
-            return node->getRadius() * std::sqrt(point.size());  // TODO backport???  sqrt(3) ?!?!
-        }
-    }
-
-  private:
-    template <typename DISTANCE, typename FILTER = FilterNoOp>
-    double rangeSearchKNN(
-        const QNode<Key, T>* node,
-        const Key& center,
-        std::vector<QEntryDist<Key, T>>& candidates,
-        size_t k,
-        double maxRange,
-        DISTANCE& dist_fn,
-        FILTER& filter) const {
-        if (node->isLeaf()) {
-            auto& entries = node->getEntries();
-            for (size_t i = 0; i < entries.size(); ++i) {
-                QEntry<Key, T>* p = const_cast<QEntry<Key, T>*>(&entries[i]);
-                double dist = dist_fn(center, p->point());
-                if (dist < maxRange && filter.IsEntryValid(p->point(), p->value())) {
-                    candidates.emplace_back(p, dist);
-                }
-            }
-            maxRange = adjustRegionKNN(candidates, k, maxRange);
-        } else {
-            const std::vector<QNode<Key, T>*>& nodes = node->getChildNodes();
-            for (size_t i = 0; i < nodes.size(); ++i) {
-                const QNode<Key, T>* sub = nodes[i];
-                if (sub != nullptr &&
-                    distToRectNode(center, sub->getCenter(), sub->getRadius(), dist_fn) <
-                        maxRange) {
-                    maxRange =
-                        rangeSearchKNN(sub, center, candidates, k, maxRange, dist_fn, filter);
-                    // we set maxRange simply to the latest returned value.
-                }
-            }
-        }
-        return maxRange;
-    }
-
-  private:
-    double adjustRegionKNN(
-        std::vector<QEntryDist<Key, T>>& candidates, size_t k, double maxRange) const {
-        if (candidates.size() < k) {
-            // wait for more candidates
-            return maxRange;
-        }
-
-        // use stored distances instead of recalculating them
-        auto comp = [](const QEntryDist<Key, T>& c1, const QEntryDist<Key, T>& c2) {
-            return c1.dist() < c2.dist();
-        };
-        std::sort(
-            candidates.begin(),
-            candidates.end(),
-            comp);  // TODO why are we sorting the whole list???
-        // candidates.sort(QEntryDist.COMP);
-
-        while (candidates.size() > k) {
-            candidates.erase(candidates.end() - 1);
-        }
-
-        double range = candidates.back().dist();
-        return range;
-    }
-
-  public:
     QStats getStats() {
         QStats s{};
         if (root_ != nullptr) {
@@ -1466,12 +1406,10 @@ class QuadTree {
     auto begin_knn_query(
         size_t k,
         const Key& center,
-        DISTANCE&& distance_function = DISTANCE(),
+        DISTANCE&& distance_fn = DISTANCE(),
         FILTER&& filter = FILTER()) const {
-        auto result = knnQuery(
-            center, k, std::forward<DISTANCE>(distance_function), std::forward<FILTER>(filter));
-        // TODO pass in directly w/o move()
-        return QIteratorKnn<Key, T>(std::move(result));
+        return IteratorKnnHS<Key, T, DISTANCE, FILTER>(
+            root_, k, center, std::forward<DISTANCE>(distance_fn), std::forward<FILTER>(filter));
     }
 
     int getNodeCount() {
