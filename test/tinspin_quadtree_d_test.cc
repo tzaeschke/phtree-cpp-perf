@@ -15,7 +15,6 @@
  */
 
 #include "phtree/common/common.h"
-#include "phtree/converter.h"
 #include "phtree/filter.h"
 #include "src/tinspin/quadtree_point.h"
 #include <include/gtest/gtest.h>

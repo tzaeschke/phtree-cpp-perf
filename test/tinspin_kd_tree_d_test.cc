@@ -15,7 +15,6 @@
  */
 
 #include "phtree/common/common.h"
-#include "phtree/converter.h"
 #include "phtree/filter.h"
 #include "src/tinspin/kdtree.h"
 #include <include/gtest/gtest.h>
@@ -463,6 +462,9 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
         size_t n = tree.erase(pOld, Id(i));
         ASSERT_EQ(1U, n);
         tree.emplace(pNew, Id(i));
+        if (i % 100 == 0) {
+            tree.checkConsistency();
+        }
         ASSERT_EQ(count_new + 1, tree.count(pNew));
         ASSERT_EQ(count_old - 1, tree.count(pOld));
         p = pNew;

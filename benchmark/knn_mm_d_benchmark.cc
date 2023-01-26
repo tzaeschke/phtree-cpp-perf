@@ -163,8 +163,6 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
         InsertEntry<DIM, SCENARIO>(tree_, points_[i], (payload_t)i);
     }
 
-    state.counters["total_result_count"] = benchmark::Counter(0);
-    state.counters["total_query_count"] = benchmark::Counter(0);
     state.counters["query_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);
     state.counters["result_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);
     state.counters["avg_result_count"] = benchmark::Counter(0, benchmark::Counter::kAvgIterations);
@@ -180,8 +178,6 @@ void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, TestPoin
         ++n;
     }
 
-    state.counters["total_query_count"] += 1;
-    state.counters["total_result_count"] += n;
     state.counters["query_rate"] += 1;
     state.counters["result_rate"] += n;
     state.counters["avg_result_count"] += n;
