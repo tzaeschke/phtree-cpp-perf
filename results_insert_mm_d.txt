@@ -1,0 +1,58 @@
+Run on (8 X 4776.02 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 12288 KiB (x1)
+Load Average: 0.81, 0.89, 0.87
+------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations   put_rate total_put_count
+------------------------------------------------------------------------------------------------------
+PhTree3D/INSERT/1000/4                0.156 ms        0.156 ms         4357 6.40631M/s          4.357M
+PhTree3D/INSERT/10000/4                2.21 ms         2.21 ms          316 4.52925M/s           3.16M
+PhTree3D/INSERT/100000/4               29.1 ms         29.1 ms           24 3.43826M/s            2.4M
+PhTree3D/INSERT/1000000/4               549 ms          549 ms            1  1.8199M/s           1000k
+PhTree3D/INSERT/1000/7                0.157 ms        0.157 ms         4341 6.37088M/s          4.341M
+PhTree3D/INSERT/10000/7                1.88 ms         1.88 ms          374 5.33266M/s           3.74M
+PhTree3D/INSERT/100000/7               21.1 ms         21.1 ms           33 4.74873M/s            3.3M
+PhTree3D/INSERT/1000000/7               275 ms          275 ms            3 3.63703M/s              3M
+PhTreeMM2_3D/INSERT/1000/4            0.152 ms        0.152 ms         4559 6.59566M/s          4.559M
+PhTreeMM2_3D/INSERT/10000/4            2.23 ms         2.23 ms          316 4.48673M/s           3.16M
+PhTreeMM2_3D/INSERT/100000/4           30.3 ms         30.3 ms           24 3.30108M/s            2.4M
+PhTreeMM2_3D/INSERT/1000000/4           517 ms          517 ms            1  1.9333M/s           1000k
+PhTreeMM2_3D/INSERT/1000/7            0.156 ms        0.156 ms         4489 6.42767M/s          4.489M
+PhTreeMM2_3D/INSERT/10000/7            1.87 ms         1.87 ms          375 5.33554M/s           3.75M
+PhTreeMM2_3D/INSERT/100000/7           21.1 ms         21.1 ms           33 4.74401M/s            3.3M
+PhTreeMM2_3D/INSERT/1000000/7           273 ms          273 ms            3 3.66067M/s              3M
+TinspinKDTree/INSERT/1000/4           0.049 ms        0.049 ms        14093 20.3065M/s         14.093M
+TinspinKDTree/INSERT/10000/4           1.23 ms         1.23 ms          570 8.15363M/s            5.7M
+TinspinKDTree/INSERT/100000/4          21.2 ms         21.2 ms           33 4.72532M/s            3.3M
+TinspinKDTree/INSERT/1000000/4          597 ms          597 ms            2 1.67636M/s              2M
+TinspinKDTree/INSERT/1000/7           0.046 ms        0.046 ms        15465 21.9004M/s         15.465M
+TinspinKDTree/INSERT/10000/7          0.875 ms        0.875 ms          795 11.4299M/s           7.95M
+TinspinKDTree/INSERT/100000/7          13.4 ms         13.4 ms           56 7.46799M/s            5.6M
+TinspinKDTree/INSERT/1000000/7          225 ms          225 ms            5 4.43784M/s              5M
+TinspinQuadtree/INSERT/1000/4         0.102 ms        0.102 ms         6846 9.84607M/s          6.846M
+TinspinQuadtree/INSERT/10000/4         1.83 ms         1.83 ms          381 5.45859M/s           3.81M
+TinspinQuadtree/INSERT/100000/4        25.6 ms         25.6 ms           27 3.90656M/s            2.7M
+TinspinQuadtree/INSERT/1000000/4        484 ms          484 ms            2 2.06557M/s              2M
+TinspinQuadtree/INSERT/1000/7         0.142 ms        0.142 ms         4878 7.03428M/s          4.878M
+TinspinQuadtree/INSERT/10000/7         1.64 ms         1.64 ms          426 6.10892M/s           4.26M
+TinspinQuadtree/INSERT/100000/7        19.3 ms         19.3 ms           37 5.17199M/s            3.7M
+TinspinQuadtree/INSERT/1000000/7        244 ms          244 ms            3 4.10118M/s              3M
+BoostRT/BOOST/1000/4                   1.37 ms         1.37 ms          510 731.343k/s            510k
+BoostRT/BOOST/10000/4                  16.0 ms         16.0 ms           44 625.607k/s            440k
+BoostRT/BOOST/100000/4                  180 ms          179 ms            4 557.122k/s            400k
+BoostRT/BOOST/1000000/4                2034 ms         2034 ms            1 491.583k/s           1000k
+BoostRT/BOOST/1000/7                  0.963 ms        0.963 ms          727  1038.4k/s            727k
+BoostRT/BOOST/10000/7                  11.1 ms         11.1 ms           63 902.904k/s            630k
+BoostRT/BOOST/100000/7                  120 ms          120 ms            6 835.781k/s            600k
+BoostRT/BOOST/1000000/7                1286 ms         1286 ms            1 777.401k/s           1000k
+Mcxme/MCXME/1000/4                    0.247 ms        0.247 ms         2877  4.0488M/s          2.877M
+Mcxme/MCXME/10000/4                    2.90 ms         2.90 ms          243  3.4473M/s           2.43M
+Mcxme/MCXME/100000/4                   36.3 ms         36.3 ms           20 2.75572M/s              2M
+Mcxme/MCXME/1000000/4                   518 ms          518 ms            1 1.93009M/s           1000k
+Mcxme/MCXME/1000/7                    0.266 ms        0.267 ms         2600 3.75203M/s            2.6M
+Mcxme/MCXME/10000/7                    3.34 ms         3.34 ms          232 2.99084M/s           2.32M
+Mcxme/MCXME/100000/7                   40.9 ms         40.9 ms           17 2.44224M/s            1.7M
+Mcxme/MCXME/1000000/7                   415 ms          415 ms            2 2.40739M/s              2M

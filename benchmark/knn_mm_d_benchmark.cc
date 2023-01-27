@@ -82,10 +82,10 @@ using TestMap = typename std::conditional_t<
                         //                    bb::PhTreeMultiMapD<DIM, payload2_t>,
                         //                    typename std::conditional_t<
                         SCENARIO == TS_KD,
-                        tinspin::KDTree<payload2_t, double>,
+                        tinspin::KDTree<payload, double>,
                         typename std::conditional_t<
                             SCENARIO == TS_QT,
-                            tinspin::QuadTree<payload2_t>,
+                            tinspin::QuadTree<payload>,
                             typename std::conditional_t<
                                 SCENARIO == FLANN_KD,
                                 flann::PhTreeMultiMap<DIM, size_t>,

@@ -1,0 +1,46 @@
+CC=clang bazel run //benchmark:update_mm_d_benchmark  --config=benchmark -- --benchmark_counters_tabular=true
+
+
+Run on (8 X 4630.79 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 12288 KiB (x1)
+Load Average: 1.24, 1.54, 1.35
+-----------------------------------------------------------------------------------------------------------------------
+Benchmark                                                 Time             CPU   Iterations total_upd_count update_rate
+-----------------------------------------------------------------------------------------------------------------------
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/1000/4         0.046 ms        0.047 ms        13144         13.144M  21.5009M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/10000/4        0.078 ms        0.078 ms         8137          8.137M   12.865M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/100000/4       0.259 ms        0.259 ms         2679          2.679M  3.86156M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/1000000/4      0.430 ms        0.430 ms         1602          1.602M  2.32821M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/1000/7         0.124 ms        0.124 ms         5080           5.08M  8.08387M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/10000/7        0.197 ms        0.198 ms         3348          3.348M  5.06305M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/100000/7       0.577 ms        0.577 ms         1000           1000k  1.73246M/s
+PhTreeMMRelocateIfStdSet3D/UPDATE_1000/1000000/7      0.827 ms        0.826 ms          934            934k  1.20995M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/1000/4              0.049 ms        0.049 ms        12537         12.537M  20.2716M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/10000/4             0.082 ms        0.082 ms         7851          7.851M  12.1587M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/100000/4            0.264 ms        0.264 ms         2657          2.657M  3.79289M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/1000000/4           0.416 ms        0.416 ms         1695          1.695M  2.40115M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/1000/7              0.127 ms        0.127 ms         4979          4.979M  7.88374M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/10000/7             0.202 ms        0.202 ms         3290           3.29M  4.94794M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/100000/7            0.547 ms        0.547 ms         1000           1000k  1.82725M/s
+PhTreeMMRelocateBpt3D/UPDATE_1000/1000000/7           0.775 ms        0.775 ms         1038           1038k  1.29015M/s
+PhtreeMM2_3D/UPDATE_1000/1000/4                       0.098 ms        0.098 ms         6910           6.91M  10.1661M/s
+PhtreeMM2_3D/UPDATE_1000/10000/4                      0.178 ms        0.178 ms         3790           3.79M  5.62571M/s
+PhtreeMM2_3D/UPDATE_1000/100000/4                     0.298 ms        0.298 ms         2356          2.356M  3.35899M/s
+PhtreeMM2_3D/UPDATE_1000/1000000/4                    0.636 ms        0.637 ms         1106          1.106M  1.57098M/s
+PhtreeMM2_3D/UPDATE_1000/1000/7                       0.128 ms        0.128 ms         4864          4.864M  7.80345M/s
+PhtreeMM2_3D/UPDATE_1000/10000/7                      0.277 ms        0.277 ms         2400            2.4M  3.60543M/s
+PhtreeMM2_3D/UPDATE_1000/100000/7                     0.549 ms        0.549 ms         1377          1.377M  1.82094M/s
+PhtreeMM2_3D/UPDATE_1000/1000000/7                     1.05 ms         1.05 ms          736            736k  950.779k/s
+TinspinKDTree3D/UPDATE_1000/1000/4                    0.369 ms        0.369 ms         2071          2.071M  2.71257M/s
+TinspinKDTree3D/UPDATE_1000/10000/4                   0.404 ms        0.404 ms         2025          2.025M  2.47274M/s
+TinspinKDTree3D/UPDATE_1000/100000/4                  0.432 ms        0.432 ms         1639          1.639M  2.31455M/s
+TinspinKDTree3D/UPDATE_1000/1000000/4                  1.17 ms         1.17 ms          598            598k  854.102k/s
+TinspinKDTree3D/UPDATE_1000/1000/7                    0.202 ms        0.202 ms         3567          3.567M  4.95845M/s
+TinspinKDTree3D/UPDATE_1000/10000/7                   0.376 ms        0.376 ms         1901          1.901M  2.65632M/s
+TinspinKDTree3D/UPDATE_1000/100000/7                  0.570 ms        0.570 ms         1297          1.297M  1.75449M/s
+...
+

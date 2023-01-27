@@ -220,10 +220,10 @@ class PhTreeMultiMap {
             for (size_t i2 = 0; i2 < indexes[i1].size(); ++i2) {
                 Key k{};
                 // TODO
-//                auto* x = tree_->getPoint(indexes[i1][i2]);
-//                for (size_t d = 0; d < DIM; ++d) {
-//                    k[d] = x[d];
-//                }
+                //                auto* x = tree_->getPoint(indexes[i1][i2]);
+                //                for (size_t d = 0; d < DIM; ++d) {
+                //                    k[d] = x[d];
+                //                }
                 knn_result_.emplace_back(
                     KNNResult{k, indexes[i1][i2] - X, std::sqrt(distances[i1][i2])});
             }

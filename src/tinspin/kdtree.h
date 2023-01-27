@@ -826,13 +826,14 @@ class KDTree {
      * @return the value associated with the key or 'null' if the key was not found.
      */
   public:
-    const T& relocate(const Key& oldKey, const Key& newKey) {
+    size_t relocate(const Key& oldKey, const Key& newKey, const T& value) {
         if (root_ == nullptr) {
-            return nullptr;
+            return 0;
         }
-        const T& value = erase(oldKey);
+        // TODO check results
+        erase(oldKey, value);
         insert(newKey, value);
-        return value;
+        return 1;
     }
 
     /**

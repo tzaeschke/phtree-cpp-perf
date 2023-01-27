@@ -385,6 +385,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
+        "//src/tinspin",
         "@gbenchmark//:benchmark",
         "@phtree",
         "@spdlog",

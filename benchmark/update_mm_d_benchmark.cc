@@ -17,6 +17,9 @@
 #include "logging.h"
 #include "phtree/phtree.h"
 #include "phtree/phtree_multimap.h"
+#include "phtree/phtree_multimap2.h"
+#include "src/tinspin/kdtree.h"
+#include "src/tinspin/quadtree_point.h"
 #include <benchmark/benchmark.h>
 #include <random>
 
@@ -34,32 +37,49 @@ std::vector<double> MOVE_DISTANCE = {0, 1.0, 10};
 
 const double GLOBAL_MAX = 10000;
 
-enum Scenario { ERASE_EMPLACE, MM_BPT_RELOCATE, MM_SET_RELOCATE, MM_SET_RELOCATE_IF };
+enum Scenario {
+    ERASE_EMPLACE,
+    MM_BPT_RELOCATE,
+    MM_SET_RELOCATE,
+    MM_SET_RELOCATE_IF,
+    PHTREE2,
+    TS_KD,
+    TS_QT,
+};
 
 using payload_t = scalar_64_t;
 
 using BucketType = std::set<payload_t>;
 
-template <dimension_t DIM>
-using PointType = PhPointD<DIM>;
+using TestPoint = PhPointD<3>;
 
-template <Scenario SCENARIO, dimension_t DIM>
+template <dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
 template <Scenario SCENARIO, dimension_t DIM>
 using TestMap = typename std::conditional_t<
     SCENARIO == ERASE_EMPLACE,
-    PhTreeD<DIM, BucketType, CONVERTER<SCENARIO, DIM>>,
+    PhTreeD<DIM, BucketType, CONVERTER<DIM>>,
     typename std::conditional_t<
         SCENARIO == MM_BPT_RELOCATE,
-        PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, b_plus_tree_hash_set<payload_t>>,
-        PhTreeMultiMapD<DIM, payload_t, CONVERTER<SCENARIO, DIM>, std::set<payload_t>>>>;
+        PhTreeMultiMapD<DIM, payload_t, CONVERTER<DIM>, b_plus_tree_hash_set<payload_t>>,
+        typename std::conditional_t<
+            SCENARIO == MM_SET_RELOCATE || SCENARIO == MM_SET_RELOCATE_IF,
+            PhTreeMultiMapD<DIM, payload_t, CONVERTER<DIM>, std::set<payload_t>>,
+            typename std::conditional_t<
+                SCENARIO == PHTREE2,
+                PhTreeMultiMap2D<DIM, payload_t>,
+                typename std::conditional_t<
+                    SCENARIO == TS_KD,
+                    tinspin::KDTree<payload_t, double>,
+                    typename std::
+                        conditional_t<SCENARIO == TS_QT, tinspin::QuadTree<payload_t>, void>>>>>>;
 
 template <dimension_t DIM>
 struct UpdateOp {
     payload_t id_;
-    PointType<DIM> old_;
-    PointType<DIM> new_;
+    TestPoint old_;
+    TestPoint new_;
 };
 
 template <dimension_t DIM, Scenario SCENARIO>
@@ -83,7 +103,7 @@ class IndexBenchmark {
     const std::vector<double> move_distance_;
 
     TestMap<SCENARIO, DIM> tree_;
-    std::vector<PointType<DIM>> points_;
+    std::vector<TestPoint> points_;
     std::vector<UpdateOp<DIM>> updates_;
     std::default_random_engine random_engine_;
     std::uniform_int_distribution<> entity_id_distribution_;
@@ -115,23 +135,22 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
     }
 }
 
-template <dimension_t DIM>
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO != Scenario::ERASE_EMPLACE), int> = 0>
+void InsertEntry(TestMap<SCENARIO, DIM>& tree, const TestPoint& point, const payload_t& data) {
+    tree.emplace(point, data);
+}
+
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO == Scenario::ERASE_EMPLACE), int> = 0>
 void InsertEntry(
-    TestMap<Scenario::ERASE_EMPLACE, DIM>& tree, const PointType<DIM>& point, payload_t data) {
+    TestMap<Scenario::ERASE_EMPLACE, DIM>& tree, const TestPoint& point, const payload_t& data) {
     BucketType& bucket = tree.emplace(point).first;
     bucket.emplace(data);
-}
-
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::MM_BPT_RELOCATE, DIM>& tree, const PointType<DIM>& point, payload_t data) {
-    tree.emplace(point, data);
-}
-
-template <dimension_t DIM>
-void InsertEntry(
-    TestMap<Scenario::MM_SET_RELOCATE, DIM>& tree, const PointType<DIM>& point, payload_t data) {
-    tree.emplace(point, data);
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
@@ -161,7 +180,7 @@ typename std::enable_if<SCENARIO == Scenario::ERASE_EMPLACE, size_t>::type Updat
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<
-    SCENARIO == Scenario::MM_BPT_RELOCATE || SCENARIO == Scenario::MM_SET_RELOCATE,
+    SCENARIO != Scenario::ERASE_EMPLACE && SCENARIO != Scenario::MM_SET_RELOCATE_IF,
     size_t>::type
 UpdateEntry(TestMap<SCENARIO, DIM>& tree, std::vector<UpdateOp<DIM>>& updates) {
     size_t n = 0;
@@ -188,7 +207,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     // create data with about 10% duplicate coordinates
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX, 0.1);
     for (size_t i = 0; i < num_entities_; ++i) {
-        InsertEntry(tree_, points_[i], i);
+        InsertEntry<DIM, SCENARIO>(tree_, points_[i], i);
     }
 
     state.counters["total_upd_count"] = benchmark::Counter(0);
@@ -258,6 +277,24 @@ void PhTreeMMEraseEmplace3D(benchmark::State& state, Arguments&&... arguments) {
     benchmark.Benchmark(state);
 }
 
+template <typename... Arguments>
+void PhtreeMM2_3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::PHTREE2> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void TinspinKDTree3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::TS_KD> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void TinspinQuadtree3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::TS_QT> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
 // index type, scenario name, data_type, num_entities, updates_per_round, move_distance
 // PhTreeMultiMap
 BENCHMARK_CAPTURE(PhTreeMMRelocateIfStdSet3D, UPDATE_1000, UPDATES_PER_ROUND)
@@ -267,6 +304,24 @@ BENCHMARK_CAPTURE(PhTreeMMRelocateIfStdSet3D, UPDATE_1000, UPDATES_PER_ROUND)
 
 // PhTreeMultiMap with b_plus_tree_hash_map
 BENCHMARK_CAPTURE(PhTreeMMRelocateBpt3D, UPDATE_1000, UPDATES_PER_ROUND)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// PH-tree 2
+BENCHMARK_CAPTURE(PhtreeMM2_3D, UPDATE_1000, UPDATES_PER_ROUND)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// Tinspin KD-tree
+BENCHMARK_CAPTURE(TinspinKDTree3D, UPDATE_1000, UPDATES_PER_ROUND)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// Tinspin quadtree
+BENCHMARK_CAPTURE(TinspinQuadtree3D, UPDATE_1000, UPDATES_PER_ROUND)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
