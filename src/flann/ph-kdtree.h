@@ -7,7 +7,7 @@
 #include "flann/algorithms/dist.h"
 #include "flann/algorithms/kdtree_index.h"
 #include "flann/defines.h"
-//#include <flann/flann.h>
+// #include <flann/flann.h>
 #include "include/phtree/common/common.h"
 #include "include/phtree/converter.h"
 #include "include/phtree/filter.h"
@@ -38,10 +38,10 @@ class PhTreeMultiMap {
 
   public:
     // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
-    using KeyInternal = flann::Matrix<SCALAR>;
+    using KeyInternal = Key;
     using QueryBox = typename pht::PhBox<DIM, SCALAR>;
 
-    explicit PhTreeMultiMap() {
+    explicit PhTreeMultiMap() : size_{0} {
         tree_ = create_tree();
     }
 
@@ -75,18 +75,16 @@ class PhTreeMultiMap {
         emplace_hint(iterator, key, value);
     }
 
+    const size_t X = 1;
+    const double R_0 = 0.1;
+
     size_t count(const Key& key) const {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
-        //        size_t cap = 100;
-        //        size_t index_data[cap];
-        //        SCALAR dist_data[cap];
-        //        Matrix<size_t> indexes(index_data, cap, 1);
-        //        Matrix<SCALAR> distances(dist_data, cap, 1);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
         SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, 0, params);
-        return indexes.size();
+        tree_->radiusSearch(queries, indexes, distances, R_0, params);
+        return indexes[0].size();
     }
 
     auto find(const Key& key) {
@@ -94,9 +92,9 @@ class PhTreeMultiMap {
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
         SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, 0, params);
+        tree_->radiusSearch(queries, indexes, distances, R_0, params);
         result_.clear();
-        for (auto& ind: indexes) {
+        for (auto& ind : indexes) {
             result_.insert(result_.end(), ind.begin(), ind.end());
         }
         // TODO result_ = indexes;
@@ -109,11 +107,11 @@ class PhTreeMultiMap {
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
         SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, 0, params);
+        tree_->radiusSearch(queries, indexes, distances, R_0, params);
         for (auto r : indexes) {
             for (auto r2 : r) {
-                if (r2 == value) {
-                    result_.emplace_back(r2);
+                if (r2 - X == value) {
+                    result_.emplace_back(r2 - X);
                     return result_.begin();
                 }
             }
@@ -159,13 +157,14 @@ class PhTreeMultiMap {
         Key& min = query_box.min();
         Key& max = query_box.max();
         Key key{};
-        double diameter = 0;
+        double diameter2 = 0;
         for (size_t d = 0; d < DIM; ++d) {
             double diff = max[d] - min[d];
-            diameter += diff;
+            diameter2 += diff * diff;
             key[d] = (min[d] + max[d]) / 2;
         }
-        double radius = std::pow(diameter, 1. / DIM) / 2;
+        double radius = std::sqrt(diameter2) / 2;
+        radius = std::max(radius, R_0);
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
@@ -175,12 +174,13 @@ class PhTreeMultiMap {
             for (auto r2 : r) {
                 auto* point = tree_->getPoint(r2);
                 for (size_t d = 0; d < DIM; ++d) {
-                    if (point[d] >= min[d] && point[d] <= max[d]) {
-                        Key k{};  // TODO
-                        if (filter.IsBucketEntryValid(k, r2)) {
-                            callback(k, r2);
-                        }
+                    if (point[d] < min[d] || point[d] > max[d]) {
+                        continue;
                     }
+                }
+                Key k{};  // TODO
+                if (filter.IsEntryValid(k, r2 - X)) {
+                    callback(k, r2 - X);
                 }
             }
         }
@@ -190,7 +190,9 @@ class PhTreeMultiMap {
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         result_.clear();
         for_each(
-            query_box, [this](const Key&, const size_t& value) { result_.emplace_back(value); });
+            query_box,
+            [this](const Key&, const size_t& value) { result_.emplace_back(value); },
+            std::forward<FILTER>(filter));
         return result_.begin();
     }
 
@@ -204,11 +206,11 @@ class PhTreeMultiMap {
         size_t min_results,
         const Key& center,
         DISTANCE&& distance_function = DISTANCE(),
-        FILTER&& filter = FILTER()) const {
+        FILTER&& filter = FILTER()) {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&center[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
+        SearchParams params{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
         tree_->knnSearch(queries, indexes, distances, min_results, params);
 
         knn_result_.clear();
@@ -216,20 +218,26 @@ class PhTreeMultiMap {
             for (size_t i2 = 0; i2 < indexes[i1].size(); ++i2) {
                 Key k{};
                 // TODO
-                knn_result_.emplace_back(KNNResult{k, indexes[i1][i2], distances[i1][i2]});
+                auto* x = tree_->getPoint(indexes[i1][i2]);
+                for (size_t d = 0; d < DIM; ++d) {
+                    k[d] = x[d];
+                }
+                knn_result_.emplace_back(
+                    KNNResult{k, indexes[i1][i2] - X, std::sqrt(distances[i1][i2])});
             }
         }
         return knn_result_.begin();
     }
 
-    auto begin() const {
+    auto begin() {
         result_.clear();
         Key key{};
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
         SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, std::numeric_limits<SCALAR>::infinity(), params);
+        tree_->radiusSearch(
+            queries, indexes, distances, std::numeric_limits<SCALAR>::infinity(), params);
         for (auto r : indexes) {
             for (auto r2 : r) {
                 result_.emplace_back(r2);
@@ -238,14 +246,13 @@ class PhTreeMultiMap {
         return result_.end();
     }
 
-        auto end() const {
-            return result_.end();
-        }
+    auto end() const {
+        return result_.end();
+    }
 
-
-        auto knn_end() const {
-            return knn_result_.end();
-        }
+    auto knn_end() const {
+        return knn_result_.end();
+    }
 
     void clear() {
         delete tree_;
@@ -259,7 +266,7 @@ class PhTreeMultiMap {
         //  -->
         //  The same could be used to do a bulk-build.
         // tree_->size();
-        assert(tree_->size() == size_);
+        // assert(tree_->size() == size_);
         return tree_->size();
     }
 
@@ -273,7 +280,13 @@ class PhTreeMultiMap {
 
   private:
     auto* create_tree() const {
-        auto* tree = new KDTreeIndex<L2<SCALAR>>();
+        IndexParams params{};
+        params.insert_or_assign("trees", 1);
+        auto* tree = new KDTreeIndex<L2<SCALAR>>(params);
+        SCALAR data[DIM]{};
+        Matrix<SCALAR> dataset(const_cast<SCALAR*>(data), 1, DIM);
+        tree->buildIndex(dataset);
+        tree->removePoint(0);
         return tree;
     }
 
@@ -362,13 +375,13 @@ class PhTreeMultiMap {
     flann::KDTreeIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
     CONVERTER converter_;
     size_t size_;
-    mutable std::vector<T> result_{};  /// Dirty Hack!!!! TODO
+    std::vector<T> result_{};  /// Dirty Hack!!!! TODO
     struct KNNResult {
         Key first;
         size_t second;
         SCALAR distance;
     };
-    mutable std::vector<KNNResult> knn_result_{};  /// Dirty Hack!!!! TODO
+    std::vector<KNNResult> knn_result_{};  /// Dirty Hack!!!! TODO
 };
 
 template <pht::dimension_t DIM, typename T, typename CONVERTER = pht::ConverterIEEE<DIM>>

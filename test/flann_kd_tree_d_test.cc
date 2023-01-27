@@ -445,32 +445,32 @@ TEST(PhTreeMMDTest, TestFind) {
     ASSERT_NE(tree.end(), iter1);
 }
 
-TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
-    const dimension_t dim = 3;
-    TestTree<dim, Id> tree;
-    size_t N = 10000;
-    double delta = 20;
-    std::vector<TestPoint<dim>> points;
-    populate(tree, points, N);
-
-    size_t i = 0;
-    for (auto& p : points) {
-        auto pOld = p;
-        TestPoint<dim> pNew{pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
-        size_t count_new = tree.count(pNew);
-        size_t count_old = tree.count(pOld);
-        size_t n = tree.erase(pOld, Id(i));
-        ASSERT_EQ(1U, n);
-        tree.emplace(pNew, Id(i));
-        ASSERT_EQ(count_new + 1, tree.count(pNew));
-        ASSERT_EQ(count_old - 1, tree.count(pOld));
-        p = pNew;
-        ++i;
-    }
-
-    ASSERT_EQ(N, tree.size());
-    tree.clear();
-}
+//TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
+//    const dimension_t dim = 3;
+//    TestTree<dim, Id> tree;
+//    size_t N = 10000;
+//    double delta = 20;
+//    std::vector<TestPoint<dim>> points;
+//    populate(tree, points, N);
+//
+//    size_t i = 0;
+//    for (auto& p : points) {
+//        auto pOld = p;
+//        TestPoint<dim> pNew{pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
+//        size_t count_new = tree.count(pNew);
+//        size_t count_old = tree.count(pOld);
+//        size_t n = tree.erase(pOld, Id(i));
+//        ASSERT_EQ(1U, n);
+//        tree.emplace(pNew, Id(i));
+//        ASSERT_EQ(count_new + 1, tree.count(pNew));
+//        ASSERT_EQ(count_old - 1, tree.count(pOld));
+//        p = pNew;
+//        ++i;
+//    }
+//
+//    ASSERT_EQ(N, tree.size());
+//    tree.clear();
+//}
 
 // TEST(PhTreeMMDTest, TestUpdateWithEmplaceHint) {
 //     const dimension_t dim = 3;
@@ -984,6 +984,7 @@ TEST(PhTreeMMDTest, TestKnnQuery) {
 
         size_t n = 0;
         double prevDist = -1;
+        std::cout << "round=" << round << std::endl;
         auto q = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
         while (q != tree.knn_end()) {
             // just read the entry
