@@ -49,7 +49,9 @@ class PhTreeMultiMap {
     PhTreeMultiMap& operator=(const PhTreeMultiMap& other) = delete;
     PhTreeMultiMap(PhTreeMultiMap&& other) noexcept = default;
     PhTreeMultiMap& operator=(PhTreeMultiMap&& other) noexcept = default;
-    ~PhTreeMultiMap() noexcept = default;
+    ~PhTreeMultiMap() noexcept {
+        delete tree_;
+    };
 
     void emplace(const Key& key, const T& id) {
         assert(id == tree_->size());
