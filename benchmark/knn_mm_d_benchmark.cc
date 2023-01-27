@@ -161,9 +161,7 @@ template <
     std::enable_if_t<(SCENARIO != Scenario::FLANN_KD), int> = 0>
 size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
-    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>());
-         q != tree.end();
-         ++q) {
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>()); q != tree.end(); ++q) {
         ++n;
     }
     return n;
@@ -173,11 +171,9 @@ template <
     dimension_t DIM,
     Scenario SCENARIO,
     std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
-size_t QueryAll(
-    TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
+size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
-    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>());
-         q != tree.knn_end();
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>()); q != tree.knn_end();
          ++q) {
         ++n;
     }
@@ -218,12 +214,6 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, TestPoint& center) {
     size_t n = QueryAll<DIM, SCENARIO>(tree_, center, knn_result_size_);
-//    int n = 0;
-//    for (auto q = tree_.begin_knn_query(knn_result_size_, center, DistanceEuclidean<3>());
-//         q != tree_.end();
-//         ++q) {
-//        ++n;
-//    }
 
     state.counters["query_rate"] += 1;
     state.counters["result_rate"] += n;

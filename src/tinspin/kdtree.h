@@ -149,10 +149,16 @@ class Node {
     }
 
     void setLeft(Node* left) noexcept {
+        if (left_ != nullptr) {
+            delete left_;
+        }
         left_ = left;
     }
 
     void setRight(Node* right) noexcept {
+        if (right_ != nullptr) {
+            delete right_;
+        }
         right_ = right;
     }
 
