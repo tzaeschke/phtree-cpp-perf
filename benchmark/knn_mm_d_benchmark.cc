@@ -19,6 +19,7 @@
 #include "phtree/phtree_multimap.h"
 #include "phtree/phtree_multimap2.h"
 #include "src/boost/boost_multimap.h"
+#include "src/flann/ph-kdtree.h"
 #include "src/tinspin/kdtree.h"
 #include "src/tinspin/quadtree_point.h"
 #include <benchmark/benchmark.h>
@@ -35,7 +36,17 @@ namespace {
 
 const double GLOBAL_MAX = 10000;
 
-enum Scenario { BOOST_RT, LSI, TREE_WITH_MAP, MULTI_MAP, MULTI_MAP_STD, PHTREE2, TS_KD, TS_QT };
+enum Scenario {
+    BOOST_RT,
+    LSI,
+    TREE_WITH_MAP,
+    MULTI_MAP,
+    MULTI_MAP_STD,
+    PHTREE2,
+    TS_KD,
+    TS_QT,
+    FLANN_KD
+};
 
 using payload_t = int64_t;
 using payload2_t = uint32_t;
@@ -64,15 +75,21 @@ using TestMap = typename std::conditional_t<
                 SCENARIO == PHTREE2,
                 PhTreeMultiMap2D<DIM, payload_t>,
                 typename std::conditional_t<
-                    //                    SCENARIO == BB,
-                    //                    bb::PhTreeMultiMapD<DIM, payload2_t>,
-                    //                    typename std::conditional_t<
-                    SCENARIO == TS_KD,
-                    tinspin::KDTree<payload2_t, double>,
+                    SCENARIO == MULTI_MAP_STD,
+                    PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>,
                     typename std::conditional_t<
-                        SCENARIO == TS_QT,
-                        tinspin::QuadTree<payload2_t>,
-                        PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>>>>>>>;
+                        //                    SCENARIO == BB,
+                        //                    bb::PhTreeMultiMapD<DIM, payload2_t>,
+                        //                    typename std::conditional_t<
+                        SCENARIO == TS_KD,
+                        tinspin::KDTree<payload2_t, double>,
+                        typename std::conditional_t<
+                            SCENARIO == TS_QT,
+                            tinspin::QuadTree<payload2_t>,
+                            typename std::conditional_t<
+                                SCENARIO == FLANN_KD,
+                                flann::PhTreeMultiMap<DIM, size_t>,
+                                void>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -138,6 +155,35 @@ void InsertEntry(
     bucket.emplace(data);
 }
 
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO != Scenario::FLANN_KD), int> = 0>
+size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
+    size_t n = 0;
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>());
+         q != tree.end();
+         ++q) {
+        ++n;
+    }
+    return n;
+}
+
+template <
+    dimension_t DIM,
+    Scenario SCENARIO,
+    std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
+size_t QueryAll(
+    TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
+    size_t n = 0;
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>());
+         q != tree.knn_end();
+         ++q) {
+        ++n;
+    }
+    return n;
+}
+
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
@@ -171,12 +217,13 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, TestPoint& center) {
-    int n = 0;
-    for (auto q = tree_.begin_knn_query(knn_result_size_, center, DistanceEuclidean<3>());
-         q != tree_.end();
-         ++q) {
-        ++n;
-    }
+    size_t n = QueryAll<DIM, SCENARIO>(tree_, center, knn_result_size_);
+//    int n = 0;
+//    for (auto q = tree_.begin_knn_query(knn_result_size_, center, DistanceEuclidean<3>());
+//         q != tree_.end();
+//         ++q) {
+//        ++n;
+//    }
 
     state.counters["query_rate"] += 1;
     state.counters["result_rate"] += n;
@@ -219,6 +266,12 @@ void KDTree3D(benchmark::State& state, Arguments&&... arguments) {
 template <typename... Arguments>
 void Quadtree3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<3, Scenario::TS_QT> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void FlannKD3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<3, Scenario::FLANN_KD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
@@ -266,6 +319,17 @@ BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, KNN_1, 1)
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// FLANN KD-tree
+BENCHMARK_CAPTURE(FlannKD3D, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(FlannKD3D, KNN_10, 10)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

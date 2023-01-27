@@ -549,6 +549,10 @@ class KDTree {
         }
     }
 
+    ~KDTree() {
+        delete root_;
+    }
+
     /**
      * Insert a key-value pair.
      * @param key the key
@@ -842,6 +846,7 @@ class KDTree {
      */
     void clear() {
         size_ = 0;
+        delete root_;
         root_ = nullptr;
         invariantBroken = false;
     }

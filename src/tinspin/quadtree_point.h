@@ -365,6 +365,12 @@ class QNode {
         subs_.emplace_back(subNode);
     }
 
+    ~QNode() {
+        for (auto* sub:subs_) {
+            delete sub;
+        }
+    }
+
     QNode<Key, T>* tryPut(const QEntry<Key, T>& e, size_t maxNodeSize, bool enforceLeaf) {
         assert(e.enclosedBy(center_, radius_));
 
@@ -567,6 +573,9 @@ class QNode {
             values_.insert(values_.begin(), subs_[i]->values_.begin(), subs_[i]->values_.end());
         }
         // subs = nullptr;
+        for (auto sub : subs_) {
+            delete sub;
+        }
         subs_.clear();
         subs_.shrink_to_fit();
         is_leaf_ = true;
@@ -1151,6 +1160,10 @@ class QuadTree {
     QuadTree(size_t dims = 3, size_t maxNodeSize = DEFAULT_MAX_NODE_SIZE)
     : dims{dims}, maxNodeSize{maxNodeSize} {}
 
+    ~QuadTree() {
+        delete root_;
+    }
+
     /**
      * Insert a key-value pair.
      * @param key the key
@@ -1348,6 +1361,7 @@ class QuadTree {
      */
     void clear() {
         size_ = 0;
+        delete root_;
         root_ = nullptr;
     }
 

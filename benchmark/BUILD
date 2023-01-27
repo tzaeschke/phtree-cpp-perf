@@ -216,6 +216,7 @@ cc_binary(
     deps = [
         ":benchmark",
         "//src/boost:ph-boost-mm",
+        "//src/flann:ph-flann",
         "//src/tinspin",
         "@gbenchmark//:benchmark",
         "@phtree",
