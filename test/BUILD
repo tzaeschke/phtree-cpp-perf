@@ -71,6 +71,20 @@ cc_test(
 )
 
 cc_test(
+    name = "flann_kd_tree_d_test",
+    timeout = "long",
+    srcs = [
+        "flann_kd_tree_d_test.cc",
+    ],
+    linkstatic = True,
+    deps = [
+        "//src/flann:ph-flann",
+        "@gtest//:gtest_main",
+        "@phtree",
+    ],
+)
+
+cc_test(
     name = "lsi_rtree_multimap_d_test",
     timeout = "long",
     srcs = [

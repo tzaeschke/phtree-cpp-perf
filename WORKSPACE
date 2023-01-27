@@ -174,3 +174,16 @@ pcl_repositories()
 load("@rules_pcl//bzl:init_deps.bzl", "pcl_init_deps")
 
 pcl_init_deps()
+
+#new_local_repository(
+#    name = "system_libs",
+#    build_file_content = """
+#cc_library(
+#    name = "flann",
+#    srcs = ["libflann.so"],
+#    visibility = ["//visibility:public"],
+#)
+#""",
+#    # pkg-config --variable=libdir x11
+#    path = "/usr/lib/x86_64-linux-gnu",
+#)

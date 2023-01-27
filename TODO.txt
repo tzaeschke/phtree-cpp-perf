@@ -1,0 +1,35 @@
+
+
+
+KD-tree
+=======
+- Fix memory leaks
+- Make fit for DIM != 3
+- Check FLANN
+- fix function naming etc
+- Backport fixes to Java
+
+QUadtree
+========
+- Fix memory leaks
+- Make fit for DIM != 3
+- fix function naming etc
+- Backport fixes to Java
+
+PH-Tree
+=======
+- Try convert-on-access, i.e. store unconverted coordinates
+- Create version 2.0:
+  - simpler Filter ->   operator() / lambdas
+  - relocate w/o count-equals
+  - return std::pair<Key&, Val&>    struct <Key&, Val&, distance>
+  - Use /** comment format for functions/classes (?)
+
+
+General
+=======
+- remove PCL / ttvd
+- use valgrind "massif" to check memory consumption: https://valgrind.org/docs/manual/ms-manual.html
+
+
+

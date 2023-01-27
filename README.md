@@ -102,6 +102,7 @@ This project contains libraries form other projects:
 * BB-tree, no license, Authors: Stefan Sprenger, Patrick Schäfer and Ulf Leser, Contact: sprengsz (at) informatik (dot)
   hu-berlin (dot) de: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
 * PCL 1.13.0, licensed under BSD, Point Cloud Library (PCL): www.pointclouds.org
+* FLANN 1.9.2, licensed under BSD, Fast Library for Approximate Nearest Neighbors: https://github.com/flann-lib/flann
 
 This projects depends on the following other projects:
 
