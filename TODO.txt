@@ -18,6 +18,8 @@ QUadtree
 
 PH-Tree
 =======
+- Use PhTree<Key, T> i.o. PhTree<DIM, T>. This allows dynamic dimensionality....
+  -> Using Key::size() may still result in loop unrolling if array::size() is a constexpr! -> Check!
 - Try convert-on-access, i.e. store unconverted coordinates
 - Require values to be movable?
   -> This is already the case for relocate(), or not?

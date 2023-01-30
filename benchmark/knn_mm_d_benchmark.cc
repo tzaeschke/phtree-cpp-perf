@@ -83,10 +83,10 @@ using TestMap = typename std::conditional_t<
                         //                    bb::PhTreeMultiMapD<DIM, payload2_t>,
                         //                    typename std::conditional_t<
                         SCENARIO == TS_KD,
-                        tinspin::KDTree<DIM, payload_t, double>,
+                        tinspin::KDTree<TestPoint, payload_t>,
                         typename std::conditional_t<
                             SCENARIO == TS_QT,
-                            tinspin::QuadTree<payload_t>,
+                            tinspin::QuadTree<TestPoint, payload_t>,
                             typename std::conditional_t<
                                 SCENARIO == FLANN_KD,
                                 flann::PhTreeMultiMap<DIM, size_t>,
@@ -299,6 +299,17 @@ BENCHMARK_CAPTURE(PhTree3D, KNN_1, 1)
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(PhTree3D, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTree multi-map 1.0
+BENCHMARK_CAPTURE(PhTreeMultiMap3D, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(PhTreeMultiMap3D, KNN_10, 10)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

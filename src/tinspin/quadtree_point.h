@@ -7,6 +7,7 @@
 #include "include/phtree/common/common.h"
 #include "include/phtree/converter.h"
 #include "include/phtree/filter.h"
+#include "src/util/ph-util.h"
 #include <cmath>
 #include <iostream>
 #include <queue>
@@ -1079,11 +1080,10 @@ class ForEach {
 
 }  // namespace
 
-template <typename T>
+template <typename Key, typename T>
 class QuadTree {
     static const int MAX_DEPTH = 50;
-    using Key = PhPointD<3>;
-    using QueryBox = PhBox<Key{}.size(), double>;
+    using QueryBox = tinspin::Box<Key>;
 
     static const int DEFAULT_MAX_NODE_SIZE = 10;
 

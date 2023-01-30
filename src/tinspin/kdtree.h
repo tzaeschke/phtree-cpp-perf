@@ -7,6 +7,7 @@
 #include "include/phtree/common/common.h"
 #include "include/phtree/converter.h"
 #include "include/phtree/filter.h"
+#include "src/util/ph-util.h"
 #include <iostream>
 #include <unordered_set>
 
@@ -449,8 +450,9 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
  *
  * By T. Zäschke
  */
-template <dimension_t DIM, typename T, typename SCALAR>
+template <typename Key, typename T>
 class KDTree {
+    using SCALAR = std::remove_reference_t<decltype(Key{}[0])>;
     static_assert(std::is_floating_point_v<SCALAR>);
     // TODO this should be infinity for floats.
     static constexpr SCALAR SCALAR_MAX = std::is_floating_point_v<SCALAR>
@@ -460,8 +462,7 @@ class KDTree {
         ? -std::numeric_limits<SCALAR>::infinity()
         : std::numeric_limits<SCALAR>::min();
 
-    using Key = PhPoint<DIM, SCALAR>;
-    using QueryBox = PhBox<DIM, SCALAR>;
+    using QueryBox = tinspin::Box<Key>;
 
     static const bool DEBUG = false;
 

@@ -1,18 +1,13 @@
 package(default_visibility = ["//visibility:private"])
 
 cc_library(
-    name = "tinspin",
+    name = "ph-util",
     testonly = True,
     hdrs = [
-        "kdtree.h",
-        "quadtree_point.h",
+        "ph-util.h",
     ],
     visibility = [
         "//visibility:public",
-    ],
-    deps = [
-        "//src/util:ph-util",
-        "@phtree",
     ],
     alwayslink = 1,
 )
