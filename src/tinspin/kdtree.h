@@ -107,7 +107,7 @@ class Node {
         }
     }
 
-    Node* getClosestNodeOrAddPoint(const Key& p, const T& value) {
+    Node* get_closest_node_or_add_entry(const Key& p, const T& value) {
         // Find best sub-node.
         // If there is no node, we create one and return null
         if (p[split_dim_] >= coordinate_[split_dim_]) {
@@ -124,47 +124,39 @@ class Node {
         return nullptr;
     }
 
-    const Key& getKey() const noexcept {
+    const Key& key() const noexcept { // backport: -> remove duplicate point/key methods
         return coordinate_;
     }
 
-    const T& getValue() const noexcept {
+    const T& value() const noexcept {
         return value_;
     }
 
-    Node* getLo() const noexcept {
+    Node* left() const noexcept {
         return left_;
     }
 
-    Node* getHi() const noexcept {
+    Node* right() const noexcept {
         return right_;
     }
 
-    void setLeft(Node* left) noexcept {
+    void set_left(Node* left) noexcept {
         if (left_ != nullptr) {
             delete left_;
         }
         left_ = left;
     }
 
-    void setRight(Node* right) noexcept {
+    void set_right(Node* right) noexcept {
         if (right_ != nullptr) {
             delete right_;
         }
         right_ = right;
     }
 
-    void setKeyValue(const Key& key, const T& value) noexcept {
+    void set(const Key& key, const T& value) noexcept {
         coordinate_ = key;
         value_ = value;
-    }
-
-    const Key& key() const noexcept {
-        return coordinate_;
-    }
-
-    const T& value() const noexcept {
-        return value_;
     }
 
     void stats(KDStats& s, size_t depth) const {
@@ -203,7 +195,7 @@ class Node {
         }
     }
 
-    bool isLeaf() const noexcept {
+    bool is_leaf() const noexcept {
         return left_ == nullptr && right_ == nullptr;
     }
 
@@ -226,12 +218,12 @@ class KDIteratorBase {
 
     inline auto& operator*() const noexcept {
         assert(node_ != nullptr);
-        return node_->getValue();
+        return node_->value();
     }
 
     inline auto* operator->() const noexcept {
         assert(node_ != nullptr);
-        return &node_->getValue();
+        return &node_->value();
     }
 
     inline friend bool operator==(
@@ -279,7 +271,7 @@ class KDIterator : public KDIteratorBase<Key, T> {
         void set(Node<Key, T>* node, const Key& min, const Key& max, size_t depth) {
             node_ = node;
             depth_ = depth;
-            const Key& key = node_->getKey();
+            const Key& key = node_->key();
             auto dims = min.size();
             dimension_t dim = depth % dims;
             // TODO backport -> invariant problem, invariant can be
@@ -361,22 +353,22 @@ class KDIterator : public KDIteratorBase<Key, T> {
         while (!stack_.isEmpty()) {
             IteratorPos& itPos = stack_.peek();
             Node<Key, T>* node = itPos.node_;
-            if (itPos.doLeft && node->getLo() != nullptr) {
+            if (itPos.doLeft && node->left() != nullptr) {
                 itPos.doLeft = false;
-                stack_.prepareAndPush(node->getLo(), min_, max_, itPos.depth_ + 1);
+                stack_.prepareAndPush(node->left(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             if (itPos.doKey) {
                 itPos.doKey = false;
-                if (isEnclosed(node->getKey(), min_, max_) &&
-                    filter_.IsEntryValid(node->getKey(), node->getValue())) {
+                if (isEnclosed(node->key(), min_, max_) &&
+                    filter_.IsEntryValid(node->key(), node->value())) {
                     this->SetCurrentResult(node);
                     return;
                 }
             }
-            if (itPos.doRight && node->getHi() != nullptr) {
+            if (itPos.doRight && node->right() != nullptr) {
                 itPos.doRight = false;
-                stack_.prepareAndPush(node->getHi(), min_, max_, itPos.depth_ + 1);
+                stack_.prepareAndPush(node->right(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             stack_.pop();
@@ -499,7 +491,7 @@ class KDTree {
             return;
         }
         Node<Key, T>* n = root_;
-        while ((n = n->getClosestNodeOrAddPoint(key, value)) != nullptr)
+        while ((n = n->get_closest_node_or_add_entry(key, value)) != nullptr)
             ;
     }
 
@@ -510,7 +502,7 @@ class KDTree {
             return;
         }
         Node<Key, T>* n = root_;
-        while ((n = n->getClosestNodeOrAddPoint(key, value)) != nullptr)
+        while ((n = n->get_closest_node_or_add_entry(key, value)) != nullptr)
             ;
     }
 
@@ -558,16 +550,16 @@ class KDTree {
         const Key& key, Node<Key, T>* parent, RemoveResult& resultDepth, const PRED& pred_fn) {
         Node<Key, T>* n = root_;
         do {
-            const Key& nodeKey = n->getKey();
+            const Key& nodeKey = n->key();
             double nodeX = nodeKey[n->dim()];
             double keyX = key[n->dim()];
-            if (keyX == nodeX && key == nodeKey && pred_fn(n->getValue())) {
+            if (keyX == nodeX && key == nodeKey && pred_fn(n->value())) {
                 resultDepth.dim = n->dim();
                 resultDepth.nodeParent = parent;
                 return n;
             }
             parent = n;
-            n = (keyX >= nodeX) ? n->getHi() : n->getLo();
+            n = (keyX >= nodeX) ? n->right() : n->left();
         } while (n != nullptr);
         return n;
     }
@@ -580,25 +572,25 @@ class KDTree {
         RemoveResult& resultDepth,
         const PRED& pred_fn) {
         do {
-            auto& nodeKey = n->getKey();
+            auto& nodeKey = n->key();
             double nodeX = nodeKey[n->dim()];
             double keyX = key[n->dim()];
             if (keyX == nodeX) {
-                if (key == nodeKey && pred_fn(n->getValue())) {
+                if (key == nodeKey && pred_fn(n->value())) {
                     resultDepth.dim = n->dim();
                     resultDepth.nodeParent = parent;
                     return n;
                 }
                 // Broken invariant? We need to check the 'lower' part as well...
-                if (n->getLo() != nullptr) {  // TODO backport!!!!!! "parent" -> "n"
-                    Node<Key, T>* n2 = findNodeExactSlow(key, n->getLo(), n, resultDepth, pred_fn);
+                if (n->left() != nullptr) {  // TODO backport!!!!!! "parent" -> "n"
+                    Node<Key, T>* n2 = findNodeExactSlow(key, n->left(), n, resultDepth, pred_fn);
                     if (n2 != nullptr) {
                         return n2;
                     }
                 }
             }
             parent = n;
-            n = (keyX >= nodeX) ? n->getHi() : n->getLo();
+            n = (keyX >= nodeX) ? n->right() : n->left();
         } while (n != nullptr);
         return n;
     }
@@ -641,30 +633,30 @@ class KDTree {
 
         // find replacement
         //   removeResult.nodeParent = nullptr; // TODO backport!
-        while (eToRemove != nullptr && !eToRemove->isLeaf()) {
+        while (eToRemove != nullptr && !eToRemove->is_leaf()) {
             // recurse
             auto dim = removeResult.dim;
             removeResult.node = nullptr;
-            if (eToRemove->getHi() != nullptr) {
+            if (eToRemove->right() != nullptr) {
                 // get replacement from right
                 // This is preferable, because it cannot break the invariant
                 removeResult.best = SCALAR_MAX;
-                removeMinLeaf(eToRemove->getHi(), eToRemove, dim, removeResult);
-            } else if (eToRemove->getLo() != nullptr) {
+                removeMinLeaf(eToRemove->right(), eToRemove, dim, removeResult);
+            } else if (eToRemove->left() != nullptr) {
                 // get replacement from left
                 removeResult.best = SCALAR_MIN;
-                removeMaxLeaf(eToRemove->getLo(), eToRemove, dim, removeResult);
+                removeMaxLeaf(eToRemove->left(), eToRemove, dim, removeResult);
             }
-            eToRemove->setKeyValue(removeResult.node->getKey(), removeResult.node->getValue());
+            eToRemove->set(removeResult.node->key(), removeResult.node->value());
             eToRemove = removeResult.node;
         }
         // leaf node
         Node<Key, T>* parent = removeResult.nodeParent;
         if (parent != nullptr) {
-            if (parent->getLo() == eToRemove) {
-                parent->setLeft(nullptr);
-            } else if (parent->getHi() == eToRemove) {
-                parent->setRight(nullptr);
+            if (parent->left() == eToRemove) {
+                parent->set_left(nullptr);
+            } else if (parent->right() == eToRemove) {
+                parent->set_right(nullptr);
             } else {
                 assert(false);
             }
@@ -680,29 +672,29 @@ class KDTree {
         if (dim == node->dim()) {
             // We strictly look for leaf nodes with left==null
             //  -> left!=null means the left child is at least as small as the current node
-            if (node->getLo() != nullptr) {
-                removeMinLeaf(node->getLo(), node, dim, result);
-            } else if (node->getKey()[dim] <= result.best) {
+            if (node->left() != nullptr) {
+                removeMinLeaf(node->left(), node, dim, result);
+            } else if (node->key()[dim] <= result.best) {
                 result.node = node;
                 result.nodeParent = parent;
-                result.best = node->getKey()[dim];
+                result.best = node->key()[dim];
                 result.dim = node->dim();
             }
         } else {
             // split in any other dimension.
             // First, check local key.
-            double localX = node->getKey()[dim];
+            double localX = node->key()[dim];
             if (localX <= result.best) {
                 result.node = node;
                 result.nodeParent = parent;
                 result.best = localX;
                 result.dim = node->dim();
             }
-            if (node->getLo() != nullptr) {
-                removeMinLeaf(node->getLo(), node, dim, result);
+            if (node->left() != nullptr) {
+                removeMinLeaf(node->left(), node, dim, result);
             }
-            if (node->getHi() != nullptr) {
-                removeMinLeaf(node->getHi(), node, dim, result);
+            if (node->right() != nullptr) {
+                removeMinLeaf(node->right(), node, dim, result);
             }
         }
     }
@@ -712,19 +704,19 @@ class KDTree {
         // Split in 'interesting' dimension
         if (dim == node->dim()) {
             // We strictly look for leaf nodes with left==null
-            if (node->getHi() != nullptr) {
-                removeMaxLeaf(node->getHi(), node, dim, result);
-            } else if (node->getKey()[dim] >= result.best) {
+            if (node->right() != nullptr) {
+                removeMaxLeaf(node->right(), node, dim, result);
+            } else if (node->key()[dim] >= result.best) {
                 result.node = node;
                 result.nodeParent = parent;
-                result.best = node->getKey()[dim];
+                result.best = node->key()[dim];
                 result.dim = node->dim();
-                invariantBroken |= result.best == node->getKey()[dim];
+                invariantBroken |= result.best == node->key()[dim];
             }
         } else {
             // split in any other dimension.
             // First, check local key.
-            double localX = node->getKey()[dim];
+            double localX = node->key()[dim];
             if (localX >= result.best) {
                 result.node = node;
                 result.nodeParent = parent;
@@ -732,11 +724,11 @@ class KDTree {
                 result.dim = node->dim();
                 invariantBroken |= result.best == localX;
             }
-            if (node->getLo() != nullptr) {
-                removeMaxLeaf(node->getLo(), node, dim, result);
+            if (node->left() != nullptr) {
+                removeMaxLeaf(node->left(), node, dim, result);
             }
-            if (node->getHi() != nullptr) {
-                removeMaxLeaf(node->getHi(), node, dim, result);
+            if (node->right() != nullptr) {
+                removeMaxLeaf(node->right(), node, dim, result);
             }
         }
     }
@@ -840,25 +832,25 @@ class KDTree {
     double rangeSearch1NN(
         Node<Key, T>* node, const Key& center, KDEntryDist<Key, T> candidate, double maxRange) {
         dimension_t dim = node->dim();
-        if (node->getLo() != nullptr &&
-            (center[dim] < node->getKey()[dim] || node->getHi() == nullptr)) {
+        if (node->left() != nullptr &&
+            (center[dim] < node->key()[dim] || node->right() == nullptr)) {
             // go down
-            maxRange = rangeSearch1NN(node->getLo(), center, candidate, maxRange);
+            maxRange = rangeSearch1NN(node->left(), center, candidate, maxRange);
             // refine result
-            if (center[dim] + maxRange >= node->getKey()[dim]) {
+            if (center[dim] + maxRange >= node->key()[dim]) {
                 maxRange = addCandidate(node, center, candidate, maxRange);
-                if (node->getHi() != nullptr) {
-                    maxRange = rangeSearch1NN(node->getHi(), center, candidate, maxRange);
+                if (node->right() != nullptr) {
+                    maxRange = rangeSearch1NN(node->right(), center, candidate, maxRange);
                 }
             }
-        } else if (node->getHi() != nullptr) {
+        } else if (node->right() != nullptr) {
             // go down
-            maxRange = rangeSearch1NN(node->getHi(), center, candidate, maxRange);
+            maxRange = rangeSearch1NN(node->right(), center, candidate, maxRange);
             // refine result
-            if (center[dim] <= node->getKey()[dim] + maxRange) {
+            if (center[dim] <= node->key()[dim] + maxRange) {
                 maxRange = addCandidate(node, center, candidate, maxRange);
-                if (node->getLo() != nullptr) {
-                    maxRange = rangeSearch1NN(node->getLo(), center, candidate, maxRange);
+                if (node->left() != nullptr) {
+                    maxRange = rangeSearch1NN(node->left(), center, candidate, maxRange);
                 }
             }
         } else {
@@ -873,7 +865,7 @@ class KDTree {
         const Key& center,
         const KDEntryDist<Key, T>& candidate,
         double maxRange) {
-        double dist = distance(center, node->getKey());
+        double dist = distance(center, node->key());
         if (dist >= maxRange) {
             // don't add if too far away
             // don't add if we already have an equally good result
@@ -912,29 +904,29 @@ class KDTree {
         DISTANCE& dist_fn,
         FILTER& filter) const {
         dimension_t dim = node->dim();
-        if (node->getLo() != nullptr &&
-            (center[dim] < node->getKey()[dim] || node->getHi() == nullptr)) {
+        if (node->left() != nullptr &&
+            (center[dim] < node->key()[dim] || node->right() == nullptr)) {
             // go down
             maxRange =
-                rangeSearchKNN(node->getLo(), center, candidates, k, maxRange, dist_fn, filter);
+                rangeSearchKNN(node->left(), center, candidates, k, maxRange, dist_fn, filter);
             // refine result
-            if (center[dim] + maxRange >= node->getKey()[dim]) {
+            if (center[dim] + maxRange >= node->key()[dim]) {
                 maxRange = addCandidate(node, center, candidates, k, maxRange, dist_fn, filter);
-                if (node->getHi() != nullptr) {
+                if (node->right() != nullptr) {
                     maxRange = rangeSearchKNN(
-                        node->getHi(), center, candidates, k, maxRange, dist_fn, filter);
+                        node->right(), center, candidates, k, maxRange, dist_fn, filter);
                 }
             }
-        } else if (node->getHi() != nullptr) {
+        } else if (node->right() != nullptr) {
             // go down
             maxRange =
-                rangeSearchKNN(node->getHi(), center, candidates, k, maxRange, dist_fn, filter);
+                rangeSearchKNN(node->right(), center, candidates, k, maxRange, dist_fn, filter);
             // refine result
-            if (center[dim] <= node->getKey()[dim] + maxRange) {
+            if (center[dim] <= node->key()[dim] + maxRange) {
                 maxRange = addCandidate(node, center, candidates, k, maxRange, dist_fn, filter);
-                if (node->getLo() != nullptr) {
+                if (node->left() != nullptr) {
                     maxRange = rangeSearchKNN(
-                        node->getLo(), center, candidates, k, maxRange, dist_fn, filter);
+                        node->left(), center, candidates, k, maxRange, dist_fn, filter);
                 }
             }
         } else {
@@ -954,7 +946,7 @@ class KDTree {
         DISTANCE& dist_fn,
         FILTER& filter) const {
         // add ?
-        double dist = dist_fn(center, node->getKey());
+        double dist = dist_fn(center, node->key());
         if (dist > maxRange) {
             // don't add if too far away
             return maxRange;
@@ -963,7 +955,7 @@ class KDTree {
             // don't add if we already have enough equally good results.
             return maxRange;
         }
-        if (!filter.IsEntryValid(node->getKey(), node->getValue())) {
+        if (!filter.IsEntryValid(node->key(), node->value())) {
             return maxRange;
         }
         //        KDEntryDist<Key, T> cand{};
@@ -1026,23 +1018,23 @@ class KDTree {
         out << prefix << node->key();
         out << " v=" << node->value();
         out << " l/r=";
-        if (node->getLo() == nullptr) {
+        if (node->left() == nullptr) {
             out << "nullptr";
         } else {
-            out << node->getLo()->key();
+            out << node->left()->key();
         }
         out << "/";
-        if (node->getHi() == nullptr) {
+        if (node->right() == nullptr) {
             out << "nullptr";
         } else {
-            out << node->getHi()->key();
+            out << node->right()->key();
         }
         out << std::endl;
-        if (node->getLo() != nullptr) {
-            toStringTree(out, node->getLo(), depth + 1);
+        if (node->left() != nullptr) {
+            toStringTree(out, node->left(), depth + 1);
         }
-        if (node->getHi() != nullptr) {
-            toStringTree(out, node->getHi(), depth + 1);
+        if (node->right() != nullptr) {
+            toStringTree(out, node->right(), depth + 1);
         }
     }
 
