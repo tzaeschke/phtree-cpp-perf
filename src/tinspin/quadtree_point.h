@@ -479,15 +479,6 @@ class QNode {
     }
 
     /**
-     *
-     * @param parent
-     * @param keyOld
-     * @param keyNew
-     * @param value
-     * @param maxNodeSize
-     * @param requiresReinsert
-     * @param currentDepth
-     * @param maxDepth
      * @return 1 == found
      */
     size_t update(
