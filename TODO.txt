@@ -19,10 +19,19 @@ QUadtree
 PH-Tree
 =======
 - Try convert-on-access, i.e. store unconverted coordinates
+- Require values to be movable?
+  -> This is already the case for relocate(), or not?
+  -> disallow non-primitive values? -> This would simplify many areas:
+     - Entry
+     - relocate()  --> including relocate many...? -> SImply move into vector<>
+     - B+trees?
+     - remove all std::forward etc.
 - Create version 2.0:
   - simpler Filter ->   operator() / lambdas
-  - relocate w/o count-equals
-  - return std::pair<Key&, Val&>    struct <Key&, Val&, distance>
+  - relocate:
+    - remove count-equals
+    - allow custom std::equals()?
+  - return std::pair<Key&, Val&>  /  struct <Key&, Val&, distance>
   - Use /** comment format for functions/classes (?)
 
 

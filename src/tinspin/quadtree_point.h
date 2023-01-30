@@ -299,16 +299,13 @@ class QEntry {
         return value_;
     }
 
+    // TODO remove the following methods
     bool enclosedBy(const Key& min, const Key& max) const {
         return isPointEnclosed(point_, min, max);
     }
 
     bool enclosedBy(const Key& center, double radius) const {
         return isPointEnclosed(point_, center, radius);
-    }
-
-    bool isExact(const QEntry<Key, T>& e) const {
-        return isPointEqual(point_, e.point());
     }
 
     void setKey(const Key& newPoint) {
@@ -366,17 +363,17 @@ class QNode {
     }
 
     ~QNode() {
-        for (auto* sub:subs_) {
+        for (auto* sub : subs_) {
             delete sub;
         }
     }
 
-    QNode<Key, T>* tryPut(const QEntry<Key, T>& e, size_t maxNodeSize, bool enforceLeaf) {
-        assert(e.enclosedBy(center_, radius_));
+    QNode<Key, T>* tryPut(const Key& key, const T& value, size_t maxNodeSize, bool enforceLeaf) {
+        assert(isPointEnclosed(key, center_, radius_));
 
         // traverse subs?
         if (!isLeaf()) {
-            return getOrCreateSub(e);
+            return getOrCreateSub(key);
         }
 
         // add if:
@@ -384,33 +381,34 @@ class QNode {
         // b) we have maxDepth
         // c) elements are equal (work only for n=1, avoids splitting
         //    in cases where splitting won't help. For n>1 the
-        //    local limit is (temporarily) violated.
-        if (values_.size() < maxNodeSize || enforceLeaf || e.isExact(values_[0])) {
-            values_.emplace_back(e);
+        //    local limit is (temporarily) violated. // TODO we should check all points!?
+        if (values_.size() < maxNodeSize || enforceLeaf || key == values_[0].point()) {
+            values_.emplace_back(key, value);
             return nullptr;
         }
 
         assert(subs_.empty());
         for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e2 = values_[i];
-            QNode<Key, T>* sub = getOrCreateSub(e2);
+            QNode<Key, T>* sub = getOrCreateSub(e2.point());
             while (sub != nullptr) {
                 // This may recurse if all entries fall
                 // into the same subnode
-                sub = sub->tryPut(e2, maxNodeSize, false);
+                // TODO std::move key/value?
+                sub = sub->tryPut(e2.point(), e2.value(), maxNodeSize, false);
             }
         }
         values_.clear();
         values_.shrink_to_fit();
         is_leaf_ = false;
-        return getOrCreateSub(e);
+        return getOrCreateSub(key);
     }
 
   private:
-    QNode<Key, T>* getOrCreateSub(const QEntry<Key, T>& e) {
-        QNode<Key, T>* n = findSubNode(e.point());
+    QNode<Key, T>* getOrCreateSub(const Key& key) {
+        QNode<Key, T>* n = findSubNode(key);
         if (n == nullptr) {
-            n = createSubForEntry(e.point());
+            n = createSubForEntry(key);
             subs_.emplace_back(n);
         }
         return n;
@@ -499,48 +497,63 @@ class QNode {
         return n;
     }
 
-    QEntry<Key, T>* update(
+    /**
+     *
+     * @param parent
+     * @param keyOld
+     * @param keyNew
+     * @param value
+     * @param maxNodeSize
+     * @param requiresReinsert
+     * @param currentDepth
+     * @param maxDepth
+     * @return 1 == found
+     */
+    size_t update(
         QNode<Key, T>* parent,
         const Key& keyOld,
         const Key& keyNew,
-        int maxNodeSize,
+        const T& value,
+        size_t maxNodeSize,
         bool& requiresReinsert,
-        int currentDepth,
-        int maxDepth) {
+        size_t currentDepth,
+        size_t maxDepth) {
         if (!is_leaf_) {
             QNode<Key, T>* sub = findSubNode(keyOld);
             if (sub == nullptr) {
-                return nullptr;
+                return 0;
             }
-            QEntry<Key, T>* ret = sub->update(
-                this, keyOld, keyNew, maxNodeSize, requiresReinsert, currentDepth + 1, maxDepth);
-            if (ret != nullptr && requiresReinsert &&
-                isPointEnclosed(ret->point(), center_, radius_)) {
+            size_t ret = sub->update(
+                this,
+                keyOld,
+                keyNew,
+                value,
+                maxNodeSize,
+                requiresReinsert,
+                currentDepth + 1,
+                maxDepth);
+            if (ret != 0 && requiresReinsert && isPointEnclosed(keyNew, center_, radius_)) {
                 requiresReinsert = false;
                 auto* r = this;  // TODO backport, r is always a QNode
                 while (r != nullptr) {
-                    r = r->tryPut(*ret, maxNodeSize, currentDepth++ > maxDepth);
+                    r = r->tryPut(keyNew, value, maxNodeSize, currentDepth++ > maxDepth);
                 }
             }
-            return ret;
+            return ret;  // TODO backport -> return 0 if entry was not found!
         }
 
         for (size_t i = 0; i < values_.size(); ++i) {
             QEntry<Key, T>& e = values_[i];
-            if (isPointEqual(e.point(), keyOld)) {
-                values_.erase(values_.begin() + i);
-                e.setKey(keyNew);
+            if (isPointEqual(e.point(), keyOld) && e.value() == value) {
                 if (isPointEnclosed(keyNew, center_, radius_)) {
                     // reinsert locally;
                     // TODO avoid previous deletion / or at least use std::move!!!!!!!
-                    // TODO avoid previous deletion / or at least use std::move!!!!!!!
-                    // TODO avoid previous deletion / or at least use std::move!!!!!!!
-                    // TODO avoid previous deletion / or at least use std::move!!!!!!!
-                    // TODO avoid previous deletion / or at least use std::move!!!!!!!
                     //    --> backport
-                    values_.emplace_back(e);
+                    // values_.emplace_back(e);
+                    e.setKey(keyNew);
                     requiresReinsert = false;
                 } else {
+                    values_.erase(values_.begin() + i);
                     requiresReinsert = true;
                     // TODO provide threshold for re-insert
                     // i.e. do not always merge.
@@ -548,11 +561,11 @@ class QNode {
                         parent->checkAndMergeLeafNodes(maxNodeSize);
                     }
                 }
-                return &e;
+                return 1;
             }
         }
         requiresReinsert = false;
-        return nullptr;
+        return 0;
     }
 
   private:
@@ -757,10 +770,12 @@ class QIteratorBase {
     explicit QIteratorBase() noexcept : entry_{nullptr} {}
 
     inline auto& operator*() const noexcept {
+        assert(!IsEnd() && "This iterator is invalid.");
         return entry_->value();
     }
 
     inline auto* operator->() const noexcept {
+        assert(!IsEnd() && "This iterator is invalid.");
         return &entry_->value();
     }
 
@@ -1184,9 +1199,8 @@ class QuadTree {
         ensureCoverage(key);
         auto* r = root_;
         int depth = 0;
-        QEntry<Key, T> e(key, std::forward<T2>(value));  // TODO std::move into node
-        while (r != nullptr) {                           // TODO backport, r is always a QNode
-            r = r->tryPut(e, maxNodeSize, depth++ > MAX_DEPTH);
+        while (r != nullptr) {  // TODO backport, r is always a QNode
+            r = r->tryPut(key, std::forward<T2>(value), maxNodeSize, depth++ > MAX_DEPTH);
         }
     }
 
@@ -1198,9 +1212,8 @@ class QuadTree {
         ensureCoverage(key);
         auto* r = root_;
         int depth = 0;
-        QEntry<Key, T> e(key, value);  // TODO std::move into node
-        while (r != nullptr) {         // TODO backport, r is always a QNode
-            r = r->tryPut(e, maxNodeSize, depth++ > MAX_DEPTH);
+        while (r != nullptr) {  // TODO backport, r is always a QNode
+            r = r->tryPut(key, value, maxNodeSize, depth++ > MAX_DEPTH);
         }
     }
 
@@ -1307,19 +1320,19 @@ class QuadTree {
             return 0;
         }
         bool requiresReinsert = false;
-        QEntry<Key, T>* e =
-            root_->update(nullptr, oldKey, newKey, maxNodeSize, requiresReinsert, 0, MAX_DEPTH);
-        if (e == nullptr) {
+        size_t result = root_->update(
+            nullptr, oldKey, newKey, value, maxNodeSize, requiresReinsert, 0, MAX_DEPTH);
+        if (result == 0) {
             // not found
             return 0;
         }
         if (requiresReinsert) {
             // does not fit in root node...
-            ensureCoverage(e->point());
+            ensureCoverage(newKey);
             auto* r = root_;
             int depth = 0;
             while (r != nullptr) {  // TODO backport, r is always a QNode
-                r = r->tryPut(*e, maxNodeSize, depth++ > MAX_DEPTH);
+                r = r->tryPut(newKey, value, maxNodeSize, depth++ > MAX_DEPTH);
             }
         }
         return 1;
@@ -1371,7 +1384,7 @@ class QuadTree {
         root_ = nullptr;
     }
 
-    QStats getStats() {
+    QStats stats() {
         QStats s{};
         if (root_ != nullptr) {
             root_->checkNode(s, nullptr, 0);
@@ -1379,7 +1392,7 @@ class QuadTree {
         return s;
     }
 
-    int getDims() {
+    size_t dimensions() {
         return dims;
     }
 
@@ -1432,12 +1445,9 @@ class QuadTree {
             root_, k, center, std::forward<DISTANCE>(distance_fn), std::forward<FILTER>(filter));
     }
 
-    int getNodeCount() {
-        return getStats().getNodeCount();
-    }
-
-    int getDepth() {
-        return getStats().getMaxDepth();
+    void check_consistency() {
+        // TODO
+        assert(true);
     }
 };
 
