@@ -428,7 +428,7 @@ class QNode {
     }
 
   public:
-    size_t remove(QNode<Key, T>* parent, const Key& key, int maxNodeSize) {
+    size_t remove(QNode<Key, T>* parent, const Key& key, size_t maxNodeSize) {
         if (!is_leaf_) {
             QNode<Key, T>* sub = findSubNode(key);
             if (sub != nullptr) {
@@ -454,7 +454,7 @@ class QNode {
         return n;
     }
 
-    size_t remove(QNode<Key, T>* parent, const Key& key, int maxNodeSize, const T& value) {
+    size_t remove(QNode<Key, T>* parent, const Key& key, size_t maxNodeSize, const T& value) {
         if (!is_leaf_) {
             QNode<Key, T>* sub = findSubNode(key);
             if (sub != nullptr) {
@@ -542,9 +542,9 @@ class QNode {
     }
 
   private:
-    void checkAndMergeLeafNodes(int maxNodeSize) {
+    void checkAndMergeLeafNodes(size_t maxNodeSize) {
         // check
-        int nTotal = 0;
+        size_t nTotal = 0;
         for (size_t i = 0; i < subs_.size(); ++i) {
             if (!subs_[i]->is_leaf_) {
                 // can't merge directory nodes.
@@ -601,7 +601,7 @@ class QNode {
         return values_;
     }
 
-    void stats(QStats s, QNode<Key, T>* parent, int depth) {
+    void stats(QStats s, QNode<Key, T>* parent, size_t depth) {
         if (depth > s.maxDepth) {
             s.maxDepth = depth;
         }
@@ -1082,10 +1082,10 @@ class ForEach {
 
 template <typename Key, typename T>
 class QuadTree {
-    static const int MAX_DEPTH = 50;
+    static const size_t MAX_DEPTH = 50;
     using QueryBox = tinspin::Box<Key>;
 
-    static const int DEFAULT_MAX_NODE_SIZE = 10;
+    static const size_t DEFAULT_MAX_NODE_SIZE = 10;
 
     const size_t dims;
     const size_t maxNodeSize;
@@ -1115,7 +1115,7 @@ class QuadTree {
         }
         ensureCoverage(key);
         auto* r = root_;
-        int depth = 0;
+        size_t depth = 0;
         while (r != nullptr) {  // TODO backport, r is always a QNode
             r = r->tryPut(key, std::forward<T2>(value), maxNodeSize, depth++ > MAX_DEPTH);
         }
@@ -1128,7 +1128,7 @@ class QuadTree {
         }
         ensureCoverage(key);
         auto* r = root_;
-        int depth = 0;
+        size_t depth = 0;
         while (r != nullptr) {  // TODO backport, r is always a QNode
             r = r->tryPut(key, value, maxNodeSize, depth++ > MAX_DEPTH);
         }
@@ -1247,7 +1247,7 @@ class QuadTree {
             // does not fit in root node...
             ensureCoverage(newKey);
             auto* r = root_;
-            int depth = 0;
+            size_t depth = 0;
             while (r != nullptr) {  // TODO backport, r is always a QNode
                 r = r->tryPut(newKey, value, maxNodeSize, depth++ > MAX_DEPTH);
             }
@@ -1288,7 +1288,7 @@ class QuadTree {
      * @return the size
      */
   public:
-    int size() {
+    size_t size() {
         return size_;
     }
 

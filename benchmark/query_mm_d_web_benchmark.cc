@@ -91,10 +91,10 @@ using TestMap = typename std::conditional_t<
                             PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>,
                             typename std::conditional_t<
                                 SCENARIO == TS_KD,
-                                tinspin::KDTree<payload_t>,
+                                tinspin::KDTree<TestPoint, payload_t>,
                                 typename std::conditional_t<
                                     SCENARIO == TS_QT,
-                                    tinspin::QuadTree<payload_t>,
+                                    tinspin::QuadTree<TestPoint, payload_t>,
                                     void>>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
@@ -175,17 +175,17 @@ struct CounterMultiMap {
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO == Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const QueryBox& query) {
+    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint& min, const TestPoint& max) {
     CounterTreeWithMap counter{0};
-    tree.for_each(query, counter);
+    tree.for_each({min, max}, counter);
     return counter.n_;
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<SCENARIO, DIM>& tree, const QueryBox& query) {
+    TestMap<SCENARIO, DIM>& tree, const TestPoint& min, const TestPoint& max) {
     CounterMultiMap counter{0};
-    tree.for_each(query, counter);
+    tree.for_each({min, max}, counter);
     return counter.n_;
 }
 
@@ -227,7 +227,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const QueryBox& query) {
-    size_t n = CountEntries<DIM, SCENARIO>(tree_, query);
+    size_t n = CountEntries<DIM, SCENARIO>(tree_, query.min(), query.max());
 
     state.counters["query_rate"] += 1;
     state.counters["result_rate"] += n;

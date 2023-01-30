@@ -36,7 +36,7 @@ template <dimension_t DIM>
 using TestPoint = PhPointD<DIM>;
 
 template <dimension_t DIM, typename T>
-using TestTree = tinspin::QuadTree<T>;
+using TestTree = tinspin::QuadTree<TestPoint<DIM>, T>;
 
 class DoubleRng {
   public:

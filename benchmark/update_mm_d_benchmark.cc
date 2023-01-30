@@ -71,9 +71,11 @@ using TestMap = typename std::conditional_t<
                 PhTreeMultiMap2D<DIM, payload_t>,
                 typename std::conditional_t<
                     SCENARIO == TS_KD,
-                    tinspin::KDTree<payload_t, double>,
-                    typename std::
-                        conditional_t<SCENARIO == TS_QT, tinspin::QuadTree<payload_t>, void>>>>>>;
+                    tinspin::KDTree<TestPoint, payload_t>,
+                    typename std::conditional_t<
+                        SCENARIO == TS_QT,
+                        tinspin::QuadTree<TestPoint, payload_t>,
+                        void>>>>>>;
 
 template <dimension_t DIM>
 struct UpdateOp {

@@ -58,54 +58,60 @@ struct Query {
 template <dimension_t DIM>
 using CONVERTER = ConverterIEEE<DIM>;
 
-//using dim_t = dimension_t;
+// using dim_t = dimension_t;
 //
-//template<Scenario S, dim_t DIM>
-//struct map_impl { using type = void; }; // Default case
+// template<Scenario S, dim_t DIM>
+// struct map_impl { using type = void; }; // Default case
 //
-//template<dim_t DIM> struct map_impl<BOOST_RT,  DIM> { using type = b::PhTreeMultiMapD<DIM, payload_t>;  };
-////template<dim_t DIM> struct map_impl<LSI,  DIM> { using type = si::PhTreeMultiMapD<DIM, payload_t>;  };
-//template<dim_t DIM> struct map_impl<TREE_WITH_MAP, DIM> { using type = PhTreeD<DIM, BucketType, CONVERTER<DIM>>; };
-//template<dim_t DIM> struct map_impl<MULTI_MAP, DIM> { using type = PhTreeMultiMap<
-//        DIM,
-//        payload_t,
-//        CONVERTER<DIM>,
-//        b_plus_tree_hash_set<payload_t>>; };
-//template<dim_t DIM> struct map_impl<MULTI_MAP_STD, DIM> { using type = PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>; };
-//template<dim_t DIM> struct map_impl<PHTREE2, DIM> { using type = PhTreeMultiMap2D<DIM, payload_t>; };
-//template<dim_t DIM> struct map_impl<BB, DIM> { using type = bb::PhTreeMultiMapD<DIM, payload2_t>; };
-//template<dim_t DIM> struct map_impl<TS_KD, DIM> { using type = tinspin::KDTree<payload2_t, double>; };
-//template<dim_t DIM> struct map_impl<TS_QT, DIM> { using type = tinspin::QuadTree<payload2_t>; };
+// template<dim_t DIM> struct map_impl<BOOST_RT,  DIM> { using type = b::PhTreeMultiMapD<DIM,
+// payload_t>;  };
+////template<dim_t DIM> struct map_impl<LSI,  DIM> { using type = si::PhTreeMultiMapD<DIM,
+///payload_t>;  };
+// template<dim_t DIM> struct map_impl<TREE_WITH_MAP, DIM> { using type = PhTreeD<DIM, BucketType,
+// CONVERTER<DIM>>; }; template<dim_t DIM> struct map_impl<MULTI_MAP, DIM> { using type =
+// PhTreeMultiMap<
+//         DIM,
+//         payload_t,
+//         CONVERTER<DIM>,
+//         b_plus_tree_hash_set<payload_t>>; };
+// template<dim_t DIM> struct map_impl<MULTI_MAP_STD, DIM> { using type = PhTreeMultiMap<DIM,
+// payload_t, CONVERTER<DIM>, BucketType>; }; template<dim_t DIM> struct map_impl<PHTREE2, DIM> {
+// using type = PhTreeMultiMap2D<DIM, payload_t>; }; template<dim_t DIM> struct map_impl<BB, DIM> {
+// using type = bb::PhTreeMultiMapD<DIM, payload2_t>; }; template<dim_t DIM> struct map_impl<TS_KD,
+// DIM> { using type = tinspin::KDTree<payload2_t, double>; }; template<dim_t DIM> struct
+// map_impl<TS_QT, DIM> { using type = tinspin::QuadTree<payload2_t>; };
 //
-//template<Scenario S, dim_t DIM>
-//using find_int_type = typename map_impl<S, DIM>::type;
+// template<Scenario S, dim_t DIM>
+// using find_int_type = typename map_impl<S, DIM>::type;
 
 template <Scenario SCENARIO, dimension_t DIM>
-using TestMap = typename std::conditional_t<
-    SCENARIO == BOOST_RT,
-    b::PhTreeMultiMapD<DIM, payload_t>,
-    typename std::conditional_t<
-        //        SCENARIO == LSI,
-        //        si::PhTreeMultiMapD<DIM, payload_t>,
-        //        typename std::conditional_t<
-        SCENARIO == TREE_WITH_MAP,
-        PhTreeD<DIM, BucketType, CONVERTER<DIM>>,
-        typename std::conditional_t<
-            SCENARIO == MULTI_MAP,
-            PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, b_plus_tree_hash_set<payload_t>>,
-            typename std::conditional_t<
-                SCENARIO == PHTREE2,
-                PhTreeMultiMap2D<DIM, payload_t>,
-                typename std::conditional_t<
-                    SCENARIO == BB,
-                    bb::PhTreeMultiMapD<DIM, payload2_t>,
-                    typename std::conditional_t<
-                        SCENARIO == TS_KD,
-                        tinspin::KDTree<payload2_t, double>,
-                        typename std::conditional_t<
-                            SCENARIO == TS_QT,
-                            tinspin::QuadTree<payload2_t>,
-                            PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>>>>>>>>;
+using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
+      b::PhTreeMultiMapD<DIM, payload_t>,
+      typename std::conditional_t<
+          //        SCENARIO == LSI,
+          //        si::PhTreeMultiMapD<DIM, payload_t>,
+          //        typename std::conditional_t<
+          SCENARIO == TREE_WITH_MAP,
+          PhTreeD<DIM, BucketType, CONVERTER<DIM>>,
+          typename std::conditional_t<
+              SCENARIO == MULTI_MAP,
+              PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, b_plus_tree_hash_set<payload_t>>,
+              typename std::conditional_t<
+                  SCENARIO == MULTI_MAP_STD,
+                  PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>,
+                  typename std::conditional_t<
+                      SCENARIO == PHTREE2,
+                      PhTreeMultiMap2D<DIM, payload_t>,
+                      typename std::conditional_t<
+                          SCENARIO == BB,
+                          bb::PhTreeMultiMapD<DIM, payload2_t>,
+                          typename std::conditional_t<
+                              SCENARIO == TS_KD,
+                              tinspin::KDTree<TestPoint, payload2_t>,
+                              typename std::conditional_t<
+                                  SCENARIO == TS_QT,
+                                  tinspin::QuadTree<TestPoint, payload2_t>,
+                                  void>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -179,7 +185,7 @@ void InsertEntry(
 struct CounterTreeWithMap {
     void operator()(const TestPoint&, const BucketType& value) {
         for (auto& x : value) {
-            (void) x;
+            (void)x;
             n_ += 1;
         }
     }
@@ -195,17 +201,17 @@ struct CounterMultiMap {
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO == Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const QueryBox& query) {
+    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint&min, const TestPoint&max) {
     CounterTreeWithMap counter{0};
-    tree.for_each(query, counter);
+    tree.for_each({min, max}, counter);
     return counter.n_;
 }
 
 template <dimension_t DIM, Scenario SCENARIO>
 typename std::enable_if<SCENARIO != Scenario::TREE_WITH_MAP, size_t>::type CountEntries(
-    TestMap<SCENARIO, DIM>& tree, const QueryBox& query) {
+    TestMap<SCENARIO, DIM>& tree, const TestPoint&min, const TestPoint&max) {
     CounterMultiMap counter{0};
-    tree.for_each(query, counter);
+    tree.for_each({min, max}, counter);
     return counter.n_;
 }
 
@@ -226,7 +232,7 @@ void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
 
 template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::QueryWorld(benchmark::State& state, const QueryBox& query) {
-    size_t n = CountEntries<DIM, SCENARIO>(tree_, query);
+    size_t n = CountEntries<DIM, SCENARIO>(tree_, query.min(), query.max());
 
     state.counters["query_rate"] += 1;
     state.counters["result_rate"] += n;

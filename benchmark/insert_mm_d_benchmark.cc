@@ -45,6 +45,7 @@ enum Scenario {
 };
 
 using payload_t = int64_t;
+using TestPoint = PhPointD<3>;
 
 using BucketType = std::set<payload_t>;
 
@@ -69,10 +70,10 @@ using TestMap = typename std::conditional_t<
                     improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
                     typename std::conditional_t<
                         SCENARIO == TS_KD,
-                        tinspin::KDTree<payload_t>,
+                        tinspin::KDTree<TestPoint, payload_t>,
                         typename std::conditional_t<
                             SCENARIO == TS_QT,
-                            tinspin::QuadTree<payload_t>,
+                            tinspin::QuadTree<TestPoint, payload_t>,
                             void>>>>>>>;
 
 /*
@@ -84,17 +85,15 @@ class IndexBenchmark {
 
   public:
     explicit IndexBenchmark(benchmark::State& state);
-
     void Benchmark(benchmark::State& state);
 
   private:
     void SetupWorld(benchmark::State& state);
-
     void Insert(benchmark::State& state, Index& tree);
 
     const TestGenerator data_type_;
     const size_t num_entities_;
-    std::vector<PhPointD<DIM>> points_;
+    std::vector<TestPoint> points_;
 };
 
 template <dimension_t DIM, Scenario S>
@@ -135,7 +134,7 @@ void IndexBenchmark<DIM, S>::SetupWorld(benchmark::State& state) {
 template <dimension_t DIM, Scenario S>
 void IndexBenchmark<DIM, S>::Insert(benchmark::State& state, Index& tree) {
     for (size_t i = 0; i < num_entities_; ++i) {
-        PhPointD<DIM>& p = points_[i];
+        auto& p = points_[i];
         tree.emplace(p, (payload_t)i);
     }
 
