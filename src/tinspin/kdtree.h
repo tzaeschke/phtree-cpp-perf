@@ -276,11 +276,11 @@ class KDIterator : public KDIteratorBase<Key, T> {
             auto dims = min.size();
             dimension_t dim = depth % dims;
             // TODO backport -> invariant problem, invariant can be
-            //   broken in additional cases with coordinayte duplicates (multiple dimensions are
+            //   broken in additional cases with coordinate duplicates (multiple dimensions are
             //   equal).
             doLeft = min[dim] <= key[dim];
             doRight = max[dim] >= key[dim];  // TODO backport to Java !!!!!!!!!!!!!!!!!!!!
-            doKey = doLeft || doRight || key[dim] == min[dim] || key[dim] == max[dim];
+            doKey = true;                    // TODO backport
         }
     };
 
