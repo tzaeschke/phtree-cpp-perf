@@ -61,10 +61,7 @@ template <typename Key, typename T>
 class KDEntryDist {
   public:
     KDEntryDist(){};
-    KDEntryDist(Node<Key, T>* node, double dist) {
-        entry_ = node;
-        distance_ = dist;
-    }
+    KDEntryDist(Node<Key, T>* node, double dist) : entry_{node}, distance_{dist} {}
 
     void set(Node<Key, T>* node, double dist) {
         entry_ = node;
@@ -75,8 +72,8 @@ class KDEntryDist {
         return distance_;
     }
 
-    const Key& point() const noexcept {
-        return entry_->point();
+    const Key& key() const noexcept {
+        return entry_->key();
     }
 
     T& value() const noexcept {
@@ -98,11 +95,8 @@ class KDEntryDist {
 template <typename Key, typename T>
 class Node {
   public:
-    Node(const Key& p, const T& value, int dim) {
-        coordinate_ = p;
-        value_ = value;
-        dim_ = dim;
-    }
+    Node(const Key& key, const T& value, size_t split_dim)
+    : coordinate_{key}, value_{value}, split_dim_{split_dim} {}
 
     ~Node() {
         if (left_ != nullptr) {
@@ -113,20 +107,20 @@ class Node {
         }
     }
 
-    Node* getClosestNodeOrAddPoint(const Key& p, const T& value, int dims) {
+    Node* getClosestNodeOrAddPoint(const Key& p, const T& value) {
         // Find best sub-node.
         // If there is no node, we create one and return null
-        if (p[dim_] >= coordinate_[dim_]) {
+        if (p[split_dim_] >= coordinate_[split_dim_]) {
             if (right_ != nullptr) {
                 return right_;
             }
-            right_ = new Node(p, value, (dim_ + 1) % dims);
+            right_ = new Node(p, value, (split_dim_ + 1) % p.size());
             return nullptr;
         }
         if (left_ != nullptr) {
             return left_;
         }
-        left_ = new Node(p, value, (dim_ + 1) % dims);
+        left_ = new Node(p, value, (split_dim_ + 1) % p.size());
         return nullptr;
     }
 
@@ -165,7 +159,7 @@ class Node {
         value_ = value;
     }
 
-    const Key& point() const noexcept {
+    const Key& key() const noexcept {
         return coordinate_;
     }
 
@@ -188,7 +182,7 @@ class Node {
 
     void check_consistency(
         const Key& lower_bound, const Key& upper_bound, size_t& n, size_t d_parent) const {
-        assert(dim_ == (d_parent + 1u) % coordinate_.size());
+        assert(split_dim_ == (d_parent + 1u) % coordinate_.size());
         for (size_t d = 0; d < lower_bound.size(); ++d) {
             assert(coordinate_[d] >= lower_bound[d]);
             assert(coordinate_[d] <= upper_bound[d]);  // TODO <- backport?
@@ -197,13 +191,15 @@ class Node {
         ++n;
         if (left_ != nullptr) {
             Key upper_bound_2{upper_bound};
-            upper_bound_2[dim_] = std::min(upper_bound_2[dim_], coordinate_[dim_]);
-            left_->check_consistency(lower_bound, upper_bound_2, n, dim_);
+            upper_bound_2[split_dim_] =
+                std::min(upper_bound_2[split_dim_], coordinate_[split_dim_]);
+            left_->check_consistency(lower_bound, upper_bound_2, n, split_dim_);
         }
         if (right_ != nullptr) {
             Key lower_bound_2{lower_bound};
-            lower_bound_2[dim_] = std::max(lower_bound_2[dim_], coordinate_[dim_]);
-            right_->check_consistency(lower_bound_2, upper_bound, n, dim_);
+            lower_bound_2[split_dim_] =
+                std::max(lower_bound_2[split_dim_], coordinate_[split_dim_]);
+            right_->check_consistency(lower_bound_2, upper_bound, n, split_dim_);
         }
     }
 
@@ -212,7 +208,7 @@ class Node {
     }
 
     size_t dim() const noexcept {
-        return dim_;
+        return split_dim_;
     }
 
   private:
@@ -220,7 +216,7 @@ class Node {
     T value_;
     Node* left_ = nullptr;
     Node* right_ = nullptr;
-    size_t dim_;
+    size_t split_dim_;
 };
 
 template <typename Key, typename T>
@@ -427,7 +423,7 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
     }
 
     const Key& first() const noexcept {
-        return iter_->point();
+        return iter_->key();
     }
 
   private:
@@ -481,69 +477,7 @@ class KDTree {
   public:
     using KeyInternal = Key;
 
-    //  public:
-    //    void main(char* args) {
-    //        for (int i = 0; i < 10; i++) {
-    //            test(i);
-    //        }
-    //    }
-    //
-    //  private:
-    //    static void test(int r) {
-    //        //		const Key&[] point_list = {{2,3}, {5,4}, {9,6}, {4,7}, {8,1}, {7,2}};
-    //        const Key&[] point_list = new double[500000][14];
-    //        Random R = new Random(r);
-    //        for (const Key&p : point_list) {
-    //            Arrays.setAll(p, [](int i) { return (double)R.nextInt(100); });
-    //        }
-    //        KDTree<double[]> tree = create(point_list[0].length);
-    //        for (const Key&data : point_list) {
-    //            tree.insert(data, data);
-    //        }
-    //        //	    System.out.println(tree.toStringTree());
-    //        for (const Key&key : point_list) {
-    //            if (!tree.containsExact(key)) {
-    //                throw new IllegalStateException("" + Arrays.toString(key));
-    //            }
-    //        }
-    //        for (const Key&key : point_list) {
-    //            System.out.println(Arrays.toString(tree.queryExact(key)));
-    //        }
-    //        //	    System.out.println(tree.toStringTree());
-    //
-    //        for (const Key&key : point_list) {
-    //            //			System.out.println(tree.toStringTree());
-    //            System.out.println("kNN query: " + Arrays.toString(key));
-    //            QueryIteratorKNN<PointEntryDist<double[]>> iter = tree.queryKNN(key, 1);
-    //            if (!iter.hasNext()) {
-    //                throw new IllegalStateException("kNN() failed: " + Arrays.toString(key));
-    //            }
-    //            const Key&answer = iter.next().point();
-    //            if (answer != key && !Arrays.equals(answer, key)) {
-    //                throw new IllegalStateException(
-    //                    "Expected " + Arrays.toString(key) + " but got " +
-    //                    Arrays.toString(answer));
-    //            }
-    //        }
-    //
-    //        for (const Key&key : point_list) {
-    //            //			System.out.println(tree.toStringTree());
-    //            System.out.println("Removing: " + Arrays.toString(key));
-    //            if (!tree.containsExact(key)) {
-    //                throw new IllegalStateException("containsExact() failed: " +
-    //                Arrays.toString(key));
-    //            }
-    //            const Key&answer = tree.remove(key);
-    //            if (answer != key && !Arrays.equals(answer, key)) {
-    //                throw new IllegalStateException(
-    //                    "Expected " + Arrays.toString(key) + " but got " +
-    //                    Arrays.toString(answer));
-    //            }
-    //        }
-    //    }
-
-  public:
-    KDTree(size_t dims = 3) : dims_{dims} {
+    KDTree() {
         if (DEBUG) {
             std::cout << "Warning: DEBUG enabled" << std::endl;
         }
@@ -565,7 +499,7 @@ class KDTree {
             return;
         }
         Node<Key, T>* n = root_;
-        while ((n = n->getClosestNodeOrAddPoint(key, value, dims_)) != nullptr)
+        while ((n = n->getClosestNodeOrAddPoint(key, value)) != nullptr)
             ;
     }
 
@@ -576,7 +510,7 @@ class KDTree {
             return;
         }
         Node<Key, T>* n = root_;
-        while ((n = n->getClosestNodeOrAddPoint(key, value, dims_)) != nullptr)
+        while ((n = n->getClosestNodeOrAddPoint(key, value)) != nullptr)
             ;
     }
 
@@ -852,7 +786,7 @@ class KDTree {
         // TODO move FILTER into begin_query
         auto end = this->end();
         while (it != end) {
-            Key k = it._node()->point();
+            Key k = it._node()->key();
             if (filter.IsEntryValid(k, *it)) {
                 callback(k, *it);
             }
@@ -1089,19 +1023,19 @@ class KDTree {
             prefix += ".";
         }
         prefix += " ";
-        out << prefix << node->point();
+        out << prefix << node->key();
         out << " v=" << node->value();
         out << " l/r=";
         if (node->getLo() == nullptr) {
             out << "nullptr";
         } else {
-            out << node->getLo()->point();
+            out << node->getLo()->key();
         }
         out << "/";
         if (node->getHi() == nullptr) {
             out << "nullptr";
         } else {
-            out << node->getHi()->point();
+            out << node->getHi()->key();
         }
         out << std::endl;
         if (node->getLo() != nullptr) {
@@ -1135,10 +1069,6 @@ class KDTree {
         }
     }
 
-    size_t dims() {
-        return dims_;
-    }
-
     auto begin() {
         return begin_query(
             {{SCALAR_MIN, SCALAR_MIN, SCALAR_MIN}, {SCALAR_MAX, SCALAR_MAX, SCALAR_MAX}});
@@ -1149,7 +1079,6 @@ class KDTree {
     }
 
   private:
-    const size_t dims_;
     size_t size_ = 0;
     // During insertion, the tree maintains an invariant that if two points have the
     // same value in any dimension, then one key is never in the 'lower' branch of the other.
