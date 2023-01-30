@@ -35,6 +35,7 @@ using namespace improbable::phtree::phbenchmark;
 namespace {
 
 const double GLOBAL_MAX = 10000;
+const dimension_t DIM = 10;
 
 enum Scenario {
     BOOST_RT,
@@ -51,8 +52,8 @@ enum Scenario {
 using payload_t = int64_t;
 using payload2_t = uint32_t;
 
-using TestPoint = PhPointD<3>;
-using QueryBox = PhBoxD<3>;
+using TestPoint = PhPointD<DIM>;
+using QueryBox = PhBoxD<DIM>;
 using BucketType = std::set<payload_t>;
 
 template <dimension_t DIM>
@@ -82,10 +83,10 @@ using TestMap = typename std::conditional_t<
                         //                    bb::PhTreeMultiMapD<DIM, payload2_t>,
                         //                    typename std::conditional_t<
                         SCENARIO == TS_KD,
-                        tinspin::KDTree<payload, double>,
+                        tinspin::KDTree<DIM, payload_t, double>,
                         typename std::conditional_t<
                             SCENARIO == TS_QT,
-                            tinspin::QuadTree<payload>,
+                            tinspin::QuadTree<payload_t>,
                             typename std::conditional_t<
                                 SCENARIO == FLANN_KD,
                                 flann::PhTreeMultiMap<DIM, size_t>,
@@ -161,7 +162,7 @@ template <
     std::enable_if_t<(SCENARIO != Scenario::FLANN_KD), int> = 0>
 size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
-    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>()); q != tree.end(); ++q) {
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<DIM>()); q != tree.end(); ++q) {
         ++n;
     }
     return n;
@@ -173,7 +174,7 @@ template <
     std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
 size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
-    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<3>()); q != tree.knn_end();
+    for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<DIM>()); q != tree.knn_end();
          ++q) {
         ++n;
     }
@@ -237,55 +238,55 @@ void BoostRT(benchmark::State& state, Arguments&&... arguments) {
 
 // template <typename... Arguments>
 // void LibSI(benchmark::State& state, Arguments&&... arguments) {
-//     IndexBenchmark<3, Scenario::LSI> benchmark{state, arguments...};
+//     IndexBenchmark<DIM, Scenario::LSI> benchmark{state, arguments...};
 //     benchmark.Benchmark(state);
 // }
 //
 // template <typename... Arguments>
 // void BBTree3D(benchmark::State& state, Arguments&&... arguments) {
-//    IndexBenchmark<3, Scenario::BB> benchmark{state, arguments...};
+//    IndexBenchmark<DIM, Scenario::BB> benchmark{state, arguments...};
 //    benchmark.Benchmark(state);
 //}
 
 template <typename... Arguments>
 void KDTree3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::TS_KD> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::TS_KD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void Quadtree3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::TS_QT> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::TS_QT> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void FlannKD3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::FLANN_KD> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::FLANN_KD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void PhTree3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::TREE_WITH_MAP> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::TREE_WITH_MAP> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void PhTreeMultiMap3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::MULTI_MAP> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::MULTI_MAP> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void PhTreeMultiMap2_3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::PHTREE2> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::PHTREE2> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void PhTreeMultiMapStd3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::MULTI_MAP_STD> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::MULTI_MAP_STD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
@@ -345,31 +346,5 @@ BENCHMARK_CAPTURE(Quadtree3D, KNN_10, 10)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
-
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CU_1_of_10K, TestGenerator::CUBE, 10000, 1)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CU_1_of_1M, TestGenerator::CUBE, 1000000, 1)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CU_10_of_10K, TestGenerator::CUBE, 10000, 10)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CU_10_of_1M, TestGenerator::CUBE, 1000000, 10)
-//     ->Unit(benchmark::kMillisecond);
-//
-//// index type, scenario name, data_type, num_entities, query_result_size
-//// PhTree 3D CLUSTER
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CL_1_of_10K, TestGenerator::CLUSTER, 10000, 1)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CL_1_of_1M, TestGenerator::CLUSTER, 1000000, 1)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CL_10_of_10K, TestGenerator::CLUSTER, 10000, 10)
-//     ->Unit(benchmark::kMillisecond);
-//
-// BENCHMARK_CAPTURE(PhTree3D, KNN_CL_10_of_1M, TestGenerator::CLUSTER, 1000000, 10)
-//     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

@@ -36,7 +36,7 @@ template <dimension_t DIM>
 using TestPoint = PhPointD<DIM>;
 
 template <dimension_t DIM, typename T>
-using TestTree = tinspin::KDTree<T, double>;
+using TestTree = tinspin::KDTree<DIM, T, double>;
 
 class DoubleRng {
   public:
@@ -463,7 +463,7 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
         ASSERT_EQ(1U, n);
         tree.emplace(pNew, Id(i));
         if (i % 100 == 0) {
-            tree.checkConsistency();
+            tree.check_consistency();
         }
         ASSERT_EQ(count_new + 1, tree.count(pNew));
         ASSERT_EQ(count_old - 1, tree.count(pOld));
