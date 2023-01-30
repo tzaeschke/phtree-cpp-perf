@@ -41,7 +41,7 @@ class PhTreeMultiMap {
     using KeyInternal = Key;
     using QueryBox = typename pht::PhBox<DIM, SCALAR>;
 
-    explicit PhTreeMultiMap() : size_{0} {
+    explicit PhTreeMultiMap() {
         tree_ = create_tree();
     }
 
@@ -89,8 +89,7 @@ class PhTreeMultiMap {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, R_0, params);
+        tree_->radiusSearch(queries, indexes, distances, R_0, params());
         return indexes[0].size();
     }
 
@@ -98,8 +97,7 @@ class PhTreeMultiMap {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, R_0, params);
+        tree_->radiusSearch(queries, indexes, distances, R_0, params());
         result_.clear();
         for (auto& ind : indexes) {
             result_.insert(result_.end(), ind.begin(), ind.end());
@@ -113,8 +111,7 @@ class PhTreeMultiMap {
         const Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, R_0, params);
+        tree_->radiusSearch(queries, indexes, distances, R_0, params());
         for (auto r : indexes) {
             for (auto r2 : r) {
                 if (r2 - X == value) {
@@ -126,34 +123,15 @@ class PhTreeMultiMap {
         return result_.end();
     }
 
-    size_t erase(const Key& key, const T& value) {
+    size_t erase(const Key&, const T& value) {
+        size_t result = tree_->size();
         tree_->removePoint(value);
-        --size_;   // TODO this is bad..!
-        return 1;  // TODO
+        result -= tree_->size();
+        return result;
     }
 
-    //    template <typename ITERATOR>
-    //    size_t erase(const ITERATOR& iterator) {
-    //        static_assert(
-    //            std::is_convertible_v<ITERATOR*, IteratorBase<PHTREE>*>,
-    //            "erase(iterator) requires an iterator argument. For erasing by key please use "
-    //            "erase(key, value).");
-    //        if (iterator != end()) {
-    //            auto& bucket = const_cast<BUCKET&>(*iterator.GetIteratorOfPhTree());
-    //            size_t old_size = bucket.size();
-    //            bucket.erase(iterator.GetIteratorOfBucket());
-    //            bool success = bucket.size() < old_size;
-    //            if (bucket.empty()) {
-    //                success &= tree_->erase(iterator.GetIteratorOfPhTree()) > 0;
-    //            }
-    //            size_ -= success;
-    //            return success;
-    //        }
-    //        return 0;
-    //    }
-
     template <typename T2>
-    size_t relocate(const Key& old_key, const Key& new_key, T2&& value, bool count_equals = true) {
+    size_t relocate(const Key& old_key, const Key& new_key, T2&& value) {
         erase(old_key, value);
         insert(new_key, value);
         return 1;
@@ -175,8 +153,7 @@ class PhTreeMultiMap {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, radius * radius, params);
+        tree_->radiusSearch(queries, indexes, distances, radius * radius, params());
         for (auto r : indexes) {
             for (auto r2 : r) {
                 auto* point = tree_->getPoint(r2);
@@ -216,17 +193,19 @@ class PhTreeMultiMap {
         const Key& center,
         DISTANCE&& distance_function = DISTANCE(),
         FILTER&& filter = FILTER()) {
+        (void)distance_function;
+        (void)filter;
+
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&center[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
-        tree_->knnSearch(queries, indexes, distances, min_results, params);
+        tree_->knnSearch(queries, indexes, distances, min_results, params());
 
         knn_result_.clear();
         for (size_t i1 = 0; i1 < indexes.size(); ++i1) {
             for (size_t i2 = 0; i2 < indexes[i1].size(); ++i2) {
                 Key k{};
-                // TODO
+                // TODO disable for performance, but required for correctness
                 //                auto* x = tree_->getPoint(indexes[i1][i2]);
                 //                for (size_t d = 0; d < DIM; ++d) {
                 //                    k[d] = x[d];
@@ -244,9 +223,8 @@ class PhTreeMultiMap {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
         tree_->radiusSearch(
-            queries, indexes, distances, std::numeric_limits<SCALAR>::infinity(), params);
+            queries, indexes, distances, std::numeric_limits<SCALAR>::infinity(), params());
         for (auto r : indexes) {
             for (auto r2 : r) {
                 result_.emplace_back(r2);
@@ -266,7 +244,6 @@ class PhTreeMultiMap {
     void clear() {
         delete tree_;
         tree_ = create_tree();
-        size_ = 0;
     }
 
     [[nodiscard]] size_t size() const {
@@ -274,8 +251,6 @@ class PhTreeMultiMap {
         //  do this after loading via a call to size()
         //  -->
         //  The same could be used to do a bulk-build.
-        // tree_->size();
-        // assert(tree_->size() == size_);
         return tree_->size();
     }
 
@@ -299,91 +274,12 @@ class PhTreeMultiMap {
         return tree;
     }
 
-    //    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
-    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-    //        //std::cout << "q: " << r.
-    //        return r;
-    //    }
-    //
-    //    template <bool DUMMY = POINT_KEYS>
-    //    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
-    //        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-    //        return r;
-    //    }
+    const SearchParams params() const {
+        return SearchParams{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
+    }
 
-    //    template <bool DUMMY = POINT_KEYS>
-    //    typename std::enable_if<DUMMY, KeyInternal>::type to_shape(const Key& key) const {
-    //        pcl::PointXYZ point;
-    //
-    //        point.x = key[0];
-    //        point.y = key[1];
-    //        point.z = key[2];
-    //
-    //        cloud_->points.push_back(point);
-    //        KeyInternal p = std::vector<float>(key.begin(), key.end());
-    //        return p;
-    //    }
-
-    //    template <bool DUMMY = POINT_KEYS>
-    //    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
-    //        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-    //        return r;
-    //    }
-    //
-    //    template <bool DUMMY2 = POINT_KEYS>
-    //    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
-    //        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
-    //        Region r = Region(&*key.begin(), &*key.begin(), DIM);
-    //        return r;
-    //    }
-    //
-    //    Key from_array(const double* a) const {
-    //        Key key;
-    //        for (pht::dimension_t d = 0; d < DIM; ++d) {
-    //            key[d] = a[d];
-    //        }
-    //        return key;
-    //    }
-    //
-    //    Key from_point(const Point& p) const {
-    //        return {from_array(p.m_pCoords)};
-    //    }
-
-    //    template <pht::dimension_t DIM2 = DIM>
-    //    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const KeyInternal&
-    //    shape) const {
-    //        // Point** p = static_cast<Point**>(shape);
-    //        Key key;
-    //        std::copy_n(shape.begin(), DIM, key.begin());
-    ////        for (pht::dimension_t d = 0; d < DIM; ++d) {
-    ////            key[d] = p.m_pCoords[d];
-    ////        }
-    //        return key;
-    //    }
-
-    //    template <pht::dimension_t DIM2 = DIM>
-    //    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
-    //        IShape* shape) const {
-    //        Region r;
-    //        shape->getMBR(r);
-    //        // PhPointD<DIM> lo{*r.m_pLow};
-    //        // PhPointD<DIM> hi{*r.m_pHigh};
-    //        // PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
-    //        pht::PhBoxD<DIM> box;
-    //        for (pht::dimension_t d = 0; d < DIM; ++d) {
-    //            box.min()[d] = r.m_pLow[d];
-    //            box.max()[d] = r.m_pHigh[d];
-    //        }
-    //        return box;
-    //    }
-
-    Matrix<float> dataset_;
-    bool is_loaded_ = false;
     flann::KDTreeIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
     CONVERTER converter_;
-    size_t size_;
     std::vector<T> result_{};  /// Dirty Hack!!!! TODO
     struct KNNResult {
         Key first;
