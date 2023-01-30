@@ -59,6 +59,11 @@ class PhTreeMultiMap {
         tree_->addPoints(dataset);
     }
 
+    void emplace(const std::vector<Key>& keys) {
+        Matrix<SCALAR> dataset(const_cast<SCALAR*>(&keys[0][0]), keys.size(), DIM);
+        tree_->addPoints(dataset);
+    }
+
     template <typename ITERATOR, typename... Args>
     std::pair<T&, bool> emplace_hint(const ITERATOR&, const Key& key, const T& id) {
         emplace(key, id);
@@ -170,18 +175,20 @@ class PhTreeMultiMap {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        SearchParams params{};  // TODO unsorted?
-        tree_->radiusSearch(queries, indexes, distances, radius, params);
+        SearchParams params{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
+        tree_->radiusSearch(queries, indexes, distances, radius * radius, params);
         for (auto r : indexes) {
             for (auto r2 : r) {
                 auto* point = tree_->getPoint(r2);
+                bool match = true;
                 for (size_t d = 0; d < DIM; ++d) {
                     if (point[d] < min[d] || point[d] > max[d]) {
-                        continue;
+                        match = false;
+                        break;
                     }
                 }
                 Key k{};  // TODO
-                if (filter.IsEntryValid(k, r2 - X)) {
+                if (match && filter.IsEntryValid(k, r2 - X)) {
                     callback(k, r2 - X);
                 }
             }
