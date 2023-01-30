@@ -124,7 +124,7 @@ class Node {
         return nullptr;
     }
 
-    const Key& key() const noexcept { // backport: -> remove duplicate point/key methods
+    const Key& key() const noexcept {  // backport: -> remove duplicate point/key methods
         return coordinate_;
     }
 
@@ -263,12 +263,13 @@ class KDIteratorBase {
  */
 template <typename Key, typename T, typename FILTER>
 class KDIterator : public KDIteratorBase<Key, T> {
+    using depth_t = std::uint32_t;
     struct IteratorPos {
         Node<Key, T>* node_;
-        int depth_;
+        depth_t depth_;
         bool doLeft, doKey, doRight;
 
-        void set(Node<Key, T>* node, const Key& min, const Key& max, size_t depth) {
+        void set(Node<Key, T>* node, const Key& min, const Key& max, depth_t depth) {
             node_ = node;
             depth_ = depth;
             const Key& key = node_->key();
@@ -283,52 +284,16 @@ class KDIterator : public KDIteratorBase<Key, T> {
         }
     };
 
-    // TODO use std::stack instead. (perf test!)
-    class IteratorStack {
-      public:
-        IteratorStack(size_t size = 10) : stack(size) {}
-
-        bool isEmpty() {
-            return size == 0u;
-        }
-
-        IteratorPos prepareAndPush(Node<Key, T>* node, const Key& min, const Key& max, int depth) {
-            if (size == stack.size()) {
-                stack.emplace_back();
-            }
-            IteratorPos& ni = stack[size++];
-
-            ni.set(node, min, max, depth);
-            return ni;
-        }
-
-        IteratorPos& peek() {
-            return stack[size - 1];
-        }
-
-        IteratorPos& pop() {
-            return stack[--size];
-        }
-
-        void clear() {
-            size = 0;
-        }
-
-      private:
-        std::vector<IteratorPos> stack{};
-        size_t size = 0;
-    };
-
   public:
     // end()
-    KDIterator() : KDIteratorBase<Key, T>(), stack_(0), min_{}, max_{} {}
+    KDIterator() : KDIteratorBase<Key, T>(), stack_{}, min_{}, max_{} {}
 
     // begin_query()
     template <typename F = FilterNoOp>
     KDIterator(Node<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
     : KDIteratorBase<Key, T>(), stack_{}, min_{min}, max_{max}, filter_(std::forward<F>(filter)) {
         if (root != nullptr) {
-            stack_.prepareAndPush(root, min, max, 0);
+            prepareAndPush(root, min, max, 0);
             findNext();
         } else {
             this->SetFinished();
@@ -350,12 +315,12 @@ class KDIterator : public KDIteratorBase<Key, T> {
 
   private:
     void findNext() {
-        while (!stack_.isEmpty()) {
-            IteratorPos& itPos = stack_.peek();
+        while (!stack_.empty()) {
+            IteratorPos& itPos = stack_.top();
             Node<Key, T>* node = itPos.node_;
             if (itPos.doLeft && node->left() != nullptr) {
                 itPos.doLeft = false;
-                stack_.prepareAndPush(node->left(), min_, max_, itPos.depth_ + 1);
+                prepareAndPush(node->left(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             if (itPos.doKey) {
@@ -368,7 +333,7 @@ class KDIterator : public KDIteratorBase<Key, T> {
             }
             if (itPos.doRight && node->right() != nullptr) {
                 itPos.doRight = false;
-                stack_.prepareAndPush(node->right(), min_, max_, itPos.depth_ + 1);
+                prepareAndPush(node->right(), min_, max_, itPos.depth_ + 1);
                 continue;
             }
             stack_.pop();
@@ -376,8 +341,14 @@ class KDIterator : public KDIteratorBase<Key, T> {
         this->SetFinished();
     }
 
+    IteratorPos prepareAndPush(Node<Key, T>* node, const Key& min, const Key& max, depth_t depth) {
+        auto& n = stack_.push();
+        n.set(node, min, max, depth);
+        return n;
+    }
+
   private:
-    IteratorStack stack_;
+    tinspin::SimpleStack<IteratorPos> stack_;
     Key min_;
     Key max_;
     FILTER filter_;

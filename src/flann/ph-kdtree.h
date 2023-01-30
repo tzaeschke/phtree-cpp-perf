@@ -22,19 +22,13 @@ namespace pht = improbable::phtree;
 /*
  * The main wrapper class
  */
-template <
-    pht::dimension_t DIM,
-    typename T = std::uint32_t,
-    typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
-    bool POINT_KEYS = true,
-    typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
+template <pht::dimension_t DIM, typename T = std::uint32_t>
 class PhTreeMultiMap {
     static_assert(std::is_same_v<size_t, T>);
 
     // using KeyInternal = typename CONVERTER::KeyInternal;
     using SCALAR = double;
     using Key = typename pht::PhPoint<DIM, SCALAR>;
-    static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
 
   public:
     // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
@@ -61,7 +55,9 @@ class PhTreeMultiMap {
 
     void emplace(const std::vector<Key>& keys) {
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(&keys[0][0]), keys.size(), DIM);
-        tree_->addPoints(dataset);
+        // tree_->addPoints(dataset);
+        tree_->buildIndex(dataset);
+        is_built_ = true;
     }
 
     template <typename ITERATOR, typename... Args>
@@ -82,10 +78,11 @@ class PhTreeMultiMap {
         emplace_hint(iterator, key, value);
     }
 
-    const size_t X = 1;
+    const size_t X = 0;  // TODO remove
     const double R_0 = 0.1;
 
     size_t count(const Key& key) const {
+        build();
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
@@ -94,6 +91,7 @@ class PhTreeMultiMap {
     }
 
     auto find(const Key& key) {
+        build();
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
@@ -107,6 +105,7 @@ class PhTreeMultiMap {
     }
 
     auto find(const Key& key, const T& value) {
+        build();
         result_.clear();
         const Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
@@ -139,6 +138,7 @@ class PhTreeMultiMap {
 
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
+        build();
         Key& min = query_box.min();
         Key& max = query_box.max();
         Key key{};
@@ -172,8 +172,9 @@ class PhTreeMultiMap {
         }
     }
 
-    template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
+    template <typename FILTER = pht::FilterNoOp>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
+        build();
         result_.clear();
         for_each(
             query_box,
@@ -182,12 +183,7 @@ class PhTreeMultiMap {
         return result_.begin();
     }
 
-    template <
-        typename DISTANCE,
-        typename FILTER = pht::FilterNoOp,
-        // Some magic to disable this in case of box keys
-        bool DUMMY = POINT_KEYS,
-        typename std::enable_if<DUMMY, int>::type = 0>
+    template <typename DISTANCE, typename FILTER = pht::FilterNoOp>
     auto begin_knn_query(
         size_t min_results,
         const Key& center,
@@ -196,6 +192,7 @@ class PhTreeMultiMap {
         (void)distance_function;
         (void)filter;
 
+        build();
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&center[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
@@ -218,6 +215,7 @@ class PhTreeMultiMap {
     }
 
     auto begin() {
+        build();
         result_.clear();
         Key key{};
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
@@ -258,19 +256,16 @@ class PhTreeMultiMap {
         return tree_->size() == 0;
     }
 
-    [[nodiscard]] const CONVERTER& converter() const {
-        return converter_;
-    }
-
   private:
     auto* create_tree() const {
         IndexParams params{};
         params.insert_or_assign("trees", 1);
-        auto* tree = new KDTreeIndex<L2<SCALAR>>(params);
+        // auto* tree = new KDTreeIndex<L2<SCALAR>>(params);
         SCALAR data[DIM]{};
-        Matrix<SCALAR> dataset(const_cast<SCALAR*>(data), 1, DIM);
-        tree->buildIndex(dataset);
-        tree->removePoint(0);
+        Matrix<SCALAR> dataset(const_cast<SCALAR*>(data), 0, DIM);
+        auto* tree = new KDTreeIndex<L2<SCALAR>>(dataset, params);
+        // tree->buildIndex(dataset);
+        // tree->removePoint(0);
         return tree;
     }
 
@@ -278,25 +273,36 @@ class PhTreeMultiMap {
         return SearchParams{FLANN_CHECKS_UNLIMITED};  // TODO unsorted?
     }
 
+    void build() {
+        if (!is_built_ && tree_->size() > 0) {
+            tree_->buildIndex();
+            is_built_ = true;
+        }
+    }
+
+    void build() const {
+        const_cast<PhTreeMultiMap&>(*this).build();
+    }
+
     flann::KDTreeIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
-    CONVERTER converter_;
-    std::vector<T> result_{};  /// Dirty Hack!!!! TODO
+    std::vector<T> result_{};               /// Dirty Hack!!!! TODO
     struct KNNResult {
         Key first;
         size_t second;
         SCALAR distance;
     };
     std::vector<KNNResult> knn_result_{};  /// Dirty Hack!!!! TODO
+    bool is_built_ = false;
 };
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER = pht::ConverterIEEE<DIM>>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapD = PhTreeMultiMap<DIM, T>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX>
-using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, false, pht::QueryIntersect>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T>;
 
 }  // namespace flann
 

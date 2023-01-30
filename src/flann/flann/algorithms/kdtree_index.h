@@ -225,6 +225,9 @@ public:
      */
     void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& searchParams) const
     {
+        if (tree_roots_.empty()) {
+            return; // TODO TZ backport / report
+        }
         int maxChecks = searchParams.checks;
         float epsError = 1+searchParams.eps;
 

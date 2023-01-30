@@ -46,3 +46,13 @@ LibSI/WEB/1000/3                            0.002 ms        0.002 ms       35720
 LibSI/WEB/10000/3                           0.003 ms        0.003 ms       228658          3.01961 326.174k/s  984.918k/s
 LibSI/WEB/100000/3                          0.007 ms        0.007 ms        94632          3.04978  136.35k/s  415.839k/s
 LibSI/WEB/1000000/3                         0.025 ms        0.025 ms        29344          3.36812 40.7742k/s  137.332k/s
+
+TinspinKDTree/WEB/1000/3                    0.002 ms        0.002 ms       298022           2.9972 426.527k/s  1.27839M/s
+TinspinKDTree/WEB/10000/3                   0.004 ms        0.004 ms       179614          3.01969 256.869k/s  775.665k/s
+TinspinKDTree/WEB/100000/3                  0.005 ms        0.005 ms       142223          3.05034 203.563k/s  620.935k/s
+TinspinKDTree/WEB/1000000/3                 0.012 ms        0.012 ms        56419           3.3652 81.6173k/s  274.658k/s
+
+TinspinKDTree/WEB/1000/3                    0.003 ms        0.003 ms       206330          2.99716 295.648k/s  886.104k/s
+TinspinKDTree/WEB/10000/3                   0.005 ms        0.005 ms       128950           3.0197 183.294k/s  553.492k/s
+TinspinKDTree/WEB/100000/3                  0.007 ms        0.007 ms       107164          3.04998 152.629k/s  465.516k/s
+TinspinKDTree/WEB/1000000/3                 0.014 ms        0.015 ms        47858          3.36495 68.8684k/s  231.739k/s
