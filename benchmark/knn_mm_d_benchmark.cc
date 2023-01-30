@@ -141,19 +141,31 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
 template <
     dimension_t DIM,
     Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO != Scenario::TREE_WITH_MAP), int> = 0>
-void InsertEntry(TestMap<SCENARIO, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    tree.emplace(point, data);
+    std::enable_if_t<(SCENARIO == Scenario::TREE_WITH_MAP), int> = 0>
+void InsertEntry(
+    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const std::vector<TestPoint>& points) {
+    for (size_t i = 0; i < points.size(); ++i) {
+        BucketType& bucket = tree.emplace(points[i]).first;
+        bucket.emplace((payload_t)i);
+    }
 }
 
 template <
     dimension_t DIM,
     Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO == Scenario::TREE_WITH_MAP), int> = 0>
-void InsertEntry(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const TestPoint& point, const payload_t& data) {
-    BucketType& bucket = tree.emplace(point).first;
-    bucket.emplace(data);
+    std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
+void InsertEntry(TestMap<SCENARIO, DIM>& tree, const std::vector<TestPoint>& points) {
+    tree.emplace(points);
+}
+
+template <
+    dimension_t DIM,
+    Scenario SCN,
+    std::enable_if_t<(SCN != Scenario::TREE_WITH_MAP && SCN != Scenario::FLANN_KD), int> = 0>
+void InsertEntry(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
+    for (size_t i = 0; i < points.size(); ++i) {
+        tree.emplace(points[i], (payload_t)i);
+    }
 }
 
 template <
@@ -202,9 +214,10 @@ template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     logging::info("Setting up world with {} entities and {} dimensions.", num_entities_, DIM);
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX);
-    for (size_t i = 0; i < num_entities_; ++i) {
-        InsertEntry<DIM, SCENARIO>(tree_, points_[i], (payload_t)i);
-    }
+    //    for (size_t i = 0; i < num_entities_; ++i) {
+    //        InsertEntry<DIM, SCENARIO>(tree_, points_[i], (payload_t)i);
+    //    }
+    InsertEntry<DIM, SCENARIO>(tree_, points_);
 
     state.counters["query_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);
     state.counters["result_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);

@@ -78,86 +78,85 @@ Quadtree3D/KNN_10/100000/7              0.006 ms        0.006 ms       115393   
 ====================================================================
 DIM = 10
 ====================================================================
-Run on (8 X 4657.18 MHz CPU s)
+Run on (8 X 4676.18 MHz CPU s)
 CPU Caches:
   L1 Data 32 KiB (x8)
   L1 Instruction 32 KiB (x8)
   L2 Unified 256 KiB (x8)
   L3 Unified 12288 KiB (x1)
-Load Average: 0.79, 0.83, 1.12
+Load Average: 0.78, 1.42, 1.43
 ---------------------------------------------------------------------------------------------------------------------
 Benchmark                                   Time             CPU   Iterations avg_result_count query_rate result_rate
 ---------------------------------------------------------------------------------------------------------------------
-PhTree3D/KNN_1/1000/4                   0.035 ms        0.035 ms        19653                1  28.341k/s   28.341k/s
-PhTree3D/KNN_1/10000/4                  0.380 ms        0.380 ms         1847                1 2.62927k/s  2.62927k/s
-PhTree3D/KNN_1/100000/4                  7.07 ms         7.07 ms           99                1  141.365/s   141.365/s
-PhTree3D/KNN_1/1000/7                   0.006 ms        0.006 ms       122507                1 177.318k/s  177.318k/s
-PhTree3D/KNN_1/10000/7                  0.011 ms        0.011 ms        63117                1 90.8647k/s  90.8647k/s
-PhTree3D/KNN_1/100000/7                 0.062 ms        0.062 ms        11225                1  16.127k/s   16.127k/s
-PhTree3D/KNN_10/1000/4                  0.038 ms        0.038 ms        18310               10 26.0748k/s  260.748k/s
-PhTree3D/KNN_10/10000/4                 0.395 ms        0.396 ms         1765               10  2.5283k/s   25.283k/s
-PhTree3D/KNN_10/100000/4                 7.33 ms         7.33 ms           96               10  136.405/s  1.36405k/s
-PhTree3D/KNN_10/1000/7                  0.006 ms        0.006 ms       106731               10 161.257k/s  1.61257M/s
-PhTree3D/KNN_10/10000/7                 0.011 ms        0.011 ms        61069               10 87.1309k/s  871.309k/s
-PhTree3D/KNN_10/100000/7                0.062 ms        0.062 ms        11184               10 16.0444k/s  160.444k/s
-PhTreeMultiMap3D/KNN_1/1000/4           0.035 ms        0.035 ms        19960                1 28.6094k/s  28.6094k/s
-PhTreeMultiMap3D/KNN_1/10000/4          0.369 ms        0.370 ms         1893                1 2.70633k/s  2.70633k/s
-PhTreeMultiMap3D/KNN_1/100000/4          6.24 ms         6.24 ms          113                1  160.196/s   160.196/s
-PhTreeMultiMap3D/KNN_1/1000/7           0.006 ms        0.006 ms       122472                1 177.741k/s  177.741k/s
-PhTreeMultiMap3D/KNN_1/10000/7          0.011 ms        0.011 ms        63671                1 90.5144k/s  90.5144k/s
-PhTreeMultiMap3D/KNN_1/100000/7         0.061 ms        0.061 ms        11477                1 16.4083k/s  16.4083k/s
-PhTreeMultiMap3D/KNN_10/1000/4          0.038 ms        0.038 ms        18624               10 26.5048k/s  265.048k/s
-PhTreeMultiMap3D/KNN_10/10000/4         0.386 ms        0.386 ms         1818               10 2.59108k/s  25.9108k/s
-PhTreeMultiMap3D/KNN_10/100000/4         6.50 ms         6.50 ms          108               10  153.898/s  1.53898k/s
-PhTreeMultiMap3D/KNN_10/1000/7          0.006 ms        0.006 ms       112811               10 161.419k/s  1.61419M/s
-PhTreeMultiMap3D/KNN_10/10000/7         0.011 ms        0.011 ms        61394               10  87.324k/s   873.24k/s
-PhTreeMultiMap3D/KNN_10/100000/7        0.061 ms        0.061 ms        11354               10 16.2609k/s  162.609k/s
-PhTreeMultiMap2_3D/KNN_1/1000/4         0.024 ms        0.024 ms        28893                1 41.2651k/s  41.2651k/s
-PhTreeMultiMap2_3D/KNN_1/10000/4        0.238 ms        0.238 ms         2942                1 4.20845k/s  4.20845k/s
-PhTreeMultiMap2_3D/KNN_1/100000/4        2.95 ms         2.95 ms          238                1  339.016/s   339.016/s
-PhTreeMultiMap2_3D/KNN_1/1000/7         0.020 ms        0.020 ms        34220                1 48.9821k/s  48.9821k/s
-PhTreeMultiMap2_3D/KNN_1/10000/7        0.118 ms        0.118 ms         5928                1  8.4527k/s   8.4527k/s
-PhTreeMultiMap2_3D/KNN_1/100000/7        1.15 ms         1.15 ms          609                1  872.406/s   872.406/s
-PhTreeMultiMap2_3D/KNN_10/1000/4        0.025 ms        0.025 ms        28283               10 40.3851k/s  403.851k/s
-PhTreeMultiMap2_3D/KNN_10/10000/4       0.251 ms        0.252 ms         2782               10 3.97547k/s  39.7547k/s
-PhTreeMultiMap2_3D/KNN_10/100000/4       2.97 ms         2.97 ms          235               10  336.897/s  3.36897k/s
-PhTreeMultiMap2_3D/KNN_10/1000/7        0.021 ms        0.021 ms        33563               10 47.5241k/s  475.241k/s
-PhTreeMultiMap2_3D/KNN_10/10000/7       0.119 ms        0.119 ms         5868               10  8.4201k/s   84.201k/s
-PhTreeMultiMap2_3D/KNN_10/100000/7       1.18 ms         1.18 ms          567               10  847.529/s  8.47529k/s
-FlannKD3D/KNN_1/1000/4                  0.018 ms        0.018 ms        40107                1 56.3272k/s  56.3272k/s
-FlannKD3D/KNN_1/10000/4                 0.241 ms        0.241 ms         2908                1  4.1536k/s   4.1536k/s
-FlannKD3D/KNN_1/100000/4                 4.22 ms         4.22 ms          165                1  236.784/s   236.784/s
-FlannKD3D/KNN_1/1000/7                  0.016 ms        0.017 ms        43003                1 60.5191k/s  60.5191k/s
-FlannKD3D/KNN_1/10000/7                 0.176 ms        0.176 ms         4032                1 5.66784k/s  5.66784k/s
-FlannKD3D/KNN_1/100000/7                 2.83 ms         2.83 ms          247                1  353.248/s   353.248/s
-FlannKD3D/KNN_10/1000/4                 0.018 ms        0.018 ms        36260               10  54.913k/s   549.13k/s
-FlannKD3D/KNN_10/10000/4                0.240 ms        0.240 ms         2909               10  4.1592k/s   41.592k/s
-FlannKD3D/KNN_10/100000/4                4.17 ms         4.17 ms          166               10  239.751/s  2.39751k/s
-FlannKD3D/KNN_10/1000/7                 0.018 ms        0.018 ms        40043               10 55.6911k/s  556.911k/s
-FlannKD3D/KNN_10/10000/7                0.174 ms        0.174 ms         4155               10 5.74312k/s  57.4312k/s
-FlannKD3D/KNN_10/100000/7                2.91 ms         2.91 ms          247               10  343.086/s  3.43086k/s
-KDTree3D/KNN_1/1000/4                   0.010 ms        0.010 ms        69357                1 100.094k/s  100.094k/s
-KDTree3D/KNN_1/10000/4                  0.204 ms        0.204 ms         3428                1 4.89739k/s  4.89739k/s
-KDTree3D/KNN_1/100000/4                  4.23 ms         4.23 ms          162                1  236.485/s   236.485/s
-KDTree3D/KNN_1/1000/7                   0.010 ms        0.010 ms        72786                1 104.931k/s  104.931k/s
-KDTree3D/KNN_1/10000/7                  0.148 ms        0.148 ms         4732                1 6.75869k/s  6.75869k/s
-KDTree3D/KNN_1/100000/7                  1.81 ms         1.81 ms          367                1  552.867/s   552.867/s
-KDTree3D/KNN_10/1000/4                  0.012 ms        0.012 ms        60404               10 86.3516k/s  863.516k/s
-KDTree3D/KNN_10/10000/4                 0.207 ms        0.207 ms         3380               10 4.83272k/s  48.3272k/s
-KDTree3D/KNN_10/100000/4                 4.22 ms         4.22 ms          163               10  237.049/s  2.37049k/s
-KDTree3D/KNN_10/1000/7                  0.012 ms        0.012 ms        56447               10 80.9758k/s  809.758k/s
-KDTree3D/KNN_10/10000/7                 0.152 ms        0.152 ms         4607               10 6.58669k/s  65.8669k/s
-KDTree3D/KNN_10/100000/7                 1.93 ms         1.93 ms          357               10  518.561/s  5.18561k/s
-Quadtree3D/KNN_1/1000/4                 0.034 ms        0.034 ms        20086                1 29.1234k/s  29.1234k/s
-Quadtree3D/KNN_1/10000/4                0.211 ms        0.211 ms         3349                1 4.74703k/s  4.74703k/s
-Quadtree3D/KNN_1/100000/4                1.19 ms         1.19 ms          589                1   840.53/s    840.53/s
-Quadtree3D/KNN_1/1000/7                 0.006 ms        0.006 ms       114782                1 164.522k/s  164.522k/s
-Quadtree3D/KNN_1/10000/7                0.017 ms        0.017 ms        41772                1 59.9042k/s  59.9042k/s
-Quadtree3D/KNN_1/100000/7               0.087 ms        0.088 ms         7982                1 11.4255k/s  11.4255k/s
-Quadtree3D/KNN_10/1000/4                0.039 ms        0.039 ms        18095               10 25.7215k/s  257.215k/s
-Quadtree3D/KNN_10/10000/4               0.269 ms        0.269 ms         2611               10 3.72081k/s  37.2081k/s
-Quadtree3D/KNN_10/100000/4               1.58 ms         1.58 ms          433               10  632.296/s  6.32296k/s
-Quadtree3D/KNN_10/1000/7                0.007 ms        0.007 ms       100402               10 147.587k/s  1.47587M/s
-Quadtree3D/KNN_10/10000/7               0.017 ms        0.017 ms        40174               10  57.612k/s   576.12k/s
-Quadtree3D/KNN_10/100000/7              0.088 ms        0.088 ms         7839               10 11.3374k/s  113.374k/s
-
+PhTree3D/KNN_1/1000/4                   0.035 ms        0.035 ms        19714                1 28.4326k/s  28.4326k/s
+PhTree3D/KNN_1/10000/4                  0.379 ms        0.379 ms         1857                1 2.64036k/s  2.64036k/s
+PhTree3D/KNN_1/100000/4                  7.01 ms         7.02 ms           99                1  142.551/s   142.551/s
+PhTree3D/KNN_1/1000/7                   0.006 ms        0.006 ms       123648                1 176.783k/s  176.783k/s
+PhTree3D/KNN_1/10000/7                  0.011 ms        0.011 ms        63000                1 89.7586k/s  89.7586k/s
+PhTree3D/KNN_1/100000/7                 0.063 ms        0.063 ms        11288                1 15.9012k/s  15.9012k/s
+PhTree3D/KNN_10/1000/4                  0.040 ms        0.040 ms        17736               10 25.2577k/s  252.577k/s
+PhTree3D/KNN_10/10000/4                 0.412 ms        0.412 ms         1632               10 2.42653k/s  24.2653k/s
+PhTree3D/KNN_10/100000/4                 8.10 ms         8.10 ms           84               10  123.403/s  1.23403k/s
+PhTree3D/KNN_10/1000/7                  0.006 ms        0.006 ms       107022               10 156.683k/s  1.56683M/s
+PhTree3D/KNN_10/10000/7                 0.012 ms        0.012 ms        58902               10 84.7029k/s  847.029k/s
+PhTree3D/KNN_10/100000/7                0.067 ms        0.067 ms        10422               10 14.9439k/s  149.439k/s
+PhTreeMultiMap3D/KNN_1/1000/4           0.037 ms        0.037 ms        19274                1 27.3269k/s  27.3269k/s
+PhTreeMultiMap3D/KNN_1/10000/4          0.371 ms        0.371 ms         1820                1 2.69186k/s  2.69186k/s
+PhTreeMultiMap3D/KNN_1/100000/4          6.42 ms         6.42 ms          109                1  155.765/s   155.765/s
+PhTreeMultiMap3D/KNN_1/1000/7           0.006 ms        0.006 ms       120273                1 175.324k/s  175.324k/s
+PhTreeMultiMap3D/KNN_1/10000/7          0.011 ms        0.011 ms        63134                1 90.2769k/s  90.2769k/s
+PhTreeMultiMap3D/KNN_1/100000/7         0.061 ms        0.061 ms        11340                1 16.4487k/s  16.4487k/s
+PhTreeMultiMap3D/KNN_10/1000/4          0.038 ms        0.038 ms        18598               10 26.5934k/s  265.934k/s
+PhTreeMultiMap3D/KNN_10/10000/4         0.388 ms        0.388 ms         1811               10 2.57753k/s  25.7753k/s
+PhTreeMultiMap3D/KNN_10/100000/4         6.47 ms         6.47 ms          109               10  154.578/s  1.54578k/s
+PhTreeMultiMap3D/KNN_10/1000/7          0.006 ms        0.006 ms       112363               10 160.401k/s  1.60401M/s
+PhTreeMultiMap3D/KNN_10/10000/7         0.011 ms        0.011 ms        60947               10 87.2192k/s  872.192k/s
+PhTreeMultiMap3D/KNN_10/100000/7        0.061 ms        0.061 ms        11452               10 16.4553k/s  164.553k/s
+PhTreeMultiMap2_3D/KNN_1/1000/4         0.025 ms        0.025 ms        28216                1 40.6045k/s  40.6045k/s
+PhTreeMultiMap2_3D/KNN_1/10000/4        0.240 ms        0.240 ms         2904                1 4.16544k/s  4.16544k/s
+PhTreeMultiMap2_3D/KNN_1/100000/4        2.95 ms         2.95 ms          237                1  338.865/s   338.865/s
+PhTreeMultiMap2_3D/KNN_1/1000/7         0.020 ms        0.020 ms        34007                1   48.84k/s    48.84k/s
+PhTreeMultiMap2_3D/KNN_1/10000/7        0.119 ms        0.119 ms         5901                1 8.39743k/s  8.39743k/s
+PhTreeMultiMap2_3D/KNN_1/100000/7        1.16 ms         1.16 ms          588                1  864.079/s   864.079/s
+PhTreeMultiMap2_3D/KNN_10/1000/4        0.025 ms        0.025 ms        27811               10 39.9627k/s  399.627k/s
+PhTreeMultiMap2_3D/KNN_10/10000/4       0.254 ms        0.254 ms         2748               10 3.93289k/s  39.3289k/s
+PhTreeMultiMap2_3D/KNN_10/100000/4       3.00 ms         3.00 ms          236               10  333.765/s  3.33765k/s
+PhTreeMultiMap2_3D/KNN_10/1000/7        0.021 ms        0.021 ms        33695               10 47.7926k/s  477.926k/s
+PhTreeMultiMap2_3D/KNN_10/10000/7       0.119 ms        0.120 ms         5868               10 8.36568k/s  83.6568k/s
+PhTreeMultiMap2_3D/KNN_10/100000/7       1.16 ms         1.16 ms          610               10  863.218/s  8.63218k/s
+FlannKD3D/KNN_1/1000/4                  0.016 ms        0.016 ms        44986                1 63.8932k/s  63.8932k/s
+FlannKD3D/KNN_1/10000/4                 0.208 ms        0.208 ms         3392                1 4.80168k/s  4.80168k/s
+FlannKD3D/KNN_1/100000/4                 4.17 ms         4.17 ms          164                1  239.642/s   239.642/s
+FlannKD3D/KNN_1/1000/7                  0.015 ms        0.015 ms        45451                1 65.5029k/s  65.5029k/s
+FlannKD3D/KNN_1/10000/7                 0.182 ms        0.182 ms         3869                1 5.50753k/s  5.50753k/s
+FlannKD3D/KNN_1/100000/7                 2.87 ms         2.87 ms          243                1  348.498/s   348.498/s
+FlannKD3D/KNN_10/1000/4                 0.016 ms        0.016 ms        43039               10 61.0696k/s  610.696k/s
+FlannKD3D/KNN_10/10000/4                0.207 ms        0.207 ms         3363               10  4.8201k/s   48.201k/s
+FlannKD3D/KNN_10/100000/4                4.18 ms         4.18 ms          167               10  239.378/s  2.39378k/s
+FlannKD3D/KNN_10/1000/7                 0.016 ms        0.016 ms        40683               10 60.9069k/s  609.069k/s
+FlannKD3D/KNN_10/10000/7                0.183 ms        0.184 ms         3769               10 5.44805k/s  54.4805k/s
+FlannKD3D/KNN_10/100000/7                2.85 ms         2.85 ms          249               10  350.591/s  3.50591k/s
+KDTree3D/KNN_1/1000/4                   0.010 ms        0.010 ms        72054                1 102.652k/s  102.652k/s
+KDTree3D/KNN_1/10000/4                  0.201 ms        0.201 ms         3485                1 4.96477k/s  4.96477k/s
+KDTree3D/KNN_1/100000/4                  4.29 ms         4.29 ms          165                1   233.22/s    233.22/s
+KDTree3D/KNN_1/1000/7                   0.009 ms        0.009 ms        74790                1 106.812k/s  106.812k/s
+KDTree3D/KNN_1/10000/7                  0.145 ms        0.145 ms         4784                1 6.87422k/s  6.87422k/s
+KDTree3D/KNN_1/100000/7                  1.98 ms         1.98 ms          386                1  503.908/s   503.908/s
+KDTree3D/KNN_10/1000/4                  0.011 ms        0.011 ms        61127               10 89.0552k/s  890.552k/s
+KDTree3D/KNN_10/10000/4                 0.204 ms        0.204 ms         3438               10 4.90887k/s  49.0887k/s
+KDTree3D/KNN_10/100000/4                 5.14 ms         5.14 ms          144               10  194.468/s  1.94468k/s
+KDTree3D/KNN_10/1000/7                  0.013 ms        0.013 ms        56459               10 78.8431k/s  788.431k/s
+KDTree3D/KNN_10/10000/7                 0.150 ms        0.150 ms         4658               10 6.68283k/s  66.8283k/s
+KDTree3D/KNN_10/100000/7                 2.01 ms         2.01 ms          356               10   498.64/s   4.9864k/s
+Quadtree3D/KNN_1/1000/4                 0.034 ms        0.034 ms        20744                1 29.6968k/s  29.6968k/s
+Quadtree3D/KNN_1/10000/4                0.206 ms        0.206 ms         3398                1 4.85418k/s  4.85418k/s
+Quadtree3D/KNN_1/100000/4                1.17 ms         1.17 ms          600                1  855.706/s   855.706/s
+Quadtree3D/KNN_1/1000/7                 0.006 ms        0.006 ms       116127                1  167.14k/s   167.14k/s
+Quadtree3D/KNN_1/10000/7                0.017 ms        0.017 ms        41819                1 59.7165k/s  59.7165k/s
+Quadtree3D/KNN_1/100000/7               0.086 ms        0.086 ms         8081                1  11.584k/s   11.584k/s
+Quadtree3D/KNN_10/1000/4                0.038 ms        0.038 ms        18249               10 26.1592k/s  261.592k/s
+Quadtree3D/KNN_10/10000/4               0.265 ms        0.265 ms         2649               10 3.77836k/s  37.7836k/s
+Quadtree3D/KNN_10/100000/4               1.83 ms         1.83 ms          396               10  547.223/s  5.47223k/s
+Quadtree3D/KNN_10/1000/7                0.007 ms        0.007 ms       103863               10 148.736k/s  1.48736M/s
+Quadtree3D/KNN_10/10000/7               0.018 ms        0.018 ms        40482               10 56.3333k/s  563.333k/s
+Quadtree3D/KNN_10/100000/7              0.091 ms        0.091 ms         7933               10 10.9495k/s  109.495k/s
