@@ -9,8 +9,8 @@
 #include "include/phtree/filter.h"
 #include "src/util/ph-util.h"
 #include <iostream>
-#include <unordered_set>
 #include <queue>
+#include <unordered_set>
 
 namespace tinspin {
 
@@ -406,12 +406,79 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
 };
 
 template <typename Key, typename Value>
-using EntryDist = std::pair<double, const Node<Key, Value>*>;
+// using EntryDist = std::pair<double, const Node<Key, Value>*>;
+struct EntryDist {
+    EntryDist(double distance, const Node<Key, Value>* node, bool is_value)
+    : dist_{distance}, node_{node}, is_value_{is_value} {
+        assert(is_value);
+    }
+
+//    template <typename DISTANCE>
+//    EntryDist(
+//        const Node<Key, Value>* node,
+//        const Node<Key, Value>* parent,
+//        const bool is_right,
+//        const Key& min,
+//        const Key& max,
+//        DISTANCE&& dist_fn)
+//    : node_{node}, is_value_{false}, min_{min}, max_{max} {
+//        if (parent != nullptr) {
+//            if (is_right) {
+//                adjust_min_max_right(parent->key(), parent->dim());
+//            } else {
+//                adjust_min_max_left(parent->key(), parent->dim());
+//            }
+//            dist_ = dist_fn(min_, max_);
+//        } else {
+//            dist_ = 0;
+//        }
+//    }
+
+    EntryDist(const Node<Key, Value>* node, const Key& min, const Key& max)
+    :  dist_{0}, node_{node}, is_value_{false}, min_{min}, max_{max} {}
+
+    // TODO perf check: ist calling this methoid expensive?
+    //   -- Copy/instantiation of DISTANCE function?
+    template <typename DISTANCE>
+    EntryDist(const EntryDist& cand, const bool is_right, DISTANCE&& dist_fn)
+    : node_{is_right ? cand.node_->right() : cand.node_->left()}
+    , is_value_{false}
+    , min_{cand.min_}
+    , max_{cand.max_} {
+        auto parent = cand.node_;
+        if (is_right) {
+            adjust_min_max_right(parent->key(), parent->dim());
+        } else {
+            adjust_min_max_left(parent->key(), parent->dim());
+        }
+        dist_ = dist_fn(min_, max_);
+    }
+
+    void adjust_min_max_left(const Key& parent, const dimension_t split_dim) {
+        assert(parent[split_dim] <= max_[split_dim]);
+        assert(parent[split_dim] >= min_[split_dim]);
+        max_[split_dim] = parent[split_dim];
+    }
+
+    void adjust_min_max_right(const Key& parent, const dimension_t split_dim) {
+        assert(parent[split_dim] <= max_[split_dim]);
+        assert(parent[split_dim] >= min_[split_dim]);
+        min_[split_dim] = parent[split_dim];
+    }
+
+    double dist_;
+    const Node<Key, Value>* node_{nullptr};
+    // Indicate whether "node_" should be seen as value, or as a node that needs traversing
+    bool is_value_ = false;
+    Key min_;  // TODO can be constructed on the fly from the previous 3 keys... -> array of DIM
+               //    pointers to previous min/max values?
+    Key max_;  // TODO do not store these for "values"...!??! -> separate stack for key-pairs?
+};
 
 template <typename ENTRY>
 struct CompareEntryDistByDistance {
     bool operator()(const ENTRY& left, const ENTRY& right) const {
-        return left.first > right.first;
+        return left.dist_ > right.dist_;
     };
 };
 
@@ -419,34 +486,40 @@ template <typename Key, typename T, typename DISTANCE, typename FILTER>
 class KDIteratorKnnHS : public KDIteratorBase<Key, T> {
     using SCALAR = std::remove_reference_t<decltype(Key{}[0])>;
     using EntryT = Node<Key, T>;
-    using EntryDistT = tinspin::KDEntryDist<Key, T>;
+    using EntryDistT = tinspin::EntryDist<Key, T>;
 
   public:
     template <typename DIST, typename F>
     explicit KDIteratorKnnHS(
-        const EntryT& root,
-        size_t min_results,
-        const Key& center,
-        DIST&& dist,
-        F&& filter)
+        const EntryT* root, const Key& center, size_t min_results, DIST&& dist, F&& filter)
     : KDIteratorBase<Key, T>()
     , center_{center}
     , current_distance_{std::numeric_limits<double>::max()}
     , num_found_results_(0)
     , num_requested_results_(min_results)
     , distance_(std::forward<DIST>(dist)) {
-        if (min_results <= 0 || root.GetNode().GetEntryCount() == 0) {
+        if (min_results <= 0 || root == nullptr) {
             this->SetFinished();
             return;
         }
 
         // Initialize queue, use d=0 because every imaginable point lies inside the root Node
-        queue_.emplace(0, &root);
+        Key min{};
+        Key max{};
+        for (dimension_t d = 0; d < min.size(); ++d) {
+            min[d] = -std::numeric_limits<SCALAR>::infinity();
+            max[d] = std::numeric_limits<SCALAR>::infinity();
+        }
+        queue_.emplace(root, min, max);
         FindNextElement();
     }
 
     [[nodiscard]] double distance() const {
         return current_distance_;
+    }
+
+    const Key& first() {
+        return this->_node()->key();
     }
 
     KDIteratorKnnHS& operator++() noexcept {
@@ -463,32 +536,59 @@ class KDIteratorKnnHS : public KDIteratorBase<Key, T> {
   private:
     void FindNextElement() {
         while (num_found_results_ < num_requested_results_ && !queue_.empty()) {
-            auto& candidate = queue_.top();
-            auto* o = candidate.second;
-            if (!o->IsNode()) {
+            // COPY!!!!
+            // TODO we are copying the min/max keys twice, this is insane!
+            // TODO check benchmark with 3D instead of 10D
+            // TODO test all with 20D/30D
+            auto candidate = queue_.top();
+            if (candidate.is_value_) {
                 // data entry
                 ++num_found_results_;
-                this->SetCurrentResult(o);
-                current_distance_ = candidate.first;
+                this->SetCurrentResult(const_cast<Node<Key, T>*>(candidate.node_));
+                current_distance_ = candidate.dist_;
                 // We need to pop() AFTER we processed the value, otherwise the reference is
                 // overwritten.
                 queue_.pop();
                 return;
             } else {
                 // inner node
-                auto& node = o->GetNode();
+                auto* node = candidate.node_;
                 queue_.pop();
-                for (auto& entry : node.Entries()) {
-                    auto& e2 = entry.second;
-                    if (this->ApplyFilter(e2)) {
-                        if (e2.IsNode()) {
-                            double d = DistanceToNode(e2.GetKey(), e2.GetNodePostfixLen() + 1);
-                            queue_.emplace(d, &e2);
-                        } else {
-                            double d = distance_(center_, this->post(e2.GetKey()));
-                            queue_.emplace(d, &e2);
-                        }
-                    }
+                // traverse: left,right, key
+                // key
+                if (filter_.IsEntryValid(node->key(), node->value())) {
+                    double d_key = distance_(center_, node->key());
+                    queue_.emplace(d_key, node, true);
+                }
+                // left
+                if (node->left() != nullptr) {
+//                    queue_.emplace(
+//                        node->left(),
+//                        node,
+//                        false,
+//                        candidate.min_,
+//                        candidate.max_,
+//                        [this](const Key& min, const Key& max) {
+//                            return DistanceToNode(min, max);
+//                        });
+                    queue_.emplace(candidate, false, [this](const Key& min, const Key& max) {
+                        return DistanceToNode(min, max);
+                    });
+                }
+                // right
+                if (node->right() != nullptr) {
+//                    queue_.emplace(
+//                        node->right(),
+//                        node,
+//                        true,
+//                        candidate.min_,
+//                        candidate.max_,
+//                        [this](const Key& min, const Key& max) {
+//                            return DistanceToNode(min, max);
+//                        });
+                    queue_.emplace(candidate, true, [this](const Key& min, const Key& max) {
+                        return DistanceToNode(min, max);
+                    });
                 }
             }
         }
@@ -496,20 +596,17 @@ class KDIteratorKnnHS : public KDIteratorBase<Key, T> {
         current_distance_ = std::numeric_limits<double>::max();
     }
 
-    double DistanceToNode(const Key& prefix, std::uint32_t bits_to_ignore) {
-        assert(bits_to_ignore < MAX_BIT_WIDTH<SCALAR>);
-        SCALAR mask_min = MAX_MASK<SCALAR> << bits_to_ignore;
-        SCALAR mask_max = ~mask_min;
+    double DistanceToNode(const Key& node_min, const Key& node_max) {
         Key buf;
         // The following calculates the point inside the node that is closest to center_.
-        for (dimension_t i = 0; i < prefix.size(); ++i) {
+        for (dimension_t i = 0; i < node_min.size(); ++i) {
             // if center_[i] is outside the node, return distance to the closest edge,
             // otherwise return center_[i] itself (assume possible distance=0)
-            SCALAR min = prefix[i] & mask_min;
-            SCALAR max = prefix[i] | mask_max;
+            SCALAR min = node_min[i];
+            SCALAR max = node_max[i];
             buf[i] = min > center_[i] ? min : (max < center_[i] ? max : center_[i]);
         }
-        return distance_(center_, this->post(buf));
+        return distance_(center_, buf);
     }
 
   private:
@@ -520,8 +617,8 @@ class KDIteratorKnnHS : public KDIteratorBase<Key, T> {
     size_t num_found_results_;
     size_t num_requested_results_;
     DISTANCE distance_;
+    FILTER filter_;
 };
-
 
 /**
  * A simple KD-Tree implementation.
@@ -801,7 +898,8 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = node->key()[dim];
                 result.dim = node->dim();
-         //       invariantBroken |= result.best == node->key()[dim]; // TODO remove? backport
+                //       invariantBroken |= result.best == node->key()[dim]; // TODO remove?
+                //       backport
             }
         } else {
             // split in any other dimension.
@@ -812,7 +910,7 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = localX;
                 result.dim = node->dim();
-         //       invariantBroken |= result.best == localX; // TODO remove? backport
+                //       invariantBroken |= result.best == localX; // TODO remove? backport
             }
             if (node->left() != nullptr) {
                 removeMaxLeaf(node->left(), node, dim, result);
@@ -893,7 +991,7 @@ class KDTree {
     }
 
     template <typename DISTANCE, typename FILTER = FilterNoOp>
-    auto begin_knn_query(
+    auto begin_knn_query1(
         size_t k,
         const Key& center,
         DISTANCE&& distance_function = DISTANCE(),
@@ -902,6 +1000,20 @@ class KDTree {
             center, k, std::forward<DISTANCE>(distance_function), std::forward<FILTER>(filter));
         // TODO pass in directly w/o move()
         return KDIteratorKnn<Key, T>(std::move(result));
+    }
+
+    template <typename DISTANCE, typename FILTER = FilterNoOp>
+    auto begin_knn_query(
+        size_t k,
+        const Key& center,
+        DISTANCE&& distance_function = DISTANCE(),
+        FILTER&& filter = FILTER()) const {
+        return KDIteratorKnnHS<Key, T, DISTANCE, FILTER>(
+            root_,
+            center,
+            k,
+            std::forward<DISTANCE>(distance_function),
+            std::forward<FILTER>(filter));
     }
 
     /**
