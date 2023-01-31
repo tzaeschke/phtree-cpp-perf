@@ -20,6 +20,8 @@ PH-Tree
 =======
 - Use PhTree<Key, T> i.o. PhTree<DIM, T>. This allows dynamic dimensionality....
   -> Using Key::size() may still result in loop unrolling if array::size() is a constexpr! -> Check!
+  -> This may really help with with kNN! Avoids constant conversion for calculating distances...
+     -> Should help with FILTERs and CALLBACKs as well, again because it avoids conversion.
 - Try convert-on-access, i.e. store unconverted coordinates
 - Require values to be movable?
   -> This is already the case for relocate(), or not?

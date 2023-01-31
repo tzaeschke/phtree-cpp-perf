@@ -19,6 +19,7 @@
 #include "phtree/phtree_multimap.h"
 #include "phtree/phtree_multimap2.h"
 #include "src/boost/boost_multimap.h"
+#include "src/flann/ph-kdtree-single.h"
 #include "src/flann/ph-kdtree.h"
 #include "src/tinspin/kdtree.h"
 #include "src/tinspin/quadtree_point.h"
@@ -46,7 +47,8 @@ enum Scenario {
     PHTREE2,
     TS_KD,
     TS_QT,
-    FLANN_KD
+    FLANN_KD,
+    FLANN_KD_S,
 };
 
 using payload_t = int64_t;
@@ -89,8 +91,11 @@ using TestMap = typename std::conditional_t<
                             tinspin::QuadTree<TestPoint, payload_t>,
                             typename std::conditional_t<
                                 SCENARIO == FLANN_KD,
-                                flann::PhTreeMultiMap<DIM, size_t>,
-                                void>>>>>>>>;
+                                flann::KDTree<DIM, size_t>,
+                                typename std::conditional_t<
+                                    SCENARIO == FLANN_KD_S,
+                                    flann::KDTreeSingle<DIM, size_t>,
+                                    void>>>>>>>>>;
 
 template <dimension_t DIM, Scenario SCENARIO>
 class IndexBenchmark {
@@ -153,7 +158,7 @@ void InsertEntry(
 template <
     dimension_t DIM,
     Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
+    std::enable_if_t<(SCENARIO == Scenario::FLANN_KD || SCENARIO == Scenario::FLANN_KD_S), int> = 0>
 void InsertEntry(TestMap<SCENARIO, DIM>& tree, const std::vector<TestPoint>& points) {
     tree.emplace(points);
 }
@@ -161,7 +166,10 @@ void InsertEntry(TestMap<SCENARIO, DIM>& tree, const std::vector<TestPoint>& poi
 template <
     dimension_t DIM,
     Scenario SCN,
-    std::enable_if_t<(SCN != Scenario::TREE_WITH_MAP && SCN != Scenario::FLANN_KD), int> = 0>
+    std::enable_if_t<
+        (SCN != Scenario::TREE_WITH_MAP && SCN != Scenario::FLANN_KD &&
+         SCN != Scenario::FLANN_KD_S),
+        int> = 0>
 void InsertEntry(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
     for (size_t i = 0; i < points.size(); ++i) {
         tree.emplace(points[i], (payload_t)i);
@@ -170,9 +178,9 @@ void InsertEntry(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) 
 
 template <
     dimension_t DIM,
-    Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO != Scenario::FLANN_KD), int> = 0>
-size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
+    Scenario SCN,
+    std::enable_if_t<(SCN != Scenario::FLANN_KD && SCN != Scenario::FLANN_KD_S), int> = 0>
+size_t QueryAll(TestMap<SCN, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
     for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<DIM>()); q != tree.end(); ++q) {
         ++n;
@@ -182,9 +190,9 @@ size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const siz
 
 template <
     dimension_t DIM,
-    Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO == Scenario::FLANN_KD), int> = 0>
-size_t QueryAll(TestMap<SCENARIO, DIM>& tree, const TestPoint& center, const size_t k) {
+    Scenario SCN,
+    std::enable_if_t<(SCN == Scenario::FLANN_KD || SCN == Scenario::FLANN_KD_S), int> = 0>
+size_t QueryAll(TestMap<SCN, DIM>& tree, const TestPoint& center, const size_t k) {
     size_t n = 0;
     for (auto q = tree.begin_knn_query(k, center, DistanceEuclidean<DIM>()); q != tree.knn_end();
          ++q) {
@@ -245,7 +253,7 @@ void IndexBenchmark<DIM, SCENARIO>::CreateQuery(TestPoint& center) {
 
 template <typename... Arguments>
 void BoostRT(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<3, Scenario::BOOST_RT> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::BOOST_RT> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
@@ -276,6 +284,12 @@ void Quadtree3D(benchmark::State& state, Arguments&&... arguments) {
 template <typename... Arguments>
 void FlannKD3D(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::FLANN_KD> benchmark{state, arguments...};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void FlannKDS3D(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<DIM, Scenario::FLANN_KD_S> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
@@ -349,6 +363,17 @@ BENCHMARK_CAPTURE(FlannKD3D, KNN_10, 10)
     ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
+// FLANN KD-tree Single
+BENCHMARK_CAPTURE(FlannKDS3D, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(FlannKDS3D, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
 // KD-tree
 BENCHMARK_CAPTURE(KDTree3D, KNN_1, 1)
     ->RangeMultiplier(10)
@@ -367,6 +392,17 @@ BENCHMARK_CAPTURE(Quadtree3D, KNN_1, 1)
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(Quadtree3D, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// Quadtree
+BENCHMARK_CAPTURE(BoostRT, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BoostRT, KNN_10, 10)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

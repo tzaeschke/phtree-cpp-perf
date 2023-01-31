@@ -6,6 +6,7 @@ cc_library(
     hdrs = [
         "flann/algorithms/dist.h",
         "flann/algorithms/kdtree_index.h",
+        "flann/algorithms/kdtree_single_index.h",
         "flann/algorithms/nn_index.h",
         "flann/config.h",
         "flann/defines.h",
@@ -36,6 +37,7 @@ cc_library(
     testonly = True,
     hdrs = [
         "ph-kdtree.h",
+        "ph-kdtree-single.h",
     ],
     visibility = [
         "//visibility:public",

@@ -404,6 +404,124 @@ class KDIteratorKnn : public KDIteratorBase<Key, T> {
     CandidatesIter iter_;
 };
 
+template <typename Key, typename Value>
+using EntryDist = std::pair<double, const Node<Key, Value>*>;
+
+template <typename ENTRY>
+struct CompareEntryDistByDistance {
+    bool operator()(const ENTRY& left, const ENTRY& right) const {
+        return left.first > right.first;
+    };
+};
+
+template <typename Key, typename T, typename DISTANCE, typename FILTER>
+class KDIteratorKnnHS : public KDIteratorBase<Key, T> {
+    using SCALAR = std::remove_reference_t<decltype(Key{}[0])>;
+    using EntryT = Node<Key, T>;
+    using EntryDistT = tinspin::KDEntryDist<Key, T>;
+
+  public:
+    template <typename DIST, typename F>
+    explicit KDIteratorKnnHS(
+        const EntryT& root,
+        size_t min_results,
+        const Key& center,
+        DIST&& dist,
+        F&& filter)
+    : KDIteratorBase<Key, T>()
+    , center_{center}
+    , current_distance_{std::numeric_limits<double>::max()}
+    , num_found_results_(0)
+    , num_requested_results_(min_results)
+    , distance_(std::forward<DIST>(dist)) {
+        if (min_results <= 0 || root.GetNode().GetEntryCount() == 0) {
+            this->SetFinished();
+            return;
+        }
+
+        // Initialize queue, use d=0 because every imaginable point lies inside the root Node
+        queue_.emplace(0, &root);
+        FindNextElement();
+    }
+
+    [[nodiscard]] double distance() const {
+        return current_distance_;
+    }
+
+    KDIteratorKnnHS& operator++() noexcept {
+        FindNextElement();
+        return *this;
+    }
+
+    KDIteratorKnnHS operator++(int) noexcept {
+        KDIteratorKnnHS iterator(*this);
+        ++(*this);
+        return iterator;
+    }
+
+  private:
+    void FindNextElement() {
+        while (num_found_results_ < num_requested_results_ && !queue_.empty()) {
+            auto& candidate = queue_.top();
+            auto* o = candidate.second;
+            if (!o->IsNode()) {
+                // data entry
+                ++num_found_results_;
+                this->SetCurrentResult(o);
+                current_distance_ = candidate.first;
+                // We need to pop() AFTER we processed the value, otherwise the reference is
+                // overwritten.
+                queue_.pop();
+                return;
+            } else {
+                // inner node
+                auto& node = o->GetNode();
+                queue_.pop();
+                for (auto& entry : node.Entries()) {
+                    auto& e2 = entry.second;
+                    if (this->ApplyFilter(e2)) {
+                        if (e2.IsNode()) {
+                            double d = DistanceToNode(e2.GetKey(), e2.GetNodePostfixLen() + 1);
+                            queue_.emplace(d, &e2);
+                        } else {
+                            double d = distance_(center_, this->post(e2.GetKey()));
+                            queue_.emplace(d, &e2);
+                        }
+                    }
+                }
+            }
+        }
+        this->SetFinished();
+        current_distance_ = std::numeric_limits<double>::max();
+    }
+
+    double DistanceToNode(const Key& prefix, std::uint32_t bits_to_ignore) {
+        assert(bits_to_ignore < MAX_BIT_WIDTH<SCALAR>);
+        SCALAR mask_min = MAX_MASK<SCALAR> << bits_to_ignore;
+        SCALAR mask_max = ~mask_min;
+        Key buf;
+        // The following calculates the point inside the node that is closest to center_.
+        for (dimension_t i = 0; i < prefix.size(); ++i) {
+            // if center_[i] is outside the node, return distance to the closest edge,
+            // otherwise return center_[i] itself (assume possible distance=0)
+            SCALAR min = prefix[i] & mask_min;
+            SCALAR max = prefix[i] | mask_max;
+            buf[i] = min > center_[i] ? min : (max < center_[i] ? max : center_[i]);
+        }
+        return distance_(center_, this->post(buf));
+    }
+
+  private:
+    const Key center_;
+    double current_distance_;
+    std::priority_queue<EntryDistT, std::vector<EntryDistT>, CompareEntryDistByDistance<EntryDistT>>
+        queue_;
+    size_t num_found_results_;
+    size_t num_requested_results_;
+    DISTANCE distance_;
+};
+
+
 /**
  * A simple KD-Tree implementation.
  *

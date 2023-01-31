@@ -62,9 +62,11 @@ namespace pht = improbable::phtree;
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 #ifdef USE_STD_ARRAY
-using point_car = std::array<double, 3>;
+template<pht::dimension_t DIM>
+using point_car = std::array<double, DIM>;
 #else
-using point_car = bg::model::point<double, 3, bg::cs::cartesian>;
+template<DIM>
+using point_car = bg::model::point<double, DIM, bg::cs::cartesian>;
 #endif
 #ifdef USE_PH_BOX
 namespace ph = improbable::phtree;
@@ -79,11 +81,11 @@ namespace {
 template <pht::dimension_t DIM, typename SCALAR>
 struct PointConverter {
     using Scalar = SCALAR;
-    const point_car& pre(const pht::PhPoint<DIM, SCALAR>& point) const {
+    const point_car<DIM>& pre(const pht::PhPoint<DIM, SCALAR>& point) const {
         return point;
     }
 
-    const pht::PhPoint<DIM, SCALAR>& post(const point_car& point) const {
+    const pht::PhPoint<DIM, SCALAR>& post(const point_car<DIM>& point) const {
         return point;
     }
 
@@ -98,11 +100,13 @@ struct PointConverter {
 #else
 template <pht::dimension_t DIM, typename SCALAR>
 struct PointConverter {
-    point_car pre(const pht::PhPoint<DIM, SCALAR>& key) const {
+    point_car<DIM> pre(const pht::PhPoint<DIM, SCALAR>& key) const {
+        assert(DIM == 3);
         return {key[0], key[1], key[2]};
     }
 
-    pht::PhPoint<DIM, SCALAR> post(const point_car& p) const {
+    pht::PhPoint<DIM, SCALAR> post(const point_car<DIM>& p) const {
+        assert(DIM == 3);
         return {p.get<0>(), p.get<1>(), p.get<2>()};
     }
 
@@ -136,8 +140,9 @@ struct BoxConverter {
     using PhBox = pht::PhBox<DIM, SCALAR>;
 
     box_car pre(const PhBox& box) const {
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        assert(DIM == 3);
+        point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
     }
 
@@ -149,8 +154,9 @@ struct BoxConverter {
     }
 
     box_car pre_query(const PhBox& box) const {
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        assert(DIM == 3);
+        point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
     }
 };
@@ -161,13 +167,15 @@ struct BoxConverter {
     using QueryBox = PhBox;
 
     box_car pre(const PhBox& in) const {
+        assert(DIM == 3);
         pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(in);
-        point_car lo{box.min()[0], box.min()[1], box.min()[2]};
-        point_car hi{box.max()[0], box.max()[1], box.max()[2]};
+        point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
+        point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
     }
 
     PhBox post(const box_car& in) const {
+        assert(DIM == 3);
         auto& rlo = in.min_corner();
         auto& rhi = in.max_corner();
         pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
@@ -255,7 +263,7 @@ class PhTreeMultiMap {
         typename std::conditional_t<POINT_KEYS, pht::PhPoint<DIM, Scalar>, pht::PhBox<DIM, Scalar>>;
     using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, POINT_KEYS, DEFAULT_QUERY_TYPE>;
 
-    using Geom = typename std::conditional_t<POINT_KEYS, point_car, box_car>;
+    using Geom = typename std::conditional_t<POINT_KEYS, point_car<DIM>, box_car>;
     using Entry = std::pair<Geom, T>;
     // For queries the best node capacity appears to be ¨rstar" around 16 (20 is also good).
     // THis was tested with WEB data with points and boxes.
@@ -277,11 +285,7 @@ class PhTreeMultiMap {
     ~PhTreeMultiMap() noexcept = default;
 
     void emplace(const Key& key, const T& id) {
-        if constexpr (DIM == 3) {
-            tree_.insert(std::make_pair(converter_.pre(key), id));
-        } else {
-            assert(false);
-        }
+        tree_.insert(std::make_pair(converter_.pre(key), id));
     }
 
     template <typename ITERATOR, typename... Args>
@@ -472,25 +476,30 @@ class PhTreeMultiMap {
         return IteratorNormal<ITER, PHTREE>(it);
     }
 
-    //    template <
-    //        typename DISTANCE,
-    //        typename FILTER = FilterNoOp,
-    //        // Some magic to disable this in case of box keys
-    //        bool DUMMY = POINT_KEYS,
-    //        typename std::enable_if<DUMMY, int>::type = 0>
-    //    auto begin_knn_query(
-    //        size_t min_results,
-    //        const Key& center,
-    //        DISTANCE&& distance_function = DISTANCE(),
-    //        FILTER&& filter = FILTER()) const {
-    //        // We use pre() instead of pre_query() here because, strictly speaking, we want to
-    //        // find the nearest neighbors of a (fictional) key, which may as well be a box.
-    //        return CreateIteratorKnn(tree_->begin_knn_query(
-    //            min_results,
-    //            converter_.pre(center),
-    //            std::forward<DISTANCE>(distance_function),
-    //            std::forward<FILTER>(filter)));
-    //    }
+    template <
+        typename DISTANCE,
+        typename FILTER = pht::FilterNoOp,
+        // Some magic to disable this in case of box keys
+        bool DUMMY = POINT_KEYS,
+        typename std::enable_if<DUMMY, int>::type = 0>
+    auto begin_knn_query(
+        size_t min_results,
+        const Key& center,
+        DISTANCE&& distance_function = DISTANCE(),
+        FILTER&& filter = FILTER()) const {
+        // We use pre() instead of pre_query() here because, strictly speaking, we want to
+        // find the nearest neighbors of a (fictional) key, which may as well be a box.
+//        std::vector returned_values{};
+//        returned_values.resize(min_results);
+//        tree_.query(bgi::nearest(converter_.pre_query(center, min_results)), std::back_inserter(returned_values)); //bgi::satisfies([&](value const& v) {return bg::distance(v.first, sought) < 2;}),
+        return IteratorNormal<ITER, PHTREE>(tree_.qbegin(bgi::nearest(converter_.pre(center), min_results))); //bgi::satisfies([&](value const& v) {return bg::distance(v.first, sought) < 2;}),
+
+//        return CreateIteratorKnn(tree_->begin_knn_query(
+//            min_results,
+//            converter_.pre(center),
+//            std::forward<DISTANCE>(distance_function),
+//            std::forward<FILTER>(filter)));
+    }
 
     auto end() const {
         return IteratorNormal<ITER, PHTREE>(tree_.qend());

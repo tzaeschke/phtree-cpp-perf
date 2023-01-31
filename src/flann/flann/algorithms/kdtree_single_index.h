@@ -219,6 +219,9 @@ public:
      */
     void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& searchParams) const
     {
+        if (root_node_ == nullptr) {
+            return; // TODO TZ report this
+        }
         float epsError = 1+searchParams.eps;
 
         std::vector<DistanceType> dists(veclen_,0);

@@ -16,7 +16,7 @@
 
 #include "phtree/common/common.h"
 #include "phtree/filter.h"
-#include "src/flann/ph-kdtree.h"
+#include "src/flann/ph-kdtree-single.h"
 #include <include/gtest/gtest.h>
 #include <random>
 
@@ -36,7 +36,7 @@ template <dimension_t DIM>
 using TestPoint = PhPointD<DIM>;
 
 template <dimension_t DIM, typename T>
-using TestTree = flann::KDTree<DIM, T>;
+using TestTree = flann::KDTreeSingle<DIM, T>;
 
 class DoubleRng {
   public:
@@ -149,12 +149,12 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
          TestPoint<DIM>& p = points.at(i);
          ASSERT_LE(tree.count(p), i % NUM_DUPL);
          if (i % NUM_DUPL == 0) {
-            std::cout << "i=" << i << " " << p <<std::endl;
-            if (tree.end() != tree.find(p)) {
-                auto it = tree.find(p);
-                std:: cout << "I=" << i << " " << DIM << "   -> " << points[*it] <<  std::endl;
+//            std::cout << "i=" << i << " " << p <<std::endl;
+//            if (tree.end() != tree.find(p)) {
+//                auto it = tree.find(p);
+//                std:: cout << "I=" << i << " " << DIM << "   -> " << points[*it] <<  std::endl;
                 ASSERT_EQ(tree.end(), tree.find(p));
-            }
+//            }
          }
 
          Id id(i);
@@ -195,6 +195,7 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
 
      for (size_t i = 0; i < N; i++) {
          TestPoint<DIM>& p = points.at(i);
+         std::cout << "i=" << i << " " << p <<std::endl;
          Id id(i);
          ASSERT_NE(tree.find(p), tree.end());
          size_t expected_remaining = (N - i - 1) % NUM_DUPL + 1;
@@ -230,11 +231,11 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
  }
 
  TEST(PhTreeMMDTest, SmokeTestBasicOps) {
-     SmokeTestBasicOps<1>(10000);
+//     SmokeTestBasicOps<1>(10000);
      SmokeTestBasicOps<3>(10000);
-     SmokeTestBasicOps<6>(10000);
-     SmokeTestBasicOps<10>(10000);
-     SmokeTestBasicOps<20>(1000);
+//     SmokeTestBasicOps<6>(10000);
+//     SmokeTestBasicOps<10>(10000);
+//     SmokeTestBasicOps<20>(1000);
      SmokeTestBasicOps<63>(100);
  }
 

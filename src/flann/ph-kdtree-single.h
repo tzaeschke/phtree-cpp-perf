@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2023 Tilmann Zäschke <zoodb@gmx.de>
 // SPDX-License-Identifier: MIT
 
-#ifndef FLANN_KD_TREE_H
-#define FLANN_KD_TREE_H
+#ifndef FLANN_KD_TREE_SINGLE_H
+#define FLANN_KD_TREE_SINGLE_H
 
 #include "flann/algorithms/dist.h"
-#include "flann/algorithms/kdtree_index.h"
+#include "flann/algorithms/kdtree_single_index.h"
 #include "flann/defines.h"
 // #include <flann/flann.h>
 #include "include/phtree/common/common.h"
@@ -23,7 +23,7 @@ namespace pht = improbable::phtree;
  * The main wrapper class
  */
 template <pht::dimension_t DIM, typename T = std::uint32_t>
-class KDTree {
+class KDTreeSingle {
     static_assert(std::is_same_v<size_t, T>);
 
     // using KeyInternal = typename CONVERTER::KeyInternal;
@@ -35,15 +35,15 @@ class KDTree {
     using KeyInternal = Key;
     using QueryBox = typename pht::PhBox<DIM, SCALAR>;
 
-    explicit KDTree() {
+    explicit KDTreeSingle() {
         tree_ = create_tree();
     }
 
-    KDTree(const KDTree& other) = delete;
-    KDTree& operator=(const KDTree& other) = delete;
-    KDTree(KDTree&& other) noexcept = default;
-    KDTree& operator=(KDTree&& other) noexcept = default;
-    ~KDTree() noexcept {
+    KDTreeSingle(const KDTreeSingle& other) = delete;
+    KDTreeSingle& operator=(const KDTreeSingle& other) = delete;
+    KDTreeSingle(KDTreeSingle&& other) noexcept = default;
+    KDTreeSingle& operator=(KDTreeSingle&& other) noexcept = default;
+    ~KDTreeSingle() noexcept {
         delete tree_;
     };
 
@@ -258,12 +258,12 @@ class KDTree {
 
   private:
     auto* create_tree() const {
-        KDTreeIndexParams params{1};
+        KDTreeSingleIndexParams params{};
         params.insert_or_assign("trees", 1);
         // auto* tree = new KDTreeIndex<L2<SCALAR>>(params);
         SCALAR data[DIM]{};
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(data), 0, DIM);
-        auto* tree = new KDTreeIndex<L2<SCALAR>>(dataset, params);
+        auto* tree = new KDTreeSingleIndex<L2<SCALAR>>(dataset, params);
         // tree->buildIndex(dataset);
         // tree->removePoint(0);
         return tree;
@@ -281,10 +281,10 @@ class KDTree {
     }
 
     void build() const {
-        const_cast<KDTree&>(*this).build();
+        const_cast<KDTreeSingle&>(*this).build();
     }
 
-    flann::KDTreeIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
+    flann::KDTreeSingleIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
     std::vector<T> result_{};               /// Dirty Hack!!!! TODO
     struct KNNResult {
         Key first;
@@ -296,14 +296,14 @@ class KDTree {
 };
 
 template <pht::dimension_t DIM, typename T>
-using KDTreeD = KDTree<DIM, T>;
+using KDTreeSingleD = KDTreeSingle<DIM, T>;
 
 template <pht::dimension_t DIM, typename T>
-using KDTreeBox = KDTree<DIM, T>;
+using KDTreeSingleBox = KDTreeSingle<DIM, T>;
 
 template <pht::dimension_t DIM, typename T>
-using KDTreeBoxD = KDTreeBox<DIM, T>;
+using KDTreeSingleBoxD = KDTreeSingleBox<DIM, T>;
 
 }  // namespace flann
 
-#endif  // FLANN_KD_TREE_H
+#endif  // FLANN_KD_TREE_SINGLE_H

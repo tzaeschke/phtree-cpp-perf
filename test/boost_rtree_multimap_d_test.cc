@@ -964,47 +964,47 @@ TEST(PhTreeMMDTest, TestWindowQueryFilter) {
     ASSERT_GE(50, num_e);
 }
 
-//TEST(PhTreeMMDTest, TestKnnQuery) {
-//    // deliberately allowing outside of main points range
-//    DoubleRng rng(-1500, 1500);
-//    const dimension_t dim = 3;
-//    const size_t N = 1000;
-//    const size_t Nq = 10;
-//
-//    TestTree<dim, Id> tree;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    for (size_t round = 0; round < 100; round++) {
-//        TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
-//
-//        // sort points manually
-//        std::vector<PointDistance> sorted_data;
-//        for (size_t i = 0; i < points.size(); i++) {
-//            double dist = distance(center, points[i]);
-//            sorted_data.emplace_back(dist, i);
-//        }
-//        std::sort(sorted_data.begin(), sorted_data.end(), comparePointDistanceAndId);
-//
-//        size_t n = 0;
-//        double prevDist = -1;
-//        auto q = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
-//        while (q != tree.end()) {
-//            // just read the entry
-//            auto& e = *q;
-//            ASSERT_EQ(sorted_data[n]._distance, q.distance());
-//            ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, e._i / NUM_DUPL);
-//            ASSERT_EQ(points[sorted_data[n]._id], q.first());
-//            ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, q->_i / NUM_DUPL);
-//            ASSERT_GE(q.distance(), prevDist);
-//            prevDist = q.distance();
-//            q++;
-//            n++;
-//        }
-//        ASSERT_EQ(Nq * NUM_DUPL, n);
-//    }
-//}
-//
+TEST(PhTreeMMDTest, TestKnnQuery) {
+    // deliberately allowing outside of main points range
+    DoubleRng rng(-1500, 1500);
+    const dimension_t dim = 10;
+    const size_t N = 1000;
+    const size_t Nq = 10;
+
+    TestTree<dim, Id> tree;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    for (size_t round = 0; round < 100; round++) {
+        TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
+
+        // sort points manually
+        std::vector<PointDistance> sorted_data;
+        for (size_t i = 0; i < points.size(); i++) {
+            double dist = distance(center, points[i]);
+            sorted_data.emplace_back(dist, i);
+        }
+        std::sort(sorted_data.begin(), sorted_data.end(), comparePointDistanceAndId);
+
+        size_t n = 0;
+        double prevDist = -1;
+        auto q = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
+        while (q != tree.end()) {
+            // just read the entry
+            auto& e = *q;
+      // TODO      ASSERT_EQ(sorted_data[n]._distance, q.distance());
+            ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, e / NUM_DUPL);
+            ASSERT_EQ(points[sorted_data[n]._id], points[*q]);
+            ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, *q / NUM_DUPL);
+        //    ASSERT_GE(q.distance(), prevDist);
+        //    prevDist = q.distance();
+            ++q;
+            n++;
+        }
+        ASSERT_EQ(Nq, n);
+    }
+}
+
 //template <dimension_t DIM>
 //struct PhDistanceLongL1 {
 //    double operator()(const TestPoint<DIM>& v1, const TestPoint<DIM>& v2) const {
