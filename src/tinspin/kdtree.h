@@ -10,6 +10,7 @@
 #include "src/util/ph-util.h"
 #include <iostream>
 #include <unordered_set>
+#include <queue>
 
 namespace tinspin {
 
@@ -800,7 +801,7 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = node->key()[dim];
                 result.dim = node->dim();
-                invariantBroken |= result.best == node->key()[dim];
+         //       invariantBroken |= result.best == node->key()[dim]; // TODO remove? backport
             }
         } else {
             // split in any other dimension.
@@ -811,7 +812,7 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = localX;
                 result.dim = node->dim();
-                invariantBroken |= result.best == localX;
+         //       invariantBroken |= result.best == localX; // TODO remove? backport
             }
             if (node->left() != nullptr) {
                 removeMaxLeaf(node->left(), node, dim, result);
