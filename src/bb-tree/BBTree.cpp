@@ -933,8 +933,8 @@ void BBTree::RebuildDelimiters() {
   }
 
   // TODO: make the following lines atomic (necessary for background execution)
-  delete this->delimiter_dimensions;
-  delete this->delimiter_values;
+  delete [] this->delimiter_dimensions;  // TODO TZ report
+  delete [] this->delimiter_values; // TODO TZ report
   delete [] this->buckets;
   this->delimiter_dimensions = new_delimiter_dimensions;
   this->delimiter_values = new_delimiter_values;

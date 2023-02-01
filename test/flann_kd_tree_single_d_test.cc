@@ -385,7 +385,7 @@ void populate(TestTree<DIM, Id>& tree, std::vector<TestPoint<DIM>>& points, size
 //    for (size_t i = 0; i < N; i++) {
 //        tree.emplace(points[i], Id(i));
 //    }
-    tree.emplace(points);
+    tree.load(points);
     ASSERT_EQ(N, tree.size());
 }
 

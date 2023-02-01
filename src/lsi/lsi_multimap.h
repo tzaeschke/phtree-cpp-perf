@@ -45,7 +45,10 @@ class PhTreeMultiMap {
     PhTreeMultiMap& operator=(const PhTreeMultiMap& other) = delete;
     PhTreeMultiMap(PhTreeMultiMap&& other) noexcept = default;
     PhTreeMultiMap& operator=(PhTreeMultiMap&& other) noexcept = default;
-    ~PhTreeMultiMap() noexcept = default;
+    ~PhTreeMultiMap() noexcept  //= default;
+    {
+        delete tree_;
+    }
 
     void emplace(const Key& key, const T& id) {
         tree_->insertData(0, 0, to_shape(key), id);

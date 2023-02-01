@@ -149,10 +149,10 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
          TestPoint<DIM>& p = points.at(i);
          ASSERT_LE(tree.count(p), i % NUM_DUPL);
          if (i % NUM_DUPL == 0) {
-            std::cout << "i=" << i << " " << p <<std::endl;
+//            std::cout << "i=" << i << " " << p <<std::endl;
             if (tree.end() != tree.find(p)) {
                 auto it = tree.find(p);
-                std:: cout << "I=" << i << " " << DIM << "   -> " << points[*it] <<  std::endl;
+//                std:: cout << "I=" << i << " " << DIM << "   -> " << points[*it] <<  std::endl;
                 ASSERT_EQ(tree.end(), tree.find(p));
             }
          }
@@ -384,7 +384,7 @@ void populate(TestTree<DIM, Id>& tree, std::vector<TestPoint<DIM>>& points, size
 //    for (size_t i = 0; i < N; i++) {
 //        tree.emplace(points[i], Id(i));
 //    }
-    tree.emplace(points);
+    tree.load(points);
     ASSERT_EQ(N, tree.size());
 }
 

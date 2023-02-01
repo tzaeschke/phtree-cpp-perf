@@ -4,16 +4,15 @@
 #ifndef BB_TREE_MULTIMAP_H
 #define BB_TREE_MULTIMAP_H
 
+#include "BBTree.h"
 #include "phtree/common/common.h"
 #include "phtree/converter.h"
 #include "phtree/filter.h"
-#include "BBTree.h"
 #include <unordered_set>
 
 /*
  * Wrapper for the BB-tree, see: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
  */
-
 
 namespace bb {
 
@@ -22,16 +21,16 @@ namespace pht = improbable::phtree;
 /*
  * The main wrapper class
  */
-template <
-    pht::dimension_t DIM,
-    typename T = std::uint32_t>
+template <pht::dimension_t DIM, typename T = std::uint32_t>
 class PhTreeMultiMap {
     static_assert(std::is_same_v<uint32_t, T>);
     using Key = pht::PhPoint<DIM, float>;
+    using KeyD = pht::PhPoint<DIM, double>;
 
   public:
     using KeyInternal = std::vector<float>;
     using QueryBox = pht::PhBox<DIM, float>;
+    using QueryBoxD = pht::PhBox<DIM, double>;
 
     explicit PhTreeMultiMap() : size_{0} {
         tree_ = create_tree();
@@ -41,12 +40,27 @@ class PhTreeMultiMap {
     PhTreeMultiMap& operator=(const PhTreeMultiMap& other) = delete;
     PhTreeMultiMap(PhTreeMultiMap&& other) noexcept = default;
     PhTreeMultiMap& operator=(PhTreeMultiMap&& other) noexcept = default;
-    ~PhTreeMultiMap() noexcept = default;
+    ~PhTreeMultiMap() noexcept  //= default;
+    {
+        delete tree_;
+    }
+
+    void emplace(const KeyD& key, const T& id) {
+        tree_->InsertObject(to_shape(key), id);
+        // TODO verify: Is this a multimap?!?!?
+        ++size_;  // TODO this is bad..!
+    }
 
     void emplace(const Key& key, const T& id) {
         tree_->InsertObject(to_shape(key), id);
         // TODO verify: Is this a multimap?!?!?
         ++size_;  // TODO this is bad..!
+    }
+
+    void load(const std::vector<std::vector<float>>& keys, const std::vector<std::uint32_t>& data) {
+        tree_->BulkInsert(keys, data);
+        // TODO verify: Is this a multimap?!?!?
+        size_ += keys.size() / DIM;  // TODO this is bad..!
     }
 
     template <typename ITERATOR, typename... Args>
@@ -70,7 +84,7 @@ class PhTreeMultiMap {
     size_t count(const Key& key) const {
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
         return results.size();
-     }
+    }
 
     auto find(const Key& key) {
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
@@ -82,7 +96,7 @@ class PhTreeMultiMap {
     auto find(const Key& key, const T& value) {
         result_.clear();
         auto results = tree_->SearchRange(to_shape(key), to_shape(key));
-        for (auto r: results) {
+        for (auto r : results) {
             if (r == value) {
                 result_.emplace_back(r);
                 return result_.begin();
@@ -127,8 +141,19 @@ class PhTreeMultiMap {
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
-        for (auto& r: results) {
-            Key k{}; // TODO
+        for (auto& r : results) {
+            Key k{};  // TODO
+            if (filter.IsBucketEntryValid(k, r)) {
+                callback(k, r);
+            }
+        }
+    }
+
+    template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
+    void for_each(QueryBoxD query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
+        auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
+        for (auto& r : results) {
+            KeyD k{};  // TODO
             if (filter.IsBucketEntryValid(k, r)) {
                 callback(k, r);
             }
@@ -139,8 +164,14 @@ class PhTreeMultiMap {
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         result_.clear();
-        result_ = results;
-        //std::copy_n(shape.begin(), DIM, key.begin());
+        for (auto& r : results) {
+            KeyInternal k{};  // TODO
+            if (filter.IsEntryValid(k, r)) {
+                result_.emplace_back(r);
+            }
+        }
+        // result_ = results;
+        // std::copy_n(shape.begin(), DIM, key.begin());
         return result_.begin();
     }
 
@@ -179,7 +210,7 @@ class PhTreeMultiMap {
         //  do this after loading via a call to size()
         //  -->
         //  The same could be used to do a bulk-build.
-        tree_->RebuildDelimiters();
+        // tree_->RebuildDelimiters();
         return size_;
     }
 
@@ -193,57 +224,67 @@ class PhTreeMultiMap {
         return tree;
     }
 
-//    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
-//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-//        //std::cout << "q: " << r.
-//        return r;
-//    }
-//
-//    template <bool DUMMY = POINT_KEYS>
-//    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
-//        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-//        return r;
-//    }
+    //    Region query_to_region(const pht::PhBoxD<DIM>& box) const {
+    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+    //        //std::cout << "q: " << r.
+    //        return r;
+    //    }
+    //
+    //    template <bool DUMMY = POINT_KEYS>
+    //    typename std::enable_if<!DUMMY, Region>::type to_shape(const Key& key) const {
+    //        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
+    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+    //        return r;
+    //    }
 
     KeyInternal to_shape(const Key& key) const {
         KeyInternal p = std::vector<float>(key.begin(), key.end());
         return p;
     }
 
-//    template <bool DUMMY = POINT_KEYS>
-//    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
-//        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
-//        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-//        return r;
-//    }
-//
-//    template <bool DUMMY2 = POINT_KEYS>
-//    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
-//        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
-//        Region r = Region(&*key.begin(), &*key.begin(), DIM);
-//        return r;
-//    }
-//
-//    Key from_array(const double* a) const {
-//        Key key;
-//        for (pht::dimension_t d = 0; d < DIM; ++d) {
-//            key[d] = a[d];
-//        }
-//        return key;
-//    }
-//
-//    Key from_point(const Point& p) const {
-//        return {from_array(p.m_pCoords)};
-//    }
+    KeyInternal to_shape(const KeyD& key) const {
+        //        KeyInternal p = std::vector<float>(key.begin(), key.end());
+        //        return p;
+        KeyInternal p(key.size());
+        for (size_t d = 0; d < key.size(); ++d) {
+            p[d] = key[d];
+        }
+        return p;
+    }
+
+    //    template <bool DUMMY = POINT_KEYS>
+    //    typename std::enable_if<!DUMMY, Region>::type to_region(const Key& key) const {
+    //        pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(key);
+    //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
+    //        return r;
+    //    }
+    //
+    //    template <bool DUMMY2 = POINT_KEYS>
+    //    typename std::enable_if<DUMMY2 == true, Region>::type to_region(const Key& key2) const {
+    //        pht::PhPointD<DIM> key = static_cast<pht::PhPointD<DIM>>(key2);
+    //        Region r = Region(&*key.begin(), &*key.begin(), DIM);
+    //        return r;
+    //    }
+    //
+    //    Key from_array(const double* a) const {
+    //        Key key;
+    //        for (pht::dimension_t d = 0; d < DIM; ++d) {
+    //            key[d] = a[d];
+    //        }
+    //        return key;
+    //    }
+    //
+    //    Key from_point(const Point& p) const {
+    //        return {from_array(p.m_pCoords)};
+    //    }
 
     Key from_shape(const KeyInternal& shape) const {
         // Point** p = static_cast<Point**>(shape);
         Key key;
         std::copy_n(shape.begin(), DIM, key.begin());
-//        for (pht::dimension_t d = 0; d < DIM; ++d) {
-//            key[d] = p.m_pCoords[d];
-//        }
+        //        for (pht::dimension_t d = 0; d < DIM; ++d) {
+        //            key[d] = p.m_pCoords[d];
+        //        }
         return key;
     }
 
@@ -253,14 +294,14 @@ class PhTreeMultiMap {
 };
 
 template <pht::dimension_t DIM, typename T>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T>;
+using PhTreeMultiMapF = PhTreeMultiMap<DIM, T>;
 
 template <pht::dimension_t DIM, typename T>
 using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T>;
 
 template <pht::dimension_t DIM, typename T>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T>;
+using PhTreeMultiMapBoxF = PhTreeMultiMapBox<DIM, T>;
 
-}  // namespace si
+}  // namespace bb
 
 #endif  // BB_TREE_MULTIMAP_H

@@ -160,7 +160,7 @@ template <
     Scenario SCENARIO,
     std::enable_if_t<(SCENARIO == Scenario::FLANN_KD || SCENARIO == Scenario::FLANN_KD_S), int> = 0>
 void InsertEntry(TestMap<SCENARIO, DIM>& tree, const std::vector<TestPoint>& points) {
-    tree.emplace(points);
+    tree.load(points);
 }
 
 template <

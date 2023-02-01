@@ -28,28 +28,28 @@ namespace phtree_multimap_d_test {
 
 // Number of entries that have the same coordinate
 static const size_t NUM_DUPL = 4;
-static const double WORLD_MIN = -1000;
-static const double WORLD_MAX = 1000;
+static const float WORLD_MIN = -1000;
+static const float WORLD_MAX = 1000;
 
 using Id = uint32_t;
 
 template <dimension_t DIM>
-using TestPoint = PhPointD<DIM>;
+using TestPoint = PhPointF<DIM>;
 
 template <dimension_t DIM, typename T>
-using TestTree = bb::PhTreeMultiMapD<DIM, T>;
+using TestTree = bb::PhTreeMultiMapF<DIM, T>;
 
-class DoubleRng {
+class FloatRng {
   public:
-    DoubleRng(double minIncl, double maxExcl) : eng(), rnd{minIncl, maxExcl} {}
+    FloatRng(float minIncl, float maxExcl) : eng(), rnd{minIncl, maxExcl} {}
 
-    double next() {
+    float next() {
         return rnd(eng);
     }
 
   private:
     std::default_random_engine eng;
-    std::uniform_real_distribution<double> rnd;
+    std::uniform_real_distribution<float> rnd;
 };
 
 //struct Id {
@@ -111,7 +111,7 @@ double distanceL1(const TestPoint<DIM>& p1, const TestPoint<DIM>& p2) {
 template <dimension_t DIM>
 void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
     assert(N % NUM_DUPL == 0);
-    DoubleRng rng(WORLD_MIN, WORLD_MAX);
+    FloatRng rng(WORLD_MIN, WORLD_MAX);
     auto reference_set = std::unordered_map<TestPoint<DIM>, size_t>();
 
     points.reserve(N);
@@ -368,9 +368,19 @@ TEST(PhTreeMMDTest, TestEmplace) {
 template <dimension_t DIM>
 void populate(TestTree<DIM, size_t>& tree, std::vector<TestPoint<DIM>>& points, size_t N) {
     generateCube(points, N);
+    std::vector<std::vector<float>> v1{};
+    std::vector<std::uint32_t> v2{};
     for (size_t i = 0; i < N; i++) {
-        ASSERT_TRUE(tree.insert(points[i], i).second);
+        auto& v = v1.emplace_back(DIM);
+        v2.emplace_back(i);
+        for (dimension_t d = 0; d < DIM; ++d) {
+            v[d] = points[i][d];
+        }
     }
+    tree.load(v1, v2);
+//    for (size_t i = 0; i < N; i++) {
+//        ASSERT_TRUE(tree.insert(points[i], i).second);
+//    }
     ASSERT_EQ(N, tree.size());
 }
 
@@ -450,7 +460,7 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
     size_t N = 10000;
-    double delta = 20;
+    float delta = 20;
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
 
@@ -661,15 +671,11 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
 template <dimension_t DIM, typename T>
 struct FilterEvenId {
     using KeyInternal = typename TestTree<DIM, T>::KeyInternal;
-    template <typename BucketT>
-    [[nodiscard]] constexpr bool IsEntryValid(const KeyInternal&, const BucketT&) const {
-        return true;
+    [[nodiscard]] constexpr bool IsEntryValid(const KeyInternal&, const T& value) const {
+        return value % 2 == 0;
     }
     [[nodiscard]] constexpr bool IsNodeValid(const KeyInternal&, int) const {
         return true;
-    }
-    [[nodiscard]] constexpr bool IsBucketEntryValid(const KeyInternal&, const T& value) const {
-        return value % 2 == 0;
     }
 };
 
@@ -858,11 +864,11 @@ TEST(PhTreeMMDTest, TestWindowQueryManyMoving) {
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
 
-    double query_length = 200;
+    float query_length = 200;
     size_t nn = 0;
     for (int i = -120; i < 120; i++) {
-        TestPoint<dim> min{i * 10., i * 9., i * 11.};
-        TestPoint<dim> max{i * 10. + query_length, i * 9. + query_length, i * 11. + query_length};
+        TestPoint<dim> min{i * 10.f, i * 9.f, i * 11.f};
+        TestPoint<dim> max{i * 10.f + query_length, i * 9.f + query_length, i * 11.f + query_length};
         std::set<size_t> referenceResult;
         referenceQuery(points, min, max, referenceResult);
 
@@ -889,11 +895,11 @@ TEST(PhTreeMMDTest, TestWindowForEachQueryManyMoving) {
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
 
-    double query_length = 200;
+    float query_length = 200;
     size_t nn = 0;
     for (int i = -120; i < 120; i++) {
-        TestPoint<dim> min{i * 10., i * 9., i * 11.};
-        TestPoint<dim> max{i * 10. + query_length, i * 9. + query_length, i * 11. + query_length};
+        TestPoint<dim> min{i * 10.f, i * 9.f, i * 11.f};
+        TestPoint<dim> max{i * 10.f + query_length, i * 9.f + query_length, i * 11.f + query_length};
         std::set<size_t> referenceResult;
         referenceQuery(points, min, max, referenceResult);
 
@@ -955,8 +961,8 @@ TEST(PhTreeMMDTest, TestWindowQueryFilter) {
     TestPoint<dim> max{100, 100, 100};
     auto qE = tree.begin_query({min, max}, FilterEvenId<dim, Id>());
     while (qE != tree.end()) {
-        ASSERT_TRUE((*qE) > -1);
-        ASSERT_TRUE((*qE) % 2 == 0);
+        //ASSERT_TRUE((*qE) > -1);
+        ASSERT_EQ((*qE) % 2, 0u);
         ++qE;
         num_e++;
     }

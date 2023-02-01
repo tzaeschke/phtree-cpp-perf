@@ -43,20 +43,18 @@ class KDTree {
     KDTree& operator=(const KDTree& other) = delete;
     KDTree(KDTree&& other) noexcept = default;
     KDTree& operator=(KDTree&& other) noexcept = default;
-    ~KDTree() noexcept {
-        delete tree_;
-    };
+    ~KDTree() noexcept = default;
 
     void emplace(const Key& key, const T& id) {
-        assert(id == tree_->size());
+        assert(id == tree_.size());
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(&key[0]), 1, DIM);
-        tree_->addPoints(dataset);
+        tree_.addPoints(dataset);
     }
 
-    void emplace(const std::vector<Key>& keys) {
+    void load(const std::vector<Key>& keys) {
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(&keys[0][0]), keys.size(), DIM);
-        // tree_->addPoints(dataset);
-        tree_->buildIndex(dataset);
+        // tree_.addPoints(dataset);
+        tree_.buildIndex(dataset);
         is_built_ = true;
     }
 
@@ -86,7 +84,7 @@ class KDTree {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->radiusSearch(queries, indexes, distances, R_0, params());
+        tree_.radiusSearch(queries, indexes, distances, R_0, params());
         return indexes[0].size();
     }
 
@@ -95,7 +93,7 @@ class KDTree {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->radiusSearch(queries, indexes, distances, R_0, params());
+        tree_.radiusSearch(queries, indexes, distances, R_0, params());
         result_.clear();
         for (auto& ind : indexes) {
             result_.insert(result_.end(), ind.begin(), ind.end());
@@ -110,7 +108,7 @@ class KDTree {
         const Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->radiusSearch(queries, indexes, distances, R_0, params());
+        tree_.radiusSearch(queries, indexes, distances, R_0, params());
         for (auto r : indexes) {
             for (auto r2 : r) {
                 if (r2 - X == value) {
@@ -123,9 +121,9 @@ class KDTree {
     }
 
     size_t erase(const Key&, const T& value) {
-        size_t result = tree_->size();
-        tree_->removePoint(value);
-        result -= tree_->size();
+        size_t result = tree_.size();
+        tree_.removePoint(value);
+        result -= tree_.size();
         return result;
     }
 
@@ -153,10 +151,10 @@ class KDTree {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->radiusSearch(queries, indexes, distances, radius * radius, params());
+        tree_.radiusSearch(queries, indexes, distances, radius * radius, params());
         for (auto r : indexes) {
             for (auto r2 : r) {
-                auto* point = tree_->getPoint(r2);
+                auto* point = const_cast<flann::KDTreeIndex<L2<SCALAR>>&>(tree_).getPoint(r2);
                 bool match = true;
                 for (size_t d = 0; d < DIM; ++d) {
                     if (point[d] < min[d] || point[d] > max[d]) {
@@ -196,14 +194,14 @@ class KDTree {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&center[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->knnSearch(queries, indexes, distances, min_results, params());
+        tree_.knnSearch(queries, indexes, distances, min_results, params());
 
         knn_result_.clear();
         for (size_t i1 = 0; i1 < indexes.size(); ++i1) {
             for (size_t i2 = 0; i2 < indexes[i1].size(); ++i2) {
                 Key k{};
                 // TODO disable for performance, but required for correctness
-                //                auto* x = tree_->getPoint(indexes[i1][i2]);
+                //                auto* x = tree_.getPoint(indexes[i1][i2]);
                 //                for (size_t d = 0; d < DIM; ++d) {
                 //                    k[d] = x[d];
                 //                }
@@ -221,7 +219,7 @@ class KDTree {
         Matrix<SCALAR> queries(const_cast<SCALAR*>(&key[0]), 1, DIM);
         std::vector<std::vector<size_t>> indexes{};
         std::vector<std::vector<SCALAR>> distances{};
-        tree_->radiusSearch(
+        tree_.radiusSearch(
             queries, indexes, distances, std::numeric_limits<SCALAR>::infinity(), params());
         for (auto r : indexes) {
             for (auto r2 : r) {
@@ -240,7 +238,7 @@ class KDTree {
     }
 
     void clear() {
-        delete tree_;
+        tree_.~KDTreeIndex<L2<SCALAR>>();
         tree_ = create_tree();
     }
 
@@ -249,21 +247,21 @@ class KDTree {
         //  do this after loading via a call to size()
         //  -->
         //  The same could be used to do a bulk-build.
-        return tree_->size();
+        return tree_.size();
     }
 
     [[nodiscard]] bool empty() const {
-        return tree_->size() == 0;
+        return tree_.size() == 0;
     }
 
   private:
-    auto* create_tree() const {
+    auto create_tree() const {
         KDTreeIndexParams params{1};
         params.insert_or_assign("trees", 1);
         // auto* tree = new KDTreeIndex<L2<SCALAR>>(params);
         SCALAR data[DIM]{};
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(data), 0, DIM);
-        auto* tree = new KDTreeIndex<L2<SCALAR>>(dataset, params);
+        KDTreeIndex<L2<SCALAR>> tree(dataset, params);
         // tree->buildIndex(dataset);
         // tree->removePoint(0);
         return tree;
@@ -274,8 +272,8 @@ class KDTree {
     }
 
     void build() {
-        if (!is_built_ && tree_->size() > 0) {
-            tree_->buildIndex();
+        if (!is_built_ && tree_.size() > 0) {
+            tree_.buildIndex();
             is_built_ = true;
         }
     }
@@ -284,7 +282,7 @@ class KDTree {
         const_cast<KDTree&>(*this).build();
     }
 
-    flann::KDTreeIndex<L2<SCALAR>>* tree_;  // TODO avoid using pointer
+    flann::KDTreeIndex<L2<SCALAR>> tree_;  // TODO avoid using pointer
     std::vector<T> result_{};               /// Dirty Hack!!!! TODO
     struct KNNResult {
         Key first;

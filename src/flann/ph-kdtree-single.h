@@ -22,7 +22,7 @@ namespace pht = improbable::phtree;
 /*
  * The main wrapper class
  */
-template <pht::dimension_t DIM, typename T = std::uint32_t>
+template <pht::dimension_t DIM, typename T = size_t>
 class KDTreeSingle {
     static_assert(std::is_same_v<size_t, T>);
 
@@ -53,7 +53,7 @@ class KDTreeSingle {
         tree_->addPoints(dataset);
     }
 
-    void emplace(const std::vector<Key>& keys) {
+    void load(const std::vector<Key>& keys) {
         Matrix<SCALAR> dataset(const_cast<SCALAR*>(&keys[0][0]), keys.size(), DIM);
         // tree_->addPoints(dataset);
         tree_->buildIndex(dataset);

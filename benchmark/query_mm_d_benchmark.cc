@@ -104,7 +104,7 @@ using TestMap = typename std::conditional_t < SCENARIO == BOOST_RT,
                       PhTreeMultiMap2D<DIM, payload_t>,
                       typename std::conditional_t<
                           SCENARIO == BB,
-                          bb::PhTreeMultiMapD<DIM, payload2_t>,
+                          bb::PhTreeMultiMapF<DIM, payload2_t>,
                           typename std::conditional_t<
                               SCENARIO == TS_KD,
                               tinspin::KDTree<TestPoint, payload2_t>,
