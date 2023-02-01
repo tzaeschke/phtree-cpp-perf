@@ -272,7 +272,7 @@ void FlannKDS(benchmark::State& state, Arguments&&...) {
 // index type, scenario name, data_generator, num_entities
 BENCHMARK_CAPTURE(PhTreeMM, INSERT, 0)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 1 * 1000 * 10}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BBTree, INSERT, 0)
