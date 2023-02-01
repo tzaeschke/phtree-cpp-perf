@@ -298,12 +298,6 @@ void TinspinQuadtree3D(benchmark::State& state, Arguments&&... arguments) {
 }
 
 // index type, scenario name, data_type, num_entities, updates_per_round, move_distance
-// PhTreeMultiMap
-BENCHMARK_CAPTURE(PhTreeMMRelocateIfStdSet3D, UPDATE_1000, UPDATES_PER_ROUND)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
 // PhTreeMultiMap with b_plus_tree_hash_map
 BENCHMARK_CAPTURE(PhTreeMMRelocateBpt3D, UPDATE_1000, UPDATES_PER_ROUND)
     ->RangeMultiplier(10)
@@ -324,6 +318,12 @@ BENCHMARK_CAPTURE(TinspinKDTree3D, UPDATE_1000, UPDATES_PER_ROUND)
 
 // Tinspin quadtree
 BENCHMARK_CAPTURE(TinspinQuadtree3D, UPDATE_1000, UPDATES_PER_ROUND)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTreeMultiMap
+BENCHMARK_CAPTURE(PhTreeMMRelocateIfStdSet3D, UPDATE_1000, UPDATES_PER_ROUND)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

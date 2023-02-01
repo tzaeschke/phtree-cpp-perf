@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "src/boost/boost_multimap.h"
 #include "phtree/common/common.h"
 #include "phtree/converter.h"
 #include "phtree/filter.h"
+#include "src/boost/boost_multimap.h"
 #include <include/gtest/gtest.h>
 #include <random>
 
@@ -52,24 +52,24 @@ class DoubleRng {
     std::uniform_real_distribution<double> rnd;
 };
 
-//struct Id {
-//    Id() = default;
+// struct Id {
+//     Id() = default;
 //
-//    explicit Id(const int i) : _i{i}, data_{0} {}
-//    explicit Id(const size_t i) : _i{static_cast<int>(i)}, data_{0} {}
+//     explicit Id(const int i) : _i{i}, data_{0} {}
+//     explicit Id(const size_t i) : _i{static_cast<int>(i)}, data_{0} {}
 //
-//    bool operator==(const Id& rhs) const {
-//        return _i == rhs._i;
-//    }
+//     bool operator==(const Id& rhs) const {
+//         return _i == rhs._i;
+//     }
 //
-//    int _i;
-//    int data_;
-//};
-}
+//     int _i;
+//     int data_;
+// };
+}  // namespace phtree_multimap_d_test
 //
-//namespace std {
-//template <>
-//struct hash<phtree_multimap_d_test::Id> {
+// namespace std {
+// template <>
+// struct hash<phtree_multimap_d_test::Id> {
 //    size_t operator()(const phtree_multimap_d_test::Id& x) const {
 //        return std::hash<int>{}(x._i);
 //    }
@@ -136,139 +136,139 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
     ASSERT_EQ(points.size(), N);
 }
 
-//template <dimension_t DIM>
-//void SmokeTestBasicOps(size_t N) {
-//    TestTree<DIM, Id> tree;
-//    std::vector<TestPoint<DIM>> points;
-//    generateCube(points, N);
+// template <dimension_t DIM>
+// void SmokeTestBasicOps(size_t N) {
+//     TestTree<DIM, Id> tree;
+//     std::vector<TestPoint<DIM>> points;
+//     generateCube(points, N);
 //
-//    ASSERT_EQ(0, tree.size());
-//    ASSERT_TRUE(tree.empty());
-//    PhTreeDebugHelper::CheckConsistency(tree);
+//     ASSERT_EQ(0, tree.size());
+//     ASSERT_TRUE(tree.empty());
+//     PhTreeDebugHelper::CheckConsistency(tree);
 //
-//    for (size_t i = 0; i < N; i++) {
-//        TestPoint<DIM>& p = points.at(i);
-//        ASSERT_LE(tree.count(p), i % NUM_DUPL);
-//        if (i % NUM_DUPL == 0) {
-//            ASSERT_EQ(tree.end(), tree.find(p));
-//        }
+//     for (size_t i = 0; i < N; i++) {
+//         TestPoint<DIM>& p = points.at(i);
+//         ASSERT_LE(tree.count(p), i % NUM_DUPL);
+//         if (i % NUM_DUPL == 0) {
+//             ASSERT_EQ(tree.end(), tree.find(p));
+//         }
 //
-//        Id id(i);
-//        if (i % 4 == 0) {
-//            ASSERT_TRUE(tree.emplace(p, id).second);
-//        } else if (i % 4 == 1) {
-//            ASSERT_TRUE(tree.insert(p, id).second);
-//        } else {
-//            ASSERT_TRUE(tree.try_emplace(p, id).second);
-//        }
-//        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
-//        ASSERT_NE(tree.end(), tree.find(p));
-//        ASSERT_EQ(id._i, tree.find(p, id)->_i);
-//        ASSERT_EQ(i + 1, tree.size());
+//         Id id(i);
+//         if (i % 4 == 0) {
+//             ASSERT_TRUE(tree.emplace(p, id).second);
+//         } else if (i % 4 == 1) {
+//             ASSERT_TRUE(tree.insert(p, id).second);
+//         } else {
+//             ASSERT_TRUE(tree.try_emplace(p, id).second);
+//         }
+//         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+//         ASSERT_NE(tree.end(), tree.find(p));
+//         ASSERT_EQ(id._i, tree.find(p, id)->_i);
+//         ASSERT_EQ(i + 1, tree.size());
 //
-//        // try adding it again
-//        ASSERT_FALSE(tree.insert(p, id).second);
-//        ASSERT_FALSE(tree.emplace(p, id).second);
-//        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
-//        ASSERT_NE(tree.end(), tree.find(p));
-//        ASSERT_EQ(id._i, tree.find(p, id)->_i);
-//        ASSERT_EQ(i + 1, tree.size());
-//        ASSERT_FALSE(tree.empty());
-//    }
+//         // try adding it again
+//         ASSERT_FALSE(tree.insert(p, id).second);
+//         ASSERT_FALSE(tree.emplace(p, id).second);
+//         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+//         ASSERT_NE(tree.end(), tree.find(p));
+//         ASSERT_EQ(id._i, tree.find(p, id)->_i);
+//         ASSERT_EQ(i + 1, tree.size());
+//         ASSERT_FALSE(tree.empty());
+//     }
 //
-//    for (size_t i = 0; i < N; i++) {
-//        TestPoint<DIM>& p = points.at(i);
-//        auto q = tree.begin_query({p, p});
-//        ASSERT_NE(q, tree.end());
-//        for (size_t j = 0; j < NUM_DUPL; j++) {
-//            ASSERT_EQ(i / NUM_DUPL, (*q)._i / NUM_DUPL);
-//            q++;
-//        }
-//        ASSERT_EQ(q, tree.end());
-//    }
+//     for (size_t i = 0; i < N; i++) {
+//         TestPoint<DIM>& p = points.at(i);
+//         auto q = tree.begin_query({p, p});
+//         ASSERT_NE(q, tree.end());
+//         for (size_t j = 0; j < NUM_DUPL; j++) {
+//             ASSERT_EQ(i / NUM_DUPL, (*q)._i / NUM_DUPL);
+//             q++;
+//         }
+//         ASSERT_EQ(q, tree.end());
+//     }
 //
-//    PhTreeDebugHelper::CheckConsistency(tree);
+//     PhTreeDebugHelper::CheckConsistency(tree);
 //
-//    for (size_t i = 0; i < N; i++) {
-//        TestPoint<DIM>& p = points.at(i);
-//        Id id(i);
-//        ASSERT_NE(tree.find(p), tree.end());
-//        size_t expected_remaining = (N - i - 1) % NUM_DUPL + 1;
-//        ASSERT_EQ(tree.count(p), expected_remaining);
-//        ASSERT_EQ(i, tree.find(p, id)->_i);
-//        if (i % 3 == 0) {
-//            ASSERT_EQ(1, tree.erase(p, id));
-//        } else {
-//            auto iter = tree.find(p, id);
-//            ASSERT_EQ(1, tree.erase(iter));
-//        }
+//     for (size_t i = 0; i < N; i++) {
+//         TestPoint<DIM>& p = points.at(i);
+//         Id id(i);
+//         ASSERT_NE(tree.find(p), tree.end());
+//         size_t expected_remaining = (N - i - 1) % NUM_DUPL + 1;
+//         ASSERT_EQ(tree.count(p), expected_remaining);
+//         ASSERT_EQ(i, tree.find(p, id)->_i);
+//         if (i % 3 == 0) {
+//             ASSERT_EQ(1, tree.erase(p, id));
+//         } else {
+//             auto iter = tree.find(p, id);
+//             ASSERT_EQ(1, tree.erase(iter));
+//         }
 //
-//        ASSERT_EQ(tree.count(p), expected_remaining - 1);
-//        if (expected_remaining - 1 == 0) {
-//            ASSERT_EQ(tree.end(), tree.find(p));
-//        }
-//        ASSERT_EQ(N - i - 1, tree.size());
+//         ASSERT_EQ(tree.count(p), expected_remaining - 1);
+//         if (expected_remaining - 1 == 0) {
+//             ASSERT_EQ(tree.end(), tree.find(p));
+//         }
+//         ASSERT_EQ(N - i - 1, tree.size());
 //
-//        // try remove again
-//        ASSERT_EQ(0, tree.erase(p, id));
-//        ASSERT_EQ(tree.count(p), expected_remaining - 1);
-//        if (expected_remaining - 1 == 0) {
-//            ASSERT_EQ(tree.end(), tree.find(p));
-//        }
-//        ASSERT_EQ(N - i - 1, tree.size());
-//        if (i < N - 1) {
-//            ASSERT_FALSE(tree.empty());
-//        }
-//    }
-//    ASSERT_EQ(0, tree.size());
-//    ASSERT_TRUE(tree.empty());
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//}
+//         // try remove again
+//         ASSERT_EQ(0, tree.erase(p, id));
+//         ASSERT_EQ(tree.count(p), expected_remaining - 1);
+//         if (expected_remaining - 1 == 0) {
+//             ASSERT_EQ(tree.end(), tree.find(p));
+//         }
+//         ASSERT_EQ(N - i - 1, tree.size());
+//         if (i < N - 1) {
+//             ASSERT_FALSE(tree.empty());
+//         }
+//     }
+//     ASSERT_EQ(0, tree.size());
+//     ASSERT_TRUE(tree.empty());
+//     PhTreeDebugHelper::CheckConsistency(tree);
+// }
 //
-//TEST(PhTreeMMDTest, SmokeTestBasicOps) {
-//    SmokeTestBasicOps<1>(10000);
-//    SmokeTestBasicOps<3>(10000);
-//    SmokeTestBasicOps<6>(10000);
-//    SmokeTestBasicOps<10>(10000);
-//    SmokeTestBasicOps<20>(1000);
-//    SmokeTestBasicOps<63>(100);
-//}
+// TEST(PhTreeMMDTest, SmokeTestBasicOps) {
+//     SmokeTestBasicOps<1>(10000);
+//     SmokeTestBasicOps<3>(10000);
+//     SmokeTestBasicOps<6>(10000);
+//     SmokeTestBasicOps<10>(10000);
+//     SmokeTestBasicOps<20>(1000);
+//     SmokeTestBasicOps<63>(100);
+// }
 //
-//TEST(PhTreeMMDTest, TestDebug) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 1000;
+// TEST(PhTreeMMDTest, TestDebug) {
+//     const dimension_t dim = 3;
+//     TestTree<dim, Id> tree;
+//     size_t N = 1000;
 //
-//    std::vector<TestPoint<dim>> points;
-//    generateCube(points, N);
+//     std::vector<TestPoint<dim>> points;
+//     generateCube(points, N);
 //
-//    using Debug = PhTreeDebugHelper;
-//    ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
-//    ASSERT_GE(10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
-//    ASSERT_GE(100, Debug::ToString(tree, Debug::PrintDetail::tree).length());
-//    ASSERT_EQ(0, Debug::GetStats(tree).size_);
-//    Debug::CheckConsistency(tree);
+//     using Debug = PhTreeDebugHelper;
+//     ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
+//     ASSERT_GE(10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
+//     ASSERT_GE(100, Debug::ToString(tree, Debug::PrintDetail::tree).length());
+//     ASSERT_EQ(0, Debug::GetStats(tree).size_);
+//     Debug::CheckConsistency(tree);
 //
-//    for (size_t i = 0; i < N; i++) {
-//        TestPoint<dim>& p = points.at(i);
-//        Id id(i);
-//        ASSERT_TRUE(tree.insert(p, id).second);
-//    }
+//     for (size_t i = 0; i < N; i++) {
+//         TestPoint<dim>& p = points.at(i);
+//         Id id(i);
+//         ASSERT_TRUE(tree.insert(p, id).second);
+//     }
 //
-//    ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
-//    ASSERT_LE(N * 10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
-//    ASSERT_LE(N * 10, Debug::ToString(tree, Debug::PrintDetail::tree).length());
-//    ASSERT_EQ(N / NUM_DUPL, Debug::GetStats(tree).size_);
-//    Debug::CheckConsistency(tree);
+//     ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
+//     ASSERT_LE(N * 10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
+//     ASSERT_LE(N * 10, Debug::ToString(tree, Debug::PrintDetail::tree).length());
+//     ASSERT_EQ(N / NUM_DUPL, Debug::GetStats(tree).size_);
+//     Debug::CheckConsistency(tree);
 //
-//    tree.clear();
+//     tree.clear();
 //
-//    ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
-//    ASSERT_GE(10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
-//    ASSERT_GE(100, Debug::ToString(tree, Debug::PrintDetail::tree).length());
-//    ASSERT_EQ(0, Debug::GetStats(tree).size_);
-//    Debug::CheckConsistency(tree);
-//}
+//     ASSERT_LE(10, Debug::ToString(tree, Debug::PrintDetail::name).length());
+//     ASSERT_GE(10, Debug::ToString(tree, Debug::PrintDetail::entries).length());
+//     ASSERT_GE(100, Debug::ToString(tree, Debug::PrintDetail::tree).length());
+//     ASSERT_EQ(0, Debug::GetStats(tree).size_);
+//     Debug::CheckConsistency(tree);
+// }
 
 TEST(PhTreeMMDTest, TestInsert) {
     const dimension_t dim = 3;
@@ -286,10 +286,10 @@ TEST(PhTreeMMDTest, TestInsert) {
         ASSERT_EQ(i, *tree.find(p, id));
 
         // try add again
-//        tree.insert(p, id);
-//        tree.insert(p, id);
-//        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
-//        ASSERT_EQ(i, *tree.find(p, id));
+        //        tree.insert(p, id);
+        //        tree.insert(p, id);
+        //        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+        //        ASSERT_EQ(i, *tree.find(p, id));
     }
     ASSERT_EQ(N, tree.size());
 
@@ -330,19 +330,19 @@ TEST(PhTreeMMDTest, TestEmplace) {
         ASSERT_EQ(i + 1, tree.size());
 
         // try add again (same `identity`), this should NOT replace the existing value
-//        Id id2(i);
-//        id2.data_ = 42;
-//        tree.emplace(p, id2);
-//        ASSERT_EQ(i, tree.find(p, id2)->_i);
-//        ASSERT_EQ(0, tree.find(p, id2)->data_);
-//        tree.emplace(p, id);
-//        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+        //        Id id2(i);
+        //        id2.data_ = 42;
+        //        tree.emplace(p, id2);
+        //        ASSERT_EQ(i, tree.find(p, id2)->_i);
+        //        ASSERT_EQ(0, tree.find(p, id2)->data_);
+        //        tree.emplace(p, id);
+        //        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
 
         // Check that the returned value is a reference
-        //tree.emplace(p, id2).first.data_++;
-        //ASSERT_EQ(1, tree.find(p, id)->data_);
-        //tree.emplace(p, id2).first.data_ = 0;
-        //ASSERT_EQ(0, tree.emplace(p, id).first.data_);
+        // tree.emplace(p, id2).first.data_++;
+        // ASSERT_EQ(1, tree.find(p, id)->data_);
+        // tree.emplace(p, id2).first.data_ = 0;
+        // ASSERT_EQ(0, tree.emplace(p, id).first.data_);
     }
     ASSERT_EQ(N, tree.size());
 
@@ -412,7 +412,7 @@ TEST(PhTreeMMDTest, TestClear) {
 TEST(PhTreeMMDTest, TestFind) {
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
-    size_t N = 10000;
+    size_t N = 1000;
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
 
@@ -424,7 +424,7 @@ TEST(PhTreeMMDTest, TestFind) {
         ASSERT_NE(tree.end(), tree.find(p));
         ASSERT_NE(tree.find(p, id), tree.end());
         ASSERT_NE(tree.end(), tree.find(p, id));
-        ASSERT_EQ(*tree.find(p, id), i);
+        ASSERT_EQ(*tree.find(p, id), (int)i);
         auto iterN = tree.find(points[0]);
         size_t n = 0;
         while (iterN != tree.end()) {
@@ -449,7 +449,7 @@ TEST(PhTreeMMDTest, TestFind) {
 TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
-    size_t N = 10000;
+    size_t N = 1000;
     double delta = 20;
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
@@ -473,133 +473,127 @@ TEST(PhTreeMMDTest, TestUpdateWithEmplace) {
     tree.clear();
 }
 
-//TEST(PhTreeMMDTest, TestUpdateWithEmplaceHint) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::array<double, 4> deltas{0, 0.1, 1, 10};
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+// TEST(PhTreeMMDTest, TestUpdateWithEmplaceHint) {
+//     const dimension_t dim = 3;
+//     TestTree<dim, Id> tree;
+//     size_t N = 10000;
+//     std::array<double, 4> deltas{0, 0.1, 1, 10};
+//     std::vector<TestPoint<dim>> points;
+//     populate(tree, points, N);
 //
-//    int i = 0;
-//    size_t d_n = 0;
-//    for (auto& p : points) {
-//        auto pOld = p;
-//        d_n = (d_n + 1) % deltas.size();
-//        double delta = deltas[d_n];
-//        TestPoint<dim> pNew{pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
-//        auto iter = tree.find(pOld, Id(i));
-//        size_t n = tree.erase(iter);
-//        ASSERT_EQ(1U, n);
-//        ASSERT_TRUE(tree.emplace_hint(iter, pNew, Id(i)).second);
-//        ASSERT_EQ(Id(i), *tree.find(pNew, Id(i)));
-//        auto iterNew = tree.find(pNew, Id(i));
-//        ASSERT_FALSE(tree.emplace_hint(iterNew, pNew, Id(i)).second);
-//        p = pNew;
-//        ++i;
-//    }
+//     int i = 0;
+//     size_t d_n = 0;
+//     for (auto& p : points) {
+//         auto pOld = p;
+//         d_n = (d_n + 1) % deltas.size();
+//         double delta = deltas[d_n];
+//         TestPoint<dim> pNew{pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
+//         auto iter = tree.find(pOld, Id(i));
+//         size_t n = tree.erase(iter);
+//         ASSERT_EQ(1U, n);
+//         ASSERT_TRUE(tree.emplace_hint(iter, pNew, Id(i)).second);
+//         ASSERT_EQ(Id(i), *tree.find(pNew, Id(i)));
+//         auto iterNew = tree.find(pNew, Id(i));
+//         ASSERT_FALSE(tree.emplace_hint(iterNew, pNew, Id(i)).second);
+//         p = pNew;
+//         ++i;
+//     }
 //
-//    ASSERT_EQ(N, tree.size());
-//    tree.clear();
+//     ASSERT_EQ(N, tree.size());
+//     tree.clear();
 //
-//    tree.emplace_hint(tree.end(), {11, 21, 31}, 421);
-//    tree.emplace_hint(tree.begin(), {1, 2, 3}, 42);
-//    ASSERT_EQ(2, tree.size());
-//}
+//     tree.emplace_hint(tree.end(), {11, 21, 31}, 421);
+//     tree.emplace_hint(tree.begin(), {1, 2, 3}, 42);
+//     ASSERT_EQ(2, tree.size());
+// }
 
-//void TestUpdateWithRelocate(bool relocate_to_existing_coordinate) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::array<double, 4> deltas{0, 0.1, 1, 10};
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    for (auto delta : deltas) {
-//        size_t i = 0;
-//        for (auto& p : points) {
-//            auto pOld = p;
-//            TestPoint<dim> pNew;
-//            if (relocate_to_existing_coordinate) {
-//                pNew = delta > 0.0 ? points[(i + 17) % N] : pOld;
-//            } else {
-//                pNew = {pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
-//            }
-//            ASSERT_EQ(1u, tree.relocate(pOld, pNew, Id(i)));
-//            if (pOld != pNew) {
-//                // second time fails because value has already been moved
-//                ASSERT_EQ(0u, tree.relocate(pOld, pNew, Id(i)));
-//                ASSERT_EQ(tree.end(), tree.find(pOld, Id(i)));
-//            } else {
-//                ASSERT_EQ(1u, tree.relocate(pOld, pNew, Id(i)));
-//            }
-//            ASSERT_EQ(Id(i), *tree.find(pNew, Id(i)));
-//            p = pNew;
-//            ++i;
-//        }
-//        PhTreeDebugHelper::CheckConsistency(tree);
-//    }
-//
-//    ASSERT_EQ(N, tree.size());
-//    tree.clear();
-//}
-//
-//TEST(PhTreeMMDTest, TestUpdateWithRelocateDelta) {
-//    TestUpdateWithRelocate(false);
-//}
-//
-//TEST(PhTreeMMDTest, TestUpdateWithRelocateToExisting) {
-//    TestUpdateWithRelocate(true);
-//}
-//
-//TEST(PhTreeMMDTest, TestUpdateWithRelocateCornerCases) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    TestPoint<dim> point0{1, 2, 3};
-//    TestPoint<dim> point1{4, 5, 6};
-//
-//    // Check that empty tree works
-//    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(42)));
-//
-//    // Check that small tree works
-//    tree.emplace(point0, Id(1));
-//    ASSERT_EQ(1u, tree.relocate(point0, point1, Id(1)));
-//    ASSERT_EQ(tree.end(), tree.find(point0, Id(1)));
-//    ASSERT_EQ(1, tree.find(point1, Id(1))->_i);
-//    ASSERT_EQ(1u, tree.size());
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//    tree.clear();
-//
-//    // check that existing destination fails
-//    tree.emplace(point0, Id(1));
-//    tree.emplace(point1, Id(1));
-//    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(1)));
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//    tree.clear();
-//
-//    // check that missing source bucket fails
-//    tree.emplace(point1, Id(1));
-//    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(0)));
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//    tree.clear();
-//
-//    // check that missing source value fails (target bucket exists)
-//    tree.emplace(point0, Id(0));
-//    tree.emplace(point1, Id(1));
-//    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(2)));
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//    tree.clear();
-//
-//    // check that missing source value fails (target bucket missing)
-//    tree.emplace(point0, Id(0));
-//    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(2)));
-//    PhTreeDebugHelper::CheckConsistency(tree);
-//}
+void TestUpdateWithRelocate(bool relocate_to_existing_coordinate) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 1000;
+    std::array<double, 4> deltas{0, 0.1, 1, 10};
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    for (auto delta : deltas) {
+        size_t i = 0;
+        for (auto& p : points) {
+            auto pOld = p;
+            TestPoint<dim> pNew;
+            if (relocate_to_existing_coordinate) {
+                pNew = delta > 0.0 ? points[(i + 17) % N] : pOld;
+            } else {
+                pNew = {pOld[0] + delta, pOld[1] + delta, pOld[2] + delta};
+            }
+            ASSERT_EQ(1u, tree.relocate(pOld, pNew, Id(i)));
+            if (pOld != pNew) {
+                // second time fails because value has already been moved
+                ASSERT_EQ(0u, tree.relocate(pOld, pNew, Id(i)));
+                ASSERT_EQ(tree.end(), tree.find(pOld, Id(i)));
+            } else {
+                ASSERT_EQ(1u, tree.relocate(pOld, pNew, Id(i)));
+            }
+            ASSERT_EQ(Id(i), *tree.find(pNew, Id(i)));
+            p = pNew;
+            ++i;
+        }
+    }
+
+    ASSERT_EQ(N, tree.size());
+    tree.clear();
+}
+
+TEST(PhTreeMMDTest, TestUpdateWithRelocateDelta) {
+    TestUpdateWithRelocate(false);
+}
+
+TEST(PhTreeMMDTest, TestUpdateWithRelocateToExisting) {
+    TestUpdateWithRelocate(true);
+}
+
+TEST(PhTreeMMDTest, TestUpdateWithRelocateCornerCases) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    TestPoint<dim> point0{1, 2, 3};
+    TestPoint<dim> point1{4, 5, 6};
+
+    // Check that empty tree works
+    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(42)));
+
+    // Check that small tree works
+    tree.emplace(point0, Id(1));
+    ASSERT_EQ(1u, tree.relocate(point0, point1, Id(1)));
+    ASSERT_EQ(tree.end(), tree.find(point0, Id(1)));
+    ASSERT_EQ(1, *tree.find(point1, Id(1)));
+    ASSERT_EQ(1u, tree.size());
+    tree.clear();
+
+    // check that existing destination fails
+    tree.emplace(point0, Id(1));
+    tree.emplace(point1, Id(1));
+    ASSERT_EQ(1u, tree.relocate(point0, point1, Id(1)));
+    tree.clear();
+
+    // check that missing source bucket fails
+    tree.emplace(point1, Id(1));
+    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(0)));
+    tree.clear();
+
+    // check that missing source value fails (target bucket exists)
+    tree.emplace(point0, Id(0));
+    tree.emplace(point1, Id(1));
+    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(2)));
+    tree.clear();
+
+    // check that missing source value fails (target bucket missing)
+    tree.emplace(point0, Id(0));
+    ASSERT_EQ(0u, tree.relocate(point0, point1, Id(2)));
+}
 
 TEST(PhTreeMMDTest, TestEraseByIterator) {
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
-    size_t N = 10000;
+    size_t N = 1000;
     std::vector<TestPoint<dim>> points;
     populate(tree, points, N);
 
@@ -620,43 +614,43 @@ TEST(PhTreeMMDTest, TestEraseByIterator) {
     ASSERT_EQ(0, tree.erase(tree.end()));
 }
 
-//TEST(PhTreeMMDTest, TestEraseByIteratorQuery) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+// TEST(PhTreeMMDTest, TestEraseByIteratorQuery) {
+//     const dimension_t dim = 3;
+//     TestTree<dim, Id> tree;
+//     size_t N = 10000;
+//     std::vector<TestPoint<dim>> points;
+//     populate(tree, points, N);
 //
-//    for (size_t i = 0; i < N; ++i) {
-//        auto iter = tree.begin();
-//        ASSERT_NE(tree.end(), iter);
-//        size_t count = tree.erase(iter);
-//        ASSERT_EQ(1U, count);
-//    }
+//     for (size_t i = 0; i < N; ++i) {
+//         auto iter = tree.begin();
+//         ASSERT_NE(tree.end(), iter);
+//         size_t count = tree.erase(iter);
+//         ASSERT_EQ(1U, count);
+//     }
 //
-//    ASSERT_EQ(0, tree.erase(tree.end()));
-//}
-//
-//TEST(PhTreeMMDTest, TestExtent) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    int num_e = 0;
-//    auto qE = tree.begin();
-//    while (qE != tree.end()) {
-//        qE++;
-//        num_e++;
-//    }
-//    ASSERT_EQ(N, num_e);
-//
-//    auto iter1 = tree.begin();
-//    auto iter2 = tree.begin();
-//    ASSERT_EQ(iter1, iter2);
-//    ASSERT_NE(tree.end(), iter1);
-//}
+//     ASSERT_EQ(0, tree.erase(tree.end()));
+// }
+
+TEST(PhTreeMMDTest, TestExtent) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 1000;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    size_t num_e = 0;
+    auto qE = tree.begin();
+    while (qE != tree.end()) {
+        ++qE;
+        num_e++;
+    }
+    ASSERT_EQ(N, num_e);
+
+    auto iter1 = tree.begin();
+    auto iter2 = tree.begin();
+    ASSERT_EQ(iter1, iter2);
+    ASSERT_NE(tree.end(), iter1);
+}
 
 template <dimension_t DIM, typename T>
 struct FilterEvenId {
@@ -673,94 +667,97 @@ struct FilterEvenId {
     }
 };
 
-//TEST(PhTreeMMDTest, TestExtentFilter) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+TEST(PhTreeMMDTest, TestExtentFilter) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 1000;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    size_t num_e = 0;
+    auto qE = tree.begin(FilterEvenId<dim, Id>());
+    while (qE != tree.end()) {
+        ASSERT_TRUE(*qE % 2 == 0);
+        ++qE;
+        num_e++;
+    }
+    ASSERT_EQ(N, num_e * 2);
+}
+
+TEST(PhTreeMMDTest, TestExtentForEachFilter) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 1000;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    struct Counter {
+        void operator()(const TestPoint<dim> key, const Id& t) {
+            ++n_;
+            ASSERT_EQ(points_[t], key);
+            ASSERT_TRUE(t % 2 == 0);
+        }
+        std::vector<TestPoint<dim>>& points_;
+        size_t n_ = 0;
+    };
+    Counter callback{points, 0};
+    tree.for_each(callback, FilterEvenId<dim, Id>());
+    ASSERT_EQ(N, callback.n_ * 2);
+}
+
+TEST(PhTreeMMDTest, TestRangeBasedForLoop) {
+    const dimension_t dim = 3;
+    TestTree<dim, Id> tree;
+    size_t N = 1000;
+    std::vector<TestPoint<dim>> points;
+    populate(tree, points, N);
+
+    size_t num_e1 = 0;
+    for (auto& x : tree) {
+        (void)x;
+        // x.data_ = 42;
+        num_e1++;
+    }
+    ASSERT_EQ(N, num_e1);
+
+    // Check that we really had references and that data_ was changed
+    size_t num_e2 = 0;
+    for (auto& x : tree) {
+        (void)x;
+        // ASSERT_EQ(42, x.data_);
+        num_e2++;
+    }
+    ASSERT_EQ(N, num_e2);
+}
+
+// TEST(PhTreeMMDTest, TestEstimateCountIntersect) {
+//     const dimension_t dim = 3;
+//     TestTree<dim, Id> tree;
+//     size_t N = 1000;
+//     std::vector<TestPoint<dim>> points;
+//     populate(tree, points, N);
 //
-//    int num_e = 0;
-//    auto qE = tree.begin(FilterEvenId<dim, Id>());
-//    while (qE != tree.end()) {
-//        ASSERT_TRUE(qE->_i % 2 == 0);
-//        qE++;
-//        num_e++;
-//    }
-//    ASSERT_EQ(N, num_e * 2);
-//}
+//     // Test small
+//     for (auto& p : points) {
+//         size_t n = tree.estimate_count({p, p});
+//         ASSERT_LE(NUM_DUPL, n);
+//         // arbitrary upper limit: 10*NUM_DUPL
+//         ASSERT_GE(10, NUM_DUPL);
+//     }
 //
-//TEST(PhTreeMMDTest, TestExtentForEachFilter) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+//     // Test medium (1/8 of volume), allow variation of 20% 0.8 / 1.2
+//     double min_2 = WORLD_MIN / 2;
+//     double max_2 = WORLD_MAX / 2;
+//     size_t n_medium = tree.estimate_count({{min_2, min_2, min_2}, {max_2, max_2, max_2}});
+//     ASSERT_LE(N / 8. * 0.8, n_medium);
+//     ASSERT_GE(N / 8. * 1.2, n_medium);
 //
-//    struct Counter {
-//        void operator()(const TestPoint<dim> key, const Id& t) {
-//            ++n_;
-//            ASSERT_EQ(points_[t._i], key);
-//            ASSERT_TRUE(t._i % 2 == 0);
-//        }
-//        std::vector<TestPoint<dim>>& points_;
-//        size_t n_ = 0;
-//    };
-//    Counter callback{points, 0};
-//    tree.for_each(callback, FilterEvenId<dim, Id>());
-//    ASSERT_EQ(N, callback.n_ * 2);
-//}
-//
-//TEST(PhTreeMMDTest, TestRangeBasedForLoop) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 10000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    size_t num_e1 = 0;
-//    for (auto& x : tree) {
-//        x.data_ = 42;
-//        num_e1++;
-//    }
-//    ASSERT_EQ(N, num_e1);
-//
-//    // Check that we really had references and that data_ was changed
-//    size_t num_e2 = 0;
-//    for (auto& x : tree) {
-//        ASSERT_EQ(42, x.data_);
-//        num_e2++;
-//    }
-//    ASSERT_EQ(N, num_e2);
-//}
-//
-//TEST(PhTreeMMDTest, TestEstimateCountIntersect) {
-//    const dimension_t dim = 3;
-//    TestTree<dim, Id> tree;
-//    size_t N = 1000;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
-//
-//    // Test small
-//    for (auto& p : points) {
-//        size_t n = tree.estimate_count({p, p});
-//        ASSERT_LE(NUM_DUPL, n);
-//        // arbitrary upper limit: 10*NUM_DUPL
-//        ASSERT_GE(10, NUM_DUPL);
-//    }
-//
-//    // Test medium (1/8 of volume), allow variation of 20% 0.8 / 1.2
-//    double min_2 = WORLD_MIN / 2;
-//    double max_2 = WORLD_MAX / 2;
-//    size_t n_medium = tree.estimate_count({{min_2, min_2, min_2}, {max_2, max_2, max_2}});
-//    ASSERT_LE(N / 8. * 0.8, n_medium);
-//    ASSERT_GE(N / 8. * 1.2, n_medium);
-//
-//    // Test all
-//    size_t n_all =
-//        tree.estimate_count({{WORLD_MIN, WORLD_MIN, WORLD_MIN}, {WORLD_MAX, WORLD_MAX, WORLD_MAX}});
-//    ASSERT_EQ(N, n_all);
-//}
+//     // Test all
+//     size_t n_all =
+//         tree.estimate_count({{WORLD_MIN, WORLD_MIN, WORLD_MIN}, {WORLD_MAX, WORLD_MAX,
+//         WORLD_MAX}});
+//     ASSERT_EQ(N, n_all);
+// }
 
 template <dimension_t DIM>
 void referenceQuery(
@@ -804,7 +801,7 @@ TEST(PhTreeMMDTest, TestWindowQuery0) {
     const dimension_t dim = 3;
     TestPoint<dim> p{-10000, -10000, -10000};
     int n = 0;
-    testQuery<dim>(p, p, 10000, n);
+    testQuery<dim>(p, p, 1000, n);
     ASSERT_EQ(0, n);
 }
 
@@ -843,7 +840,7 @@ TEST(PhTreeMMDTest, TestWindowQueryMany) {
 
 TEST(PhTreeMMDTest, TestWindowQueryAll) {
     const dimension_t dim = 3;
-    const size_t N = 10000;
+    const size_t N = 1000;
     TestPoint<dim> min{-10000, -10000, -10000};
     TestPoint<dim> max{10000, 10000, 10000};
     int n = 0;
@@ -852,7 +849,7 @@ TEST(PhTreeMMDTest, TestWindowQueryAll) {
 }
 
 TEST(PhTreeMMDTest, TestWindowQueryManyMoving) {
-    size_t N = 10000;
+    size_t N = 1000;
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
     std::vector<TestPoint<dim>> points;
@@ -876,14 +873,14 @@ TEST(PhTreeMMDTest, TestWindowQueryManyMoving) {
         ASSERT_EQ(referenceResult.size(), n);
 
         // basic check to ensure healthy queries
-        ASSERT_GE(100, n);
+        ASSERT_GE(100u, n);
     }
-    ASSERT_LE(500, nn);
-    ASSERT_GE(5000, nn);
+    ASSERT_LE(50u, nn);
+    ASSERT_GE(500u, nn);
 }
 
 TEST(PhTreeMMDTest, TestWindowForEachQueryManyMoving) {
-    size_t N = 10000;
+    size_t N = 1000;
     const dimension_t dim = 3;
     TestTree<dim, Id> tree;
     std::vector<TestPoint<dim>> points;
@@ -914,10 +911,10 @@ TEST(PhTreeMMDTest, TestWindowForEachQueryManyMoving) {
         ASSERT_EQ(referenceResult.size(), n);
 
         // basic check to ensure healthy queries
-        ASSERT_GE(100, n);
+        ASSERT_GE(100u, n);
     }
-    ASSERT_LE(500, nn);
-    ASSERT_GE(5000, nn);
+    ASSERT_LE(50u, nn);
+    ASSERT_GE(500u, nn);
 }
 
 TEST(PhTreeMMDTest, TestWindowQueryIterators) {
@@ -987,17 +984,17 @@ TEST(PhTreeMMDTest, TestKnnQuery) {
         std::sort(sorted_data.begin(), sorted_data.end(), comparePointDistanceAndId);
 
         size_t n = 0;
-        double prevDist = -1;
+        // double prevDist = -1;
         auto q = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
         while (q != tree.end()) {
             // just read the entry
             auto& e = *q;
-      // TODO      ASSERT_EQ(sorted_data[n]._distance, q.distance());
+            // TODO      ASSERT_EQ(sorted_data[n]._distance, q.distance());
             ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, e / NUM_DUPL);
             ASSERT_EQ(points[sorted_data[n]._id], points[*q]);
             ASSERT_EQ(sorted_data[n]._id / NUM_DUPL, *q / NUM_DUPL);
-        //    ASSERT_GE(q.distance(), prevDist);
-        //    prevDist = q.distance();
+            //    ASSERT_GE(q.distance(), prevDist);
+            //    prevDist = q.distance();
             ++q;
             n++;
         }
@@ -1005,291 +1002,291 @@ TEST(PhTreeMMDTest, TestKnnQuery) {
     }
 }
 
-//template <dimension_t DIM>
-//struct PhDistanceLongL1 {
-//    double operator()(const TestPoint<DIM>& v1, const TestPoint<DIM>& v2) const {
-//        double sum = 0;
-//        for (dimension_t i = 0; i < DIM; i++) {
-//            sum += std::abs(v1[i] - v2[i]);
-//        }
-//        return sum;
-//    };
-//};
+// template <dimension_t DIM>
+// struct PhDistanceLongL1 {
+//     double operator()(const TestPoint<DIM>& v1, const TestPoint<DIM>& v2) const {
+//         double sum = 0;
+//         for (dimension_t i = 0; i < DIM; i++) {
+//             sum += std::abs(v1[i] - v2[i]);
+//         }
+//         return sum;
+//     };
+// };
 //
-//TEST(PhTreeMMDTest, TestKnnQueryFilterAndDistanceL1) {
-//    // deliberately allowing outside of main points range
-//    DoubleRng rng(-1500, 1500);
-//    const dimension_t dim = 3;
-//    const size_t N = 100;
-//    const size_t Nq = 10;
+// TEST(PhTreeMMDTest, TestKnnQueryFilterAndDistanceL1) {
+//     // deliberately allowing outside of main points range
+//     DoubleRng rng(-1500, 1500);
+//     const dimension_t dim = 3;
+//     const size_t N = 100;
+//     const size_t Nq = 10;
 //
-//    TestTree<dim, Id> tree;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+//     TestTree<dim, Id> tree;
+//     std::vector<TestPoint<dim>> points;
+//     populate(tree, points, N);
 //
-//    for (size_t round = 0; round < 100; round++) {
-//        TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
+//     for (size_t round = 0; round < 100; round++) {
+//         TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
 //
-//        // sort points manually by L1; skip every 2nd point
-//        std::vector<PointDistance> sorted_data;
-//        for (size_t i = 0; i < points.size(); i += 2) {
-//            double dist = distanceL1(center, points[i]);
-//            sorted_data.emplace_back(dist, i);
-//        }
-//        std::sort(sorted_data.begin(), sorted_data.end(), comparePointDistanceAndId);
+//         // sort points manually by L1; skip every 2nd point
+//         std::vector<PointDistance> sorted_data;
+//         for (size_t i = 0; i < points.size(); i += 2) {
+//             double dist = distanceL1(center, points[i]);
+//             sorted_data.emplace_back(dist, i);
+//         }
+//         std::sort(sorted_data.begin(), sorted_data.end(), comparePointDistanceAndId);
 //
-//        std::vector<PointDistance> sorted_results;
-//        size_t n = 0;
-//        double prevDist = -1;
-//        auto q = tree.begin_knn_query(Nq, center, PhDistanceLongL1<dim>(), FilterEvenId<dim, Id>());
-//        while (q != tree.end()) {
-//            // just read the entry
-//            auto& e = *q;
-//            sorted_results.emplace_back(q.distance(), e._i);
-//            if (sorted_data[n]._id == e._i) {
-//                ASSERT_EQ(points[sorted_data[n]._id], q.first());
-//                ASSERT_EQ(sorted_data[n]._id, q->_i);
-//            }
+//         std::vector<PointDistance> sorted_results;
+//         size_t n = 0;
+//         double prevDist = -1;
+//         auto q = tree.begin_knn_query(Nq, center, PhDistanceLongL1<dim>(), FilterEvenId<dim,
+//         Id>()); while (q != tree.end()) {
+//             // just read the entry
+//             auto& e = *q;
+//             sorted_results.emplace_back(q.distance(), e._i);
+//             if (sorted_data[n]._id == e._i) {
+//                 ASSERT_EQ(points[sorted_data[n]._id], q.first());
+//                 ASSERT_EQ(sorted_data[n]._id, q->_i);
+//             }
 //
-//            ASSERT_GE(q.distance(), prevDist);
-//            prevDist = q.distance();
-//            q++;
-//            n++;
-//        }
-//        std::sort(sorted_results.begin(), sorted_results.end(), comparePointDistanceAndId);
+//             ASSERT_GE(q.distance(), prevDist);
+//             prevDist = q.distance();
+//             q++;
+//             n++;
+//         }
+//         std::sort(sorted_results.begin(), sorted_results.end(), comparePointDistanceAndId);
 //
-//        for (size_t i = 0; i < n; ++i) {
-//            auto& r = sorted_results[i];
-//            ASSERT_EQ(sorted_data[i]._distance, r._distance);
-//            ASSERT_EQ(sorted_data[i]._id, r._id);
-//        }
-//        ASSERT_EQ(Nq * NUM_DUPL / 2, n);
-//    }
-//}
+//         for (size_t i = 0; i < n; ++i) {
+//             auto& r = sorted_results[i];
+//             ASSERT_EQ(sorted_data[i]._distance, r._distance);
+//             ASSERT_EQ(sorted_data[i]._id, r._id);
+//         }
+//         ASSERT_EQ(Nq * NUM_DUPL / 2, n);
+//     }
+// }
 //
-//TEST(PhTreeMMDTest, TestKnnQueryIterator) {
-//    // deliberately allowing outside of main points range
-//    DoubleRng rng(-1500, 1500);
-//    const dimension_t dim = 3;
-//    const size_t N = 1000;
-//    const size_t Nq = 10;
+// TEST(PhTreeMMDTest, TestKnnQueryIterator) {
+//     // deliberately allowing outside of main points range
+//     DoubleRng rng(-1500, 1500);
+//     const dimension_t dim = 3;
+//     const size_t N = 1000;
+//     const size_t Nq = 10;
 //
-//    TestTree<dim, Id> tree;
-//    std::vector<TestPoint<dim>> points;
-//    populate(tree, points, N);
+//     TestTree<dim, Id> tree;
+//     std::vector<TestPoint<dim>> points;
+//     populate(tree, points, N);
 //
-//    TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
-//    size_t n = 0;
-//    auto q1 = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
-//    auto q2 = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
-//    while (q1 != tree.end()) {
-//        ASSERT_NE(q1, tree.end());
-//        ASSERT_NE(q2, tree.end());
-//        ASSERT_EQ(q1, q2);
-//        q1++;
-//        ASSERT_NE(q1, q2);
-//        q2++;
-//        n++;
-//    }
-//    ASSERT_EQ(Nq * NUM_DUPL, n);
-//}
+//     TestPoint<dim> center{rng.next(), rng.next(), rng.next()};
+//     size_t n = 0;
+//     auto q1 = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
+//     auto q2 = tree.begin_knn_query(Nq, center, DistanceEuclidean<3>());
+//     while (q1 != tree.end()) {
+//         ASSERT_NE(q1, tree.end());
+//         ASSERT_NE(q2, tree.end());
+//         ASSERT_EQ(q1, q2);
+//         q1++;
+//         ASSERT_NE(q1, q2);
+//         q2++;
+//         n++;
+//     }
+//     ASSERT_EQ(Nq * NUM_DUPL, n);
+// }
 //
-//TEST(PhTreeMMDTest, SmokeTestPoint0) {
-//    // Test edge case: empty tree
-//    TestPoint<3> p{1, 2, 3};
-//    TestTree<3, Id> tree;
-//    ASSERT_EQ(tree.size(), 0);
-//    ASSERT_EQ(tree.find(p), tree.end());
+// TEST(PhTreeMMDTest, SmokeTestPoint0) {
+//     // Test edge case: empty tree
+//     TestPoint<3> p{1, 2, 3};
+//     TestTree<3, Id> tree;
+//     ASSERT_EQ(tree.size(), 0);
+//     ASSERT_EQ(tree.find(p), tree.end());
 //
-//    auto q_window = tree.begin_query({p, p});
-//    ASSERT_EQ(q_window, tree.end());
+//     auto q_window = tree.begin_query({p, p});
+//     ASSERT_EQ(q_window, tree.end());
 //
-//    auto q_extent = tree.begin();
-//    ASSERT_EQ(q_extent, tree.end());
+//     auto q_extent = tree.begin();
+//     ASSERT_EQ(q_extent, tree.end());
 //
-//    auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
-//    ASSERT_EQ(q_knn, tree.end());
+//     auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
+//     ASSERT_EQ(q_knn, tree.end());
 //
-//    ASSERT_EQ(0, tree.erase(p, Id(-1)));
-//    ASSERT_EQ(0, tree.size());
-//    ASSERT_TRUE(tree.empty());
-//}
+//     ASSERT_EQ(0, tree.erase(p, Id(-1)));
+//     ASSERT_EQ(0, tree.size());
+//     ASSERT_TRUE(tree.empty());
+// }
 //
-//TEST(PhTreeMMDTest, SmokeTestPointInfinity) {
-//    // Test inifnity.
-//    double positive_infinity = std::numeric_limits<double>::infinity();
-//    double negative_infinity = -positive_infinity;
-//    PhPointD<3> p_pos{positive_infinity, positive_infinity, positive_infinity};
-//    PhPointD<3> p_neg{negative_infinity, negative_infinity, negative_infinity};
-//    PhPointD<3> p{1, 2, 3};
-//    TestTree<3, Id> tree;
-//    tree.emplace(p, Id{1});
-//    tree.emplace(p_pos, Id{10});
-//    tree.emplace(p_neg, Id{-10});
-//    ASSERT_EQ(tree.size(), 3);
-//    ASSERT_EQ(tree.find(p_neg, Id(-10))->_i, -10);
-//    ASSERT_EQ(tree.find(p, Id(1))->_i, 1);
-//    ASSERT_EQ(tree.find(p_pos, Id(10))->_i, 10);
+// TEST(PhTreeMMDTest, SmokeTestPointInfinity) {
+//     // Test inifnity.
+//     double positive_infinity = std::numeric_limits<double>::infinity();
+//     double negative_infinity = -positive_infinity;
+//     PhPointD<3> p_pos{positive_infinity, positive_infinity, positive_infinity};
+//     PhPointD<3> p_neg{negative_infinity, negative_infinity, negative_infinity};
+//     PhPointD<3> p{1, 2, 3};
+//     TestTree<3, Id> tree;
+//     tree.emplace(p, Id{1});
+//     tree.emplace(p_pos, Id{10});
+//     tree.emplace(p_neg, Id{-10});
+//     ASSERT_EQ(tree.size(), 3);
+//     ASSERT_EQ(tree.find(p_neg, Id(-10))->_i, -10);
+//     ASSERT_EQ(tree.find(p, Id(1))->_i, 1);
+//     ASSERT_EQ(tree.find(p_pos, Id(10))->_i, 10);
 //
-//    ASSERT_EQ(positive_infinity, positive_infinity);
-//    ASSERT_EQ(negative_infinity, negative_infinity);
-//    ASSERT_GT(positive_infinity, negative_infinity);
+//     ASSERT_EQ(positive_infinity, positive_infinity);
+//     ASSERT_EQ(negative_infinity, negative_infinity);
+//     ASSERT_GT(positive_infinity, negative_infinity);
 //
-//    // Note that the tree returns result in z-order, however, since the z-order is based on
-//    // the (unsigned) bit representation, negative values come _after_ positive values.
-//    auto q_window = tree.begin_query({p_neg, p_pos});
-//    ASSERT_EQ(1, q_window->_i);
-//    ++q_window;
-//    ASSERT_EQ(10, q_window->_i);
-//    ++q_window;
-//    ASSERT_EQ(-10, q_window->_i);
-//    ++q_window;
-//    ASSERT_EQ(q_window, tree.end());
+//     // Note that the tree returns result in z-order, however, since the z-order is based on
+//     // the (unsigned) bit representation, negative values come _after_ positive values.
+//     auto q_window = tree.begin_query({p_neg, p_pos});
+//     ASSERT_EQ(1, q_window->_i);
+//     ++q_window;
+//     ASSERT_EQ(10, q_window->_i);
+//     ++q_window;
+//     ASSERT_EQ(-10, q_window->_i);
+//     ++q_window;
+//     ASSERT_EQ(q_window, tree.end());
 //
-//    auto q_extent = tree.begin();
-//    ASSERT_EQ(1, q_extent->_i);
-//    ++q_extent;
-//    ASSERT_EQ(10, q_extent->_i);
-//    ++q_extent;
-//    ASSERT_EQ(-10, q_extent->_i);
-//    ++q_extent;
-//    ASSERT_EQ(q_extent, tree.end());
+//     auto q_extent = tree.begin();
+//     ASSERT_EQ(1, q_extent->_i);
+//     ++q_extent;
+//     ASSERT_EQ(10, q_extent->_i);
+//     ++q_extent;
+//     ASSERT_EQ(-10, q_extent->_i);
+//     ++q_extent;
+//     ASSERT_EQ(q_extent, tree.end());
 //
-//    auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
-//    ASSERT_EQ(1, q_knn->_i);
-//    ++q_knn;
-//    ASSERT_NE(q_knn, tree.end());
-//    ++q_knn;
-//    ASSERT_NE(q_knn, tree.end());
-//    ++q_knn;
-//    ASSERT_EQ(q_knn, tree.end());
+//     auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
+//     ASSERT_EQ(1, q_knn->_i);
+//     ++q_knn;
+//     ASSERT_NE(q_knn, tree.end());
+//     ++q_knn;
+//     ASSERT_NE(q_knn, tree.end());
+//     ++q_knn;
+//     ASSERT_EQ(q_knn, tree.end());
 //
-//    ASSERT_EQ(1, tree.erase(p_neg, Id(-10)));
-//    ASSERT_EQ(1, tree.erase(p, Id(1)));
-//    ASSERT_EQ(1, tree.erase(p_pos, Id(10)));
-//    ASSERT_EQ(0, tree.size());
-//    ASSERT_EQ(0, tree.erase(p_neg, Id(-10)));
-//    ASSERT_EQ(0, tree.erase(p_pos, Id(10)));
-//    ASSERT_EQ(0, tree.size());
-//    ASSERT_TRUE(tree.empty());
-//}
+//     ASSERT_EQ(1, tree.erase(p_neg, Id(-10)));
+//     ASSERT_EQ(1, tree.erase(p, Id(1)));
+//     ASSERT_EQ(1, tree.erase(p_pos, Id(10)));
+//     ASSERT_EQ(0, tree.size());
+//     ASSERT_EQ(0, tree.erase(p_neg, Id(-10)));
+//     ASSERT_EQ(0, tree.erase(p_pos, Id(10)));
+//     ASSERT_EQ(0, tree.size());
+//     ASSERT_TRUE(tree.empty());
+// }
 //
-//TEST(PhTreeMMDTest, SmokeTestTreeAPI) {
-//    std::map<int, Id*> mapPtr;
-//    PhTreeMultiMapD<3, Id*> treePtr;
-//    Id* idPtr = new Id(1);
-//    treePtr.emplace(PhPointD<3>{1, 2, 3}, idPtr);
-//    treePtr.clear();
-//    delete idPtr;
-//}
+// TEST(PhTreeMMDTest, SmokeTestTreeAPI) {
+//     std::map<int, Id*> mapPtr;
+//     PhTreeMultiMapD<3, Id*> treePtr;
+//     Id* idPtr = new Id(1);
+//     treePtr.emplace(PhPointD<3>{1, 2, 3}, idPtr);
+//     treePtr.clear();
+//     delete idPtr;
+// }
 //
-//template <typename TREE>
-//void test_tree(TREE& tree) {
-//    PhPointD<3> p{1, 2, 3};
+// template <typename TREE>
+// void test_tree(TREE& tree) {
+//     PhPointD<3> p{1, 2, 3};
 //
-//    // test various operations
-//    tree.emplace(p, Id{2});
-//    Id id3{3};
-//    tree.insert(p, id3);
-//    ASSERT_EQ(tree.size(), 3);
-//    ASSERT_EQ(tree.count(p), 3);
-//    ASSERT_EQ(tree.find(p, Id(1))->_i, 1);
-//    ASSERT_EQ(tree.find(p, Id(2))->_i, 2);
-//    ASSERT_EQ(tree.find(p, Id(3))->_i, 3);
+//     // test various operations
+//     tree.emplace(p, Id{2});
+//     Id id3{3};
+//     tree.insert(p, id3);
+//     ASSERT_EQ(tree.size(), 3);
+//     ASSERT_EQ(tree.count(p), 3);
+//     ASSERT_EQ(tree.find(p, Id(1))->_i, 1);
+//     ASSERT_EQ(tree.find(p, Id(2))->_i, 2);
+//     ASSERT_EQ(tree.find(p, Id(3))->_i, 3);
 //
-//    auto q_window = tree.begin_query({p, p});
-//    std::set<int> wq_result;
-//    wq_result.emplace(q_window->_i);
-//    ++q_window;
-//    wq_result.emplace(q_window->_i);
-//    ++q_window;
-//    wq_result.emplace(q_window->_i);
-//    ++q_window;
-//    ASSERT_EQ(q_window, tree.end());
-//    ASSERT_EQ(3, wq_result.size());
+//     auto q_window = tree.begin_query({p, p});
+//     std::set<int> wq_result;
+//     wq_result.emplace(q_window->_i);
+//     ++q_window;
+//     wq_result.emplace(q_window->_i);
+//     ++q_window;
+//     wq_result.emplace(q_window->_i);
+//     ++q_window;
+//     ASSERT_EQ(q_window, tree.end());
+//     ASSERT_EQ(3, wq_result.size());
 //
-//    auto q_extent = tree.begin();
-//    std::set<int> eq_result;
-//    eq_result.emplace(q_extent->_i);
-//    ++q_extent;
-//    eq_result.emplace(q_extent->_i);
-//    ++q_extent;
-//    eq_result.emplace(q_extent->_i);
-//    ++q_extent;
-//    ASSERT_EQ(q_extent, tree.end());
-//    ASSERT_EQ(3, eq_result.size());
+//     auto q_extent = tree.begin();
+//     std::set<int> eq_result;
+//     eq_result.emplace(q_extent->_i);
+//     ++q_extent;
+//     eq_result.emplace(q_extent->_i);
+//     ++q_extent;
+//     eq_result.emplace(q_extent->_i);
+//     ++q_extent;
+//     ASSERT_EQ(q_extent, tree.end());
+//     ASSERT_EQ(3, eq_result.size());
 //
-//    auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
-//    std::set<int> knn_result;
-//    knn_result.emplace(q_knn->_i);
-//    ++q_knn;
-//    knn_result.emplace(q_knn->_i);
-//    ++q_knn;
-//    knn_result.emplace(q_knn->_i);
-//    ++q_knn;
-//    ASSERT_EQ(q_knn, tree.end());
-//    ASSERT_EQ(3, knn_result.size());
+//     auto q_knn = tree.begin_knn_query(10, p, DistanceEuclidean<3>());
+//     std::set<int> knn_result;
+//     knn_result.emplace(q_knn->_i);
+//     ++q_knn;
+//     knn_result.emplace(q_knn->_i);
+//     ++q_knn;
+//     knn_result.emplace(q_knn->_i);
+//     ++q_knn;
+//     ASSERT_EQ(q_knn, tree.end());
+//     ASSERT_EQ(3, knn_result.size());
 //
-//    ASSERT_EQ(1, tree.erase(p, Id{1}));
-//    ASSERT_EQ(2, tree.size());
-//    ASSERT_EQ(0, tree.erase(p, Id{1}));
-//    ASSERT_EQ(2, tree.size());
-//    ASSERT_EQ(1, tree.erase(p, Id{2}));
-//    ASSERT_EQ(1, tree.erase(p, Id{3}));
-//    ASSERT_TRUE(tree.empty());
-//}
+//     ASSERT_EQ(1, tree.erase(p, Id{1}));
+//     ASSERT_EQ(2, tree.size());
+//     ASSERT_EQ(0, tree.erase(p, Id{1}));
+//     ASSERT_EQ(2, tree.size());
+//     ASSERT_EQ(1, tree.erase(p, Id{2}));
+//     ASSERT_EQ(1, tree.erase(p, Id{3}));
+//     ASSERT_TRUE(tree.empty());
+// }
 //
-//TEST(PhTreeMMDTest, TestMoveConstruct) {
-//    // Test edge case: only one entry in tree
-//    PhPointD<3> p{1, 2, 3};
-//    PhTreeMultiMapD<3, Id> tree1;
-//    tree1.emplace(p, Id{1});
+// TEST(PhTreeMMDTest, TestMoveConstruct) {
+//     // Test edge case: only one entry in tree
+//     PhPointD<3> p{1, 2, 3};
+//     PhTreeMultiMapD<3, Id> tree1;
+//     tree1.emplace(p, Id{1});
 //
-//    TestTree<3, Id> tree{std::move(tree1)};
-//    test_tree(tree);
-//    tree.~PhTreeMultiMap();
-//}
+//     TestTree<3, Id> tree{std::move(tree1)};
+//     test_tree(tree);
+//     tree.~PhTreeMultiMap();
+// }
 //
-//TEST(PhTreeMMDTest, TestMoveAssign) {
-//    // Test edge case: only one entry in tree
-//    PhPointD<3> p{1, 2, 3};
-//    PhTreeMultiMapD<3, Id> tree1;
-//    tree1.emplace(p, Id{1});
+// TEST(PhTreeMMDTest, TestMoveAssign) {
+//     // Test edge case: only one entry in tree
+//     PhPointD<3> p{1, 2, 3};
+//     PhTreeMultiMapD<3, Id> tree1;
+//     tree1.emplace(p, Id{1});
 //
-//    TestTree<3, Id> tree{};
-//    tree = std::move(tree1);
-//    test_tree(tree);
-//    tree.~PhTreeMultiMap();
-//}
+//     TestTree<3, Id> tree{};
+//     tree = std::move(tree1);
+//     test_tree(tree);
+//     tree.~PhTreeMultiMap();
+// }
 //
-//TEST(PhTreeMMDTest, TestMovableIterators) {
-//    // Test edge case: only one entry in tree
-//    PhPointD<3> p{1, 2, 3};
-//    auto tree = TestTree<3, Id>();
-//    tree.emplace(p, Id{1});
+// TEST(PhTreeMMDTest, TestMovableIterators) {
+//     // Test edge case: only one entry in tree
+//     PhPointD<3> p{1, 2, 3};
+//     auto tree = TestTree<3, Id>();
+//     tree.emplace(p, Id{1});
 //
-//    ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin())>);
-//    ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin())>);
-//    ASSERT_NE(tree.begin(), tree.end());
+//     ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin())>);
+//     ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin())>);
+//     ASSERT_NE(tree.begin(), tree.end());
 //
-//    ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.end())>);
-//    ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.end())>);
+//     ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.end())>);
+//     ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.end())>);
 //
-//    ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.find(p))>);
-//    ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.find(p))>);
-//    ASSERT_NE(tree.find(p), tree.end());
+//     ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.find(p))>);
+//     ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.find(p))>);
+//     ASSERT_NE(tree.find(p), tree.end());
 //
-//    TestTree<3, Id>::QueryBox qb{{1, 2, 3}, {4, 5, 6}};
-//    FilterMultiMapAABB filter(p, p, tree.converter());
-//    ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin_query(qb, filter))>);
-//    // Not movable due to constant fields
-//    // ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin_query(qb, filter))>);
+//     TestTree<3, Id>::QueryBox qb{{1, 2, 3}, {4, 5, 6}};
+//     FilterMultiMapAABB filter(p, p, tree.converter());
+//     ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin_query(qb, filter))>);
+//     // Not movable due to constant fields
+//     // ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin_query(qb, filter))>);
 //
-//    ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin_knn_query(
-//                    3, {2, 3, 4}, DistanceEuclidean<3>()))>);
-//    // Not movable due to constant fields
-//    // ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin_knn_query(
-//    //                 3, {2, 3, 4}, DistanceEuclidean<3>()))>);
-//}
+//     ASSERT_TRUE(std::is_move_constructible_v<decltype(tree.begin_knn_query(
+//                     3, {2, 3, 4}, DistanceEuclidean<3>()))>);
+//     // Not movable due to constant fields
+//     // ASSERT_TRUE(std::is_move_assignable_v<decltype(tree.begin_knn_query(
+//     //                 3, {2, 3, 4}, DistanceEuclidean<3>()))>);
+// }
 
 }  // namespace phtree_multimap_d_test

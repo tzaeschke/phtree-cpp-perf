@@ -63,10 +63,10 @@ using TestMap = typename std::conditional_t<
             SCENARIO == MCXME,
             mcxme::PhTreeD<DIM, payload_t>,
             typename std::conditional_t<
-                SCENARIO == PHTREE2,
-                improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
+                SCENARIO == PHTREE,
+                improbable::phtree::PhTreeMultiMapD<DIM, payload_t>,
                 typename std::conditional_t<
-                    SCENARIO == PHTREE,
+                    SCENARIO == PHTREE2,
                     improbable::phtree::PhTreeMultiMap2D<DIM, payload_t>,
                     typename std::conditional_t<
                         SCENARIO == TS_KD,
@@ -150,11 +150,11 @@ void BoostRT(benchmark::State& state, Arguments&&...) {
     benchmark.Benchmark(state);
 }
 
-// template <typename... Arguments>
-// void Lsi(benchmark::State& state, Arguments&&...) {
-//     IndexBenchmark<3, LSI> benchmark{state};
-//     benchmark.Benchmark(state);
-// }
+template <typename... Arguments>
+void Lsi(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, LSI> benchmark{state};
+    benchmark.Benchmark(state);
+}
 
 template <typename... Arguments>
 void Mcxme(benchmark::State& state, Arguments&&...) {
@@ -163,13 +163,13 @@ void Mcxme(benchmark::State& state, Arguments&&...) {
 }
 
 template <typename... Arguments>
-void PhTree3D(benchmark::State& state, Arguments&&...) {
+void PhTreeMM(benchmark::State& state, Arguments&&...) {
     IndexBenchmark<3, PHTREE> benchmark{state};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void PhTreeMM2_3D(benchmark::State& state, Arguments&&...) {
+void PhTreeMM2(benchmark::State& state, Arguments&&...) {
     IndexBenchmark<3, PHTREE2> benchmark{state};
     benchmark.Benchmark(state);
 }
@@ -187,12 +187,12 @@ void TinspinQuadtree(benchmark::State& state, Arguments&&...) {
 }
 
 // index type, scenario name, data_generator, num_entities
-BENCHMARK_CAPTURE(PhTree3D, INSERT, 0)
+BENCHMARK_CAPTURE(PhTreeMM, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(PhTreeMM2_3D, INSERT, 0)
+BENCHMARK_CAPTURE(PhTreeMM2, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
@@ -212,12 +212,12 @@ BENCHMARK_CAPTURE(BoostRT, BOOST, 0)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-// BENCHMARK_CAPTURE(Lsi, LSI, 0)
-//     ->RangeMultiplier(10)
-//     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-//     ->Unit(benchmark::kMillisecond);
-
 BENCHMARK_CAPTURE(Mcxme, MCXME, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(Lsi, LSI, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

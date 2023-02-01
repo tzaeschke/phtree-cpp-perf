@@ -62,10 +62,10 @@ namespace pht = improbable::phtree;
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 #ifdef USE_STD_ARRAY
-template<pht::dimension_t DIM>
+template <pht::dimension_t DIM>
 using point_car = std::array<double, DIM>;
 #else
-template<DIM>
+template <DIM>
 using point_car = bg::model::point<double, DIM, bg::cs::cartesian>;
 #endif
 #ifdef USE_PH_BOX
@@ -269,7 +269,7 @@ class PhTreeMultiMap {
     // THis was tested with WEB data with points and boxes.
     // TODO test insert()
     // TODO test other strategies
-    using TREE = rtree<Entry, bgi::rstar<16>>; // 9; 16; 20; 25;
+    using TREE = rtree<Entry, bgi::rstar<16>>;  // 9; 16; 20; 25;
     using ITER = decltype(TREE().qend());
 
   public:
@@ -355,92 +355,26 @@ class PhTreeMultiMap {
     }
 
     template <typename T2>
-    size_t relocate(const Key& old_key, const Key& new_key, T2&& value, bool count_equals = true) {
-        erase(old_key, value);
+    size_t relocate(const Key& old_key, const Key& new_key, T2&& value) {
+        if (erase(old_key, value) == 0) {
+            return 0;
+        }
         insert(new_key, value);
         return 1;
     }
 
-    //    template <typename PREDICATE>
-    //    size_t relocate_if(
-    //        const Key& old_key, const Key& new_key, PREDICATE&& predicate, bool count_equals =
-    //        true) { auto pair = tree_->_find_or_create_two_mm(
-    //            converter_.pre(old_key), converter_.pre(new_key), count_equals);
-    //        auto& iter_old = pair.first;
-    //        auto& iter_new = pair.second;
-    //
-    //        if (iter_old.IsEnd()) {
-    //            assert(iter_new.IsEnd() || !iter_new->empty());  // Otherwise remove iter_new
-    //            return 0;
-    //        }
-    //
-    //        // Are we inserting in same node and same quadrant? Or are the keys equal?
-    //        if (iter_old == iter_new) {
-    //            assert(old_key == new_key);
-    //            return 1;
-    //        }
-    //
-    //        size_t n = 0;
-    //        auto it = iter_old->begin();
-    //        while (it != iter_old->end()) {
-    //            if (predicate(*it) && iter_new->emplace(std::move(*it)).second) {
-    //                it = iter_old->erase(it);
-    //                ++n;
-    //            } else {
-    //                ++it;
-    //            }
-    //        }
-    //
-    //        if (iter_old->empty()) {
-    //            [[maybe_unused]] auto found = tree_->erase(iter_old);
-    //            assert(found);
-    //        } else if (iter_new->empty()) {
-    //            [[maybe_unused]] auto found = tree_->erase(iter_new);
-    //            assert(found);
-    //        }
-    //        return n;
-    //    }
-
-    //    auto relocate_all(const Key& old_key, const Key& new_key) {
-    //        return tree_->relocate(old_key, new_key);
-    //    }
-
-    //    template <typename CALLBACK, typename FILTER = FilterNoOp>
-    //    void for_each(CALLBACK&& callback, FILTER&& filter = FILTER()) const {
-    //        class MyVisitor : public IVisitor {
-    //          public:
-    //            void visitNode(const INode& /* n */) override {}
-    //            void visitData(const IData& d) override {
-    //                if (d.getIdentifier() == value) {
-    //                    result.push_back(d.getIdentifier());
-    //                }
-    //                // std::cout << d.getIdentifier() << std::endl;
-    //                //  the ID of this data entry is an answer to the query. I will just print it
-    //                to
-    //                //  stdout.
-    //            }
-    //            void visitData(std::vector<const IData*>& /* v */) override {}
-    //            CALLBACK callback_;
-    //            FILTER filter_;
-    //        };
-    //        MyVisitor v{std::forward<CALLBACK>(callback), std::forward<FILTER>(filter)};
-    //
-    //
-    //        PhBox<DIM> box = static_cast<PhBox<DIM>>(key);
-    //        Region r = Region(box.min(), box.max(), DIM);
-    //        return r;
-    //        tree_->intersectsWithQuery();
-    //
-    //        tree_->pointLocationQuery(key, v);
-    //        return v.result.begin();
-    //
-    //
-    //
-    //        tree_->for_each(
-    //            NoOpCallback{},
-    //            WrapCallbackFilter<CALLBACK, FILTER>{
-    //                std::forward<CALLBACK>(callback), std::forward<FILTER>(filter), converter_});
-    //    }
+    template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
+    void for_each(CALLBACK&& callback, FILTER&& filter = FILTER()) const {
+        auto predicate = bgi::satisfies([&](auto const& v) {
+            // KeyInternal k{};  // TODO
+            KeyInternal k = converter_.post(v.first);
+            return filter.IsBucketEntryValid(k, v.second);
+        });
+        auto it = tree_.qbegin(predicate);
+        for (; it != tree_.qend(); ++it) {
+            callback(converter_.post(it->first), it->second);
+        }
+    }
 
     template <typename CALLBACK, typename FILTER = pht::FilterNoOp>
     void for_each(QueryBox query_box, CALLBACK&& callback, FILTER&& filter = FILTER()) const {
@@ -451,18 +385,21 @@ class PhTreeMultiMap {
                 return filter.IsBucketEntryValid(k, v.second);
             });
         auto it = tree_.qbegin(predicate);
-        //        auto it = tree_.qbegin(bgi::intersects(to_region(query_box)));
-
         for (; it != tree_.qend(); ++it) {
             callback(converter_.post(it->first), it->second);
         }
     }
 
-    //        template <typename FILTER = pht::FilterNoOp>
-    //        auto begin(FILTER&& filter = FILTER()) const {
-    //            //return CreateIterator(tree_->begin(std::forward<FILTER>(filter)));
-    //            return IteratorNormal<ITER, PHTREE>(tree_.begin());
-    //        }
+    template <typename FILTER = pht::FilterNoOp>
+    auto begin(FILTER&& filter = FILTER()) const {
+        auto it = tree_.qbegin(bgi::satisfies([&](auto const& v) {
+            KeyInternal k = converter_.post(v.first);  // TODO?
+            auto id = v.second;
+            return filter.IsBucketEntryValid(k, id);
+        }));
+
+        return IteratorNormal<ITER, PHTREE>(it);
+    }
 
     template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
@@ -485,20 +422,12 @@ class PhTreeMultiMap {
     auto begin_knn_query(
         size_t min_results,
         const Key& center,
-        DISTANCE&& distance_function = DISTANCE(),
-        FILTER&& filter = FILTER()) const {
-        // We use pre() instead of pre_query() here because, strictly speaking, we want to
-        // find the nearest neighbors of a (fictional) key, which may as well be a box.
-//        std::vector returned_values{};
-//        returned_values.resize(min_results);
-//        tree_.query(bgi::nearest(converter_.pre_query(center, min_results)), std::back_inserter(returned_values)); //bgi::satisfies([&](value const& v) {return bg::distance(v.first, sought) < 2;}),
-        return IteratorNormal<ITER, PHTREE>(tree_.qbegin(bgi::nearest(converter_.pre(center), min_results))); //bgi::satisfies([&](value const& v) {return bg::distance(v.first, sought) < 2;}),
-
-//        return CreateIteratorKnn(tree_->begin_knn_query(
-//            min_results,
-//            converter_.pre(center),
-//            std::forward<DISTANCE>(distance_function),
-//            std::forward<FILTER>(filter)));
+        DISTANCE&&  // distance_function = DISTANCE(),
+        // FILTER&& filter = FILTER()
+    ) const {
+        return IteratorNormal<ITER, PHTREE>(tree_.qbegin(bgi::nearest(
+            converter_.pre(center), min_results)));  // bgi::satisfies([&](value const& v) {return
+                                                     // bg::distance(v.first, sought) < 2;}),
     }
 
     auto end() const {
