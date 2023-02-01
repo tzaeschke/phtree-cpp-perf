@@ -270,47 +270,47 @@ void FlannKDS(benchmark::State& state, Arguments&&...) {
 }
 
 // index type, scenario name, data_generator, num_entities
-BENCHMARK_CAPTURE(PhTreeMM, INSERT, 0)
+BENCHMARK_CAPTURE(PhTreeMM, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BBTree, INSERT, 0)
+BENCHMARK_CAPTURE(PhTreeMM2, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(FlannKDS, INSERT, 0)
+BENCHMARK_CAPTURE(TinspinKDTree, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(PhTreeMM2, INSERT, 0)
+BENCHMARK_CAPTURE(TinspinQuadtree, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(TinspinKDTree, INSERT, 0)
+BENCHMARK_CAPTURE(BoostRT, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(TinspinQuadtree, INSERT, 0)
+BENCHMARK_CAPTURE(FlannKDS, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BoostRT, INSERT, 0)
+BENCHMARK_CAPTURE(BBTree, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(Mcxme, INSERT, 0)
+BENCHMARK_CAPTURE(Mcxme, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(Lsi, INSERT, 0)
+BENCHMARK_CAPTURE(Lsi, LOAD, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
