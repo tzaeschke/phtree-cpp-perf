@@ -136,104 +136,104 @@ void generateCube(std::vector<TestPoint<DIM>>& points, size_t N) {
     ASSERT_EQ(points.size(), N);
 }
 
-// template <dimension_t DIM>
-// void SmokeTestBasicOps(size_t N) {
-//     TestTree<DIM, Id> tree;
-//     std::vector<TestPoint<DIM>> points;
-//     generateCube(points, N);
-//
-//     ASSERT_EQ(0, tree.size());
-//     ASSERT_TRUE(tree.empty());
-//     PhTreeDebugHelper::CheckConsistency(tree);
-//
-//     for (size_t i = 0; i < N; i++) {
-//         TestPoint<DIM>& p = points.at(i);
-//         ASSERT_LE(tree.count(p), i % NUM_DUPL);
-//         if (i % NUM_DUPL == 0) {
-//             ASSERT_EQ(tree.end(), tree.find(p));
-//         }
-//
-//         Id id(i);
-//         if (i % 4 == 0) {
-//             ASSERT_TRUE(tree.emplace(p, id).second);
-//         } else if (i % 4 == 1) {
-//             ASSERT_TRUE(tree.insert(p, id).second);
-//         } else {
-//             ASSERT_TRUE(tree.try_emplace(p, id).second);
-//         }
-//         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
-//         ASSERT_NE(tree.end(), tree.find(p));
-//         ASSERT_EQ(id._i, tree.find(p, id)->_i);
-//         ASSERT_EQ(i + 1, tree.size());
-//
-//         // try adding it again
-//         ASSERT_FALSE(tree.insert(p, id).second);
-//         ASSERT_FALSE(tree.emplace(p, id).second);
-//         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
-//         ASSERT_NE(tree.end(), tree.find(p));
-//         ASSERT_EQ(id._i, tree.find(p, id)->_i);
-//         ASSERT_EQ(i + 1, tree.size());
-//         ASSERT_FALSE(tree.empty());
-//     }
-//
-//     for (size_t i = 0; i < N; i++) {
-//         TestPoint<DIM>& p = points.at(i);
-//         auto q = tree.begin_query({p, p});
-//         ASSERT_NE(q, tree.end());
-//         for (size_t j = 0; j < NUM_DUPL; j++) {
-//             ASSERT_EQ(i / NUM_DUPL, (*q)._i / NUM_DUPL);
-//             q++;
-//         }
-//         ASSERT_EQ(q, tree.end());
-//     }
-//
-//     PhTreeDebugHelper::CheckConsistency(tree);
-//
-//     for (size_t i = 0; i < N; i++) {
-//         TestPoint<DIM>& p = points.at(i);
-//         Id id(i);
-//         ASSERT_NE(tree.find(p), tree.end());
-//         size_t expected_remaining = (N - i - 1) % NUM_DUPL + 1;
-//         ASSERT_EQ(tree.count(p), expected_remaining);
-//         ASSERT_EQ(i, tree.find(p, id)->_i);
-//         if (i % 3 == 0) {
-//             ASSERT_EQ(1, tree.erase(p, id));
-//         } else {
-//             auto iter = tree.find(p, id);
-//             ASSERT_EQ(1, tree.erase(iter));
-//         }
-//
-//         ASSERT_EQ(tree.count(p), expected_remaining - 1);
-//         if (expected_remaining - 1 == 0) {
-//             ASSERT_EQ(tree.end(), tree.find(p));
-//         }
-//         ASSERT_EQ(N - i - 1, tree.size());
-//
-//         // try remove again
-//         ASSERT_EQ(0, tree.erase(p, id));
-//         ASSERT_EQ(tree.count(p), expected_remaining - 1);
-//         if (expected_remaining - 1 == 0) {
-//             ASSERT_EQ(tree.end(), tree.find(p));
-//         }
-//         ASSERT_EQ(N - i - 1, tree.size());
-//         if (i < N - 1) {
-//             ASSERT_FALSE(tree.empty());
-//         }
-//     }
-//     ASSERT_EQ(0, tree.size());
-//     ASSERT_TRUE(tree.empty());
-//     PhTreeDebugHelper::CheckConsistency(tree);
-// }
-//
-// TEST(PhTreeMMDTest, SmokeTestBasicOps) {
-//     SmokeTestBasicOps<1>(10000);
-//     SmokeTestBasicOps<3>(10000);
-//     SmokeTestBasicOps<6>(10000);
-//     SmokeTestBasicOps<10>(10000);
-//     SmokeTestBasicOps<20>(1000);
-//     SmokeTestBasicOps<63>(100);
-// }
-//
+template <dimension_t DIM>
+void SmokeTestBasicOps(size_t N) {
+    TestTree<DIM, Id> tree;
+    std::vector<TestPoint<DIM>> points;
+    generateCube(points, N);
+
+    ASSERT_EQ(0, tree.size());
+    ASSERT_TRUE(tree.empty());
+    // PhTreeDebugHelper::CheckConsistency(tree);
+
+    for (size_t i = 0; i < N; i++) {
+        TestPoint<DIM>& p = points.at(i);
+        ASSERT_LE(tree.count(p), i % NUM_DUPL);
+        if (i % NUM_DUPL == 0) {
+            ASSERT_EQ(tree.end(), tree.find(p));
+        }
+
+        Id id(i);
+        if (i % 4 == 0) {
+            tree.emplace(p, id);
+        } else if (i % 4 == 1) {
+            tree.insert(p, id);
+        } else {
+            tree.try_emplace(p, id);
+        }
+        ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+        ASSERT_NE(tree.end(), tree.find(p));
+        ASSERT_EQ(id, *tree.find(p, id));
+        ASSERT_EQ(i + 1, tree.size());
+
+        // try adding it again
+        //         ASSERT_FALSE(tree.insert(p, id).second);
+        //         ASSERT_FALSE(tree.emplace(p, id).second);
+        //         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
+        //         ASSERT_NE(tree.end(), tree.find(p));
+        //         ASSERT_EQ(id, *tree.find(p, id));
+        //         ASSERT_EQ(i + 1, tree.size());
+        ASSERT_FALSE(tree.empty());
+    }
+
+    for (size_t i = 0; i < N; i++) {
+        TestPoint<DIM>& p = points.at(i);
+        auto q = tree.begin_query({p, p});
+        ASSERT_NE(q, tree.end());
+        for (size_t j = 0; j < NUM_DUPL; j++) {
+            ASSERT_EQ(i / NUM_DUPL, (*q) / NUM_DUPL);
+            ++q;
+        }
+        ASSERT_EQ(q, tree.end());
+    }
+
+    // PhTreeDebugHelper::CheckConsistency(tree);
+
+    for (size_t i = 0; i < N; i++) {
+        TestPoint<DIM>& p = points.at(i);
+        Id id(i);
+        ASSERT_NE(tree.find(p), tree.end());
+        size_t expected_remaining = (N - i - 1) % NUM_DUPL + 1;
+        ASSERT_EQ(tree.count(p), expected_remaining);
+        ASSERT_EQ(i, *tree.find(p, id));
+        if (i % 3 == 0) {
+            ASSERT_EQ(1, tree.erase(p, id));
+        } else {
+            auto iter = tree.find(p, id);
+            ASSERT_EQ(1, tree.erase(iter));
+        }
+
+        ASSERT_EQ(tree.count(p), expected_remaining - 1);
+        if (expected_remaining - 1 == 0) {
+            ASSERT_EQ(tree.end(), tree.find(p));
+        }
+        ASSERT_EQ(N - i - 1, tree.size());
+
+        // try remove again
+        ASSERT_EQ(0, tree.erase(p, id));
+        ASSERT_EQ(tree.count(p), expected_remaining - 1);
+        if (expected_remaining - 1 == 0) {
+            ASSERT_EQ(tree.end(), tree.find(p));
+        }
+        ASSERT_EQ(N - i - 1, tree.size());
+        if (i < N - 1) {
+            ASSERT_FALSE(tree.empty());
+        }
+    }
+    ASSERT_EQ(0, tree.size());
+    ASSERT_TRUE(tree.empty());
+    // PhTreeDebugHelper::CheckConsistency(tree);
+}
+
+TEST(PhTreeMMDTest, SmokeTestBasicOps) {
+    //     SmokeTestBasicOps<1>(10000);
+    SmokeTestBasicOps<3>(1000);
+    SmokeTestBasicOps<6>(1000);
+    SmokeTestBasicOps<10>(1000);
+    SmokeTestBasicOps<20>(100);
+    //     SmokeTestBasicOps<63>(100);
+}
+
 // TEST(PhTreeMMDTest, TestDebug) {
 //     const dimension_t dim = 3;
 //     TestTree<dim, Id> tree;
@@ -327,7 +327,7 @@ TEST(PhTreeMMDTest, TestEmplace) {
         tree.emplace(p, id);
         ASSERT_EQ(tree.count(p), i % NUM_DUPL + 1);
         ASSERT_EQ(i, *tree.find(p, id));
-        ASSERT_EQ(i + 1, tree.size());
+        ASSERT_EQ(i + 1u, tree.size());
 
         // try add again (same `identity`), this should NOT replace the existing value
         //        Id id2(i);

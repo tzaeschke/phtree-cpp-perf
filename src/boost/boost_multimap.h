@@ -31,6 +31,9 @@ BOOST_GEOMETRY_REGISTER_STD_ARRAY_CS(cs::cartesian)
 #ifdef USE_PH_BOX
 namespace ph = improbable::phtree;
 BOOST_GEOMETRY_REGISTER_BOX(ph::PhBoxD<3>, ph::PhPointD<3>, min(), max())
+BOOST_GEOMETRY_REGISTER_BOX(ph::PhBoxD<6>, ph::PhPointD<6>, min(), max())
+BOOST_GEOMETRY_REGISTER_BOX(ph::PhBoxD<10>, ph::PhPointD<10>, min(), max())
+BOOST_GEOMETRY_REGISTER_BOX(ph::PhBoxD<20>, ph::PhPointD<20>, min(), max())
 #endif  // USE_PH_BOX
 #endif
 
@@ -70,7 +73,8 @@ using point_car = bg::model::point<double, DIM, bg::cs::cartesian>;
 #endif
 #ifdef USE_PH_BOX
 namespace ph = improbable::phtree;
-using box_car = ph::PhBoxD<3>;
+template <pht::dimension_t DIM>
+using box_car = ph::PhBoxD<DIM>;
 #else
 using box_car = bg::model::box<point_car>;
 #endif  // USE_PH_BOX
@@ -89,11 +93,11 @@ struct PointConverter {
         return point;
     }
 
-    box_car pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
+    box_car<DIM> pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
         return {pre(query_box.min()), pre(query_box.max())};
     }
 
-    box_car pre_query(const pht::PhPoint<DIM, SCALAR>& query_point) const {
+    box_car<DIM> pre_query(const pht::PhPoint<DIM, SCALAR>& query_point) const {
         return {pre(query_point), pre(query_point)};
     }
 };
@@ -101,16 +105,16 @@ struct PointConverter {
 template <pht::dimension_t DIM, typename SCALAR>
 struct PointConverter {
     point_car<DIM> pre(const pht::PhPoint<DIM, SCALAR>& key) const {
-        assert(DIM == 3);
+        static_assert(DIM == 3);
         return {key[0], key[1], key[2]};
     }
 
     pht::PhPoint<DIM, SCALAR> post(const point_car<DIM>& p) const {
-        assert(DIM == 3);
+        static_assert(DIM == 3);
         return {p.get<0>(), p.get<1>(), p.get<2>()};
     }
 
-    box_car pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
+    box_car<DIM> pre_query(const pht::PhBox<DIM, SCALAR>& query_box) const {
         return {pre(query_box.min()), pre(query_box.max())};
     }
 };
@@ -122,15 +126,15 @@ struct BoxConverter {
     using Scalar = SCALAR;
     using PhBox = pht::PhBox<DIM, SCALAR>;
 
-    const box_car& pre(const PhBox& box) const {
+    const box_car<DIM>& pre(const PhBox& box) const {
         return box;
     }
 
-    PhBox post(const box_car& r) const {
+    PhBox post(const box_car<DIM>& r) const {
         return r;
     }
 
-    box_car pre_query(const PhBox& box) const {
+    box_car<DIM> pre_query(const PhBox& box) const {
         return box;
     }
 };
@@ -139,22 +143,22 @@ template <pht::dimension_t DIM, typename SCALAR = double>
 struct BoxConverter {
     using PhBox = pht::PhBox<DIM, SCALAR>;
 
-    box_car pre(const PhBox& box) const {
-        assert(DIM == 3);
+    box_car<DIM> pre(const PhBox& box) const {
+        static_assert(DIM == 3);
         point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
         point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
     }
 
-    PhBox post(const box_car& r) const {
+    PhBox post(const box_car<DIM>& r) const {
         auto& rlo = r.min_corner();
         auto& rhi = r.max_corner();
         pht::PhBoxD<DIM> box{rlo, rhi};
         return box;
     }
 
-    box_car pre_query(const PhBox& box) const {
-        assert(DIM == 3);
+    box_car<DIM> pre_query(const PhBox& box) const {
+        static_assert(DIM == 3);
         point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
         point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
@@ -166,16 +170,16 @@ struct BoxConverter {
     using PhBox = pht::PhBox<DIM, SCALAR>;
     using QueryBox = PhBox;
 
-    box_car pre(const PhBox& in) const {
-        assert(DIM == 3);
+    box_car<DIM> pre(const PhBox& in) const {
+        static_assert(DIM == 3);
         pht::PhBoxD<DIM> box = static_cast<pht::PhBoxD<DIM>>(in);
         point_car<DIM> lo{box.min()[0], box.min()[1], box.min()[2]};
         point_car<DIM> hi{box.max()[0], box.max()[1], box.max()[2]};
         return {lo, hi};
     }
 
-    PhBox post(const box_car& in) const {
-        assert(DIM == 3);
+    PhBox post(const box_car<DIM>& in) const {
+        static_assert(DIM == 3);
         auto& rlo = in.min_corner();
         auto& rhi = in.max_corner();
         pht::PhPointD<DIM> lo{rlo.get<0>(), rlo.get<1>(), rlo.get<2>()};
@@ -258,12 +262,14 @@ template <
     bool POINT_KEYS = true,
     typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
 class PhTreeMultiMap {
+    static_assert(
+        (DIM == 3 || DIM == 6 || DIM == 10 || DIM == 20) && "See BOOST_GEOMETRY_REGISTER_BOX");
     using Scalar = typename CONVERTER::Scalar;
     using Key =
         typename std::conditional_t<POINT_KEYS, pht::PhPoint<DIM, Scalar>, pht::PhBox<DIM, Scalar>>;
     using PHTREE = PhTreeMultiMap<DIM, T, CONVERTER, POINT_KEYS, DEFAULT_QUERY_TYPE>;
 
-    using Geom = typename std::conditional_t<POINT_KEYS, point_car<DIM>, box_car>;
+    using Geom = typename std::conditional_t<POINT_KEYS, point_car<DIM>, box_car<DIM>>;
     using Entry = std::pair<Geom, T>;
     // For queries the best node capacity appears to be ¨rstar" around 16 (20 is also good).
     // THis was tested with WEB data with points and boxes.
@@ -309,9 +315,21 @@ class PhTreeMultiMap {
     size_t count(const Key& key) const {
         // TODO? This is not publicly documented....??
         //        return tree_.count(converter_.pre_query(key));
-
         size_t n = 0;
         auto it = tree_.qbegin(bgi::covered_by(converter_.pre_query(key)));
+        for (; it != tree_.qend(); ++it) {
+            ++n;
+        }
+        return n;
+    }
+
+    size_t count(const Key& key, const T& value) const {
+        // TODO? This is not publicly documented....??
+        //        return tree_.count(converter_.pre_query(key));
+        size_t n = 0;
+        auto it = tree_.qbegin(
+            bgi::covered_by(converter_.pre_query(key)) &&
+            bgi::satisfies([&](auto const& v) { return v.second == value; }));
         for (; it != tree_.qend(); ++it) {
             ++n;
         }
