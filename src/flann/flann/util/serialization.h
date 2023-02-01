@@ -336,7 +336,7 @@ public:
     }
 
     template<typename T>
-    void save_binary(T* ptr, size_t size)
+    void save_binary(T* , size_t size)
     {
     	size_ += size;
     }

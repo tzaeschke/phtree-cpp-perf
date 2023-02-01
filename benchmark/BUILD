@@ -151,6 +151,8 @@ cc_binary(
         "//src/lsi:ph-lsi-mm",
         "//src/mcxme:ph-mcxme",
         "//src/tinspin",
+        "//src/bb-tree:ph-bb-tree",
+        "//src/flann:ph-flann",
         "@gbenchmark//:benchmark",
         "@phtree",
         "@spdlog",

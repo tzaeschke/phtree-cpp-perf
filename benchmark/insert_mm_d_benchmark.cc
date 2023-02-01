@@ -15,6 +15,8 @@
  */
 #include "benchmark_util.h"
 #include "logging.h"
+#include "src/bb-tree/bb_multimap.h"
+#include "src/flann/ph-kdtree-single.h"
 #include "phtree/phtree_multimap.h"
 #include "phtree/phtree_multimap2.h"
 #include "src/boost/boost_multimap.h"
@@ -38,10 +40,10 @@ enum Scenario {
     MCXME,
     PHTREE,
     PHTREE2,
-    EMPLACE,
-    SQUARE_BR,
     TS_KD,
     TS_QT,
+    BB,
+    FLANN_KD_S,
 };
 
 using payload_t = int64_t;
@@ -74,7 +76,13 @@ using TestMap = typename std::conditional_t<
                         typename std::conditional_t<
                             SCENARIO == TS_QT,
                             tinspin::QuadTree<TestPoint, payload_t>,
-                            void>>>>>>>;
+                          typename std::conditional_t<
+                              SCENARIO == BB,
+                              bb::PhTreeMultiMapD<DIM, payload2_t>,
+                              typename std::conditional_t<
+                                  SCENARIO == FLANN_KD_S,
+                                  flann::KDTreeSingle<DIM, payload_t>,
+                            void>>>>>>>>>;
 
 /*
  * Benchmark for adding entries to the index.
@@ -121,8 +129,8 @@ void IndexBenchmark<DIM, S>::Benchmark(benchmark::State& state) {
     }
 }
 
-template <dimension_t DIM, Scenario S>
-void IndexBenchmark<DIM, S>::SetupWorld(benchmark::State& state) {
+template <dimension_t DIM, Scenario SCN>
+void IndexBenchmark<DIM, SCN>::SetupWorld(benchmark::State& state) {
     logging::info("Setting up world with {} entities and {} dimensions.", num_entities_, DIM);
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX, 0.1);
 
@@ -131,12 +139,32 @@ void IndexBenchmark<DIM, S>::SetupWorld(benchmark::State& state) {
     logging::info("World setup complete.");
 }
 
-template <dimension_t DIM, Scenario S>
-void IndexBenchmark<DIM, S>::Insert(benchmark::State& state, Index& tree) {
-    for (size_t i = 0; i < num_entities_; ++i) {
-        auto& p = points_[i];
+template <
+    dimension_t DIM,
+    Scenario SCN,
+    std::enable_if_t<(SCN != Scenario::BB && SCN != Scenario::FLANN_KD_S), int> = 0>
+void InsertEntries(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
+    for (size_t i = 0; i < points.size(); ++i) {
+        auto& p = points[i];
         tree.emplace(p, (payload_t)i);
     }
+}
+
+template <
+    dimension_t DIM,
+    Scenario SCN,
+    std::enable_if_t<(SCN == Scenario::BB || SCN == Scenario::FLANN_KD_S), int> = 0>
+void InsertEntries(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
+    tree.load(points);
+}
+
+template <dimension_t DIM, Scenario SCN>
+void IndexBenchmark<DIM, SCN>::Insert(benchmark::State& state, Index& tree) {
+    InsertEntries<DIM, SCN>(tree, points_);
+    //    for (size_t i = 0; i < num_entities_; ++i) {
+    //        auto& p = points_[i];
+    //        tree.emplace(p, (payload_t)i);
+    //    }
 
     state.counters["total_put_count"] += num_entities_;
     state.counters["put_rate"] += num_entities_;
@@ -186,8 +214,30 @@ void TinspinQuadtree(benchmark::State& state, Arguments&&...) {
     benchmark.Benchmark(state);
 }
 
+template <typename... Arguments>
+void BBTree(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, BB> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
+template <typename... Arguments>
+void FlannKDS(benchmark::State& state, Arguments&&...) {
+    IndexBenchmark<3, FLANN_KD_S> benchmark{state};
+    benchmark.Benchmark(state);
+}
+
 // index type, scenario name, data_generator, num_entities
 BENCHMARK_CAPTURE(PhTreeMM, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BBTree, INSERT, 0)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(FlannKDS, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
@@ -207,17 +257,17 @@ BENCHMARK_CAPTURE(TinspinQuadtree, INSERT, 0)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BoostRT, BOOST, 0)
+BENCHMARK_CAPTURE(BoostRT, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(Mcxme, MCXME, 0)
+BENCHMARK_CAPTURE(Mcxme, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(Lsi, LSI, 0)
+BENCHMARK_CAPTURE(Lsi, INSERT, 0)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1 * 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);

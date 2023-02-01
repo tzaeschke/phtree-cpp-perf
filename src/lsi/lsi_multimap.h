@@ -13,7 +13,6 @@
 namespace si {
 
 using scalar_64_t = std::int64_t;
-const unsigned int bitLength = 64;  // 4;
 
 using namespace SpatialIndex;
 namespace pht = improbable::phtree;
@@ -24,22 +23,21 @@ namespace pht = improbable::phtree;
 template <
     pht::dimension_t DIM,
     typename T,
-    typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
+    typename SCALAR,
     bool POINT_KEYS = true,
     typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
 class PhTreeMultiMap {
     static_assert(std::is_same_v<int64_t, T>);
 
-    // using KeyInternal = typename CONVERTER::KeyInternal;
-    using Key = typename CONVERTER::KeyExternal;
-    static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
+    using Key =
+        typename std::conditional_t<POINT_KEYS, pht::PhPoint<DIM, SCALAR>, pht::PhBox<DIM, SCALAR>>;
+    static constexpr pht::dimension_t DimInternal = DIM;
 
   public:
-    // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
     using KeyInternal = IData;
-    using QueryBox = typename CONVERTER::QueryBoxExternal;
+    using QueryBox = pht::PhBox<DIM, SCALAR>;
 
-    explicit PhTreeMultiMap(CONVERTER converter = CONVERTER()) : converter_{converter}, size_{0} {
+    explicit PhTreeMultiMap() : size_{0} {
         tree_ = create_tree();
     }
 
@@ -186,7 +184,7 @@ class PhTreeMultiMap {
     //    }
 
     template <typename T2>
-    size_t relocate(const Key& old_key, const Key& new_key, T2&& value, bool count_equals = true) {
+    size_t relocate(const Key& old_key, const Key& new_key, T2&& value) {
         erase(old_key, value);
         insert(new_key, value);
         return 1;
@@ -226,7 +224,7 @@ class PhTreeMultiMap {
         //        PhBox<DIM> box = static_cast<PhBox<DIM>>(query_box);
         //        Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
         //        tree_->intersectsWithQuery(r, v);
-        //RTree::IntersectionQuery;
+        // RTree::IntersectionQuery;
         tree_->intersectsWithQuery(query_to_region(query_box), v);
     }
 
@@ -314,10 +312,6 @@ class PhTreeMultiMap {
     //        return empty();
     //    }
 
-    [[nodiscard]] const CONVERTER& converter() const {
-        return converter_;
-    }
-
   private:
     ISpatialIndex* create_tree() const {
         IStorageManager* memory = StorageManager::createNewMemoryStorageManager();
@@ -349,7 +343,7 @@ class PhTreeMultiMap {
 
     Region query_to_region(const pht::PhBoxD<DIM>& box) const {
         Region r = Region(&*box.min().begin(), &*box.max().begin(), DIM);
-        //std::cout << "q: " << r.
+        // std::cout << "q: " << r.
         return r;
     }
 
@@ -392,8 +386,8 @@ class PhTreeMultiMap {
         return {from_array(p.m_pCoords)};
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const IShape* shape) const {
+    template <bool IS_POINT = POINT_KEYS>
+    typename std::enable_if<IS_POINT == true, Key>::type from_shape(const IShape* shape) const {
         // Point** p = static_cast<Point**>(shape);
         Point p{};
         shape->getCenter(p);
@@ -404,8 +398,8 @@ class PhTreeMultiMap {
         return key;
     }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
+    template <bool IS_POINT = POINT_KEYS>
+    typename std::enable_if<IS_POINT == false, pht::PhBoxD<DIM>>::type from_shape(
         IShape* shape) const {
         Region r;
         shape->getMBR(r);
@@ -421,19 +415,24 @@ class PhTreeMultiMap {
     }
 
     SpatialIndex::ISpatialIndex* tree_;
-    CONVERTER converter_;
     size_t size_;
     std::vector<T> result_{};  /// Dirty Hack!!!! TODO
 };
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER = pht::ConverterIEEE<DIM>>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER>;
+template <pht::dimension_t DIM, typename T, typename SCALAR>
+using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, SCALAR, false, pht::QueryIntersect>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX>
-using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, false, pht::QueryIntersect>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, double>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, double>;
+
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapF = PhTreeMultiMap<DIM, T, float>;
+
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBoxF = PhTreeMultiMapBox<DIM, T, float>;
 
 }  // namespace si
 

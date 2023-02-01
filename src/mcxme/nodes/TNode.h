@@ -35,20 +35,20 @@ public:
 	explicit TNode(TNode<DIM, PREF_BLOCKS>* other);
 	virtual ~TNode() {}
 	virtual std::ostream& output(std::ostream& os, size_t depth, size_t index, size_t totalBitLength) override;
-	virtual NodeIterator<DIM>* begin() const = 0;
-	virtual NodeIterator<DIM>* it(unsigned long hcAddress) const =0;
-	virtual NodeIterator<DIM>* end() const = 0;
+	virtual NodeIterator<DIM>* begin() const override = 0;
+	virtual NodeIterator<DIM>* it(unsigned long hcAddress) const override  =0;
+	virtual NodeIterator<DIM>* end() const override  = 0;
 	virtual void accept(Visitor<DIM>* visitor, size_t depth, unsigned int index) override;
-	virtual void recursiveDelete() = 0;
+	virtual void recursiveDelete() override  = 0;
 	// gets the number of contents: #suffixes + #subnodes
-	virtual size_t getNumberOfContents() const = 0;
-	virtual size_t getMaximumNumberOfContents() const = 0;
-	virtual void lookup(unsigned long address, NodeAddressContent<DIM>& outContent, bool resolveSuffixIndex) const = 0;
-	virtual void insertAtAddress(unsigned long hcAddress, uintptr_t pointer) =0;
-	virtual void insertAtAddress(unsigned long hcAddress, unsigned int suffixStartBlockIndex, int id) = 0;
-	virtual void insertAtAddress(unsigned long hcAddress, unsigned long startSuffixBlock, int id) = 0;
-	virtual void insertAtAddress(unsigned long hcAddress, const Node<DIM>* const subnode) = 0;
-	virtual Node<DIM>* adjustSize() = 0;
+	virtual size_t getNumberOfContents() const override  = 0;
+	virtual size_t getMaximumNumberOfContents() const  override = 0;
+	virtual void lookup(unsigned long address, NodeAddressContent<DIM>& outContent, bool resolveSuffixIndex) const override  = 0;
+	virtual void insertAtAddress(unsigned long hcAddress, uintptr_t pointer) override  =0;
+	virtual void insertAtAddress(unsigned long hcAddress, unsigned int suffixStartBlockIndex, int id)  override = 0;
+	virtual void insertAtAddress(unsigned long hcAddress, unsigned long startSuffixBlock, int id) override  = 0;
+	virtual void insertAtAddress(unsigned long hcAddress, const Node<DIM>* const subnode) override  = 0;
+	virtual Node<DIM>* adjustSize() override  = 0;
 
 	size_t getMaxPrefixLength() const override;
 	size_t getPrefixLength() const override;

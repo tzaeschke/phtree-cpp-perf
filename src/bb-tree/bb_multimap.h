@@ -11,14 +11,11 @@
 #include <unordered_set>
 
 /*
- * From: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
+ * Wrapper for the BB-tree, see: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
  */
 
 
 namespace bb {
-
-using scalar_64_t = std::int64_t;
-const unsigned int bitLength = 64;  // 4;
 
 namespace pht = improbable::phtree;
 
@@ -27,23 +24,16 @@ namespace pht = improbable::phtree;
  */
 template <
     pht::dimension_t DIM,
-    typename T = std::uint32_t,
-    typename CONVERTER = pht::ConverterNoOp<DIM, scalar_64_t>,
-    bool POINT_KEYS = true,
-    typename DEFAULT_QUERY_TYPE = pht::QueryPoint>
+    typename T = std::uint32_t>
 class PhTreeMultiMap {
     static_assert(std::is_same_v<uint32_t, T>);
-
-    // using KeyInternal = typename CONVERTER::KeyInternal;
-    using Key = typename CONVERTER::KeyExternal;
-    static constexpr pht::dimension_t DimInternal = CONVERTER::DimInternal;
+    using Key = pht::PhPoint<DIM, float>;
 
   public:
-    // using KeyInternal = typename std::conditional_t<POINT_KEYS, Point, Region>;
     using KeyInternal = std::vector<float>;
-    using QueryBox = typename CONVERTER::QueryBoxExternal;
+    using QueryBox = pht::PhBox<DIM, float>;
 
-    explicit PhTreeMultiMap(CONVERTER converter = CONVERTER()) : converter_{converter}, size_{0} {
+    explicit PhTreeMultiMap() : size_{0} {
         tree_ = create_tree();
     }
 
@@ -145,7 +135,7 @@ class PhTreeMultiMap {
         }
     }
 
-    template <typename FILTER = pht::FilterNoOp, typename QUERY_TYPE = DEFAULT_QUERY_TYPE>
+    template <typename FILTER = pht::FilterNoOp>
     auto begin_query(const QueryBox& query_box, FILTER&& filter = FILTER()) {
         auto results = tree_->SearchRange(to_shape(query_box.min()), to_shape(query_box.max()));
         result_.clear();
@@ -197,10 +187,6 @@ class PhTreeMultiMap {
         return tree_->getCount() == 0;
     }
 
-    [[nodiscard]] const CONVERTER& converter() const {
-        return converter_;
-    }
-
   private:
     BBTree* create_tree() const {
         auto* tree = new BBTree(3);
@@ -220,8 +206,7 @@ class PhTreeMultiMap {
 //        return r;
 //    }
 
-    template <bool DUMMY = POINT_KEYS>
-    typename std::enable_if<DUMMY, KeyInternal>::type to_shape(const Key& key) const {
+    KeyInternal to_shape(const Key& key) const {
         KeyInternal p = std::vector<float>(key.begin(), key.end());
         return p;
     }
@@ -252,8 +237,7 @@ class PhTreeMultiMap {
 //        return {from_array(p.m_pCoords)};
 //    }
 
-    template <pht::dimension_t DIM2 = DIM>
-    typename std::enable_if<DIM2 == DimInternal, Key>::type from_shape(const KeyInternal& shape) const {
+    Key from_shape(const KeyInternal& shape) const {
         // Point** p = static_cast<Point**>(shape);
         Key key;
         std::copy_n(shape.begin(), DIM, key.begin());
@@ -263,36 +247,19 @@ class PhTreeMultiMap {
         return key;
     }
 
-//    template <pht::dimension_t DIM2 = DIM>
-//    typename std::enable_if<DIM2 != DimInternal, pht::PhBoxD<DIM>>::type from_shape(
-//        IShape* shape) const {
-//        Region r;
-//        shape->getMBR(r);
-//        // PhPointD<DIM> lo{*r.m_pLow};
-//        // PhPointD<DIM> hi{*r.m_pHigh};
-//        // PhBoxD<DIM> box{r.m_pLow, r.m_pHigh};
-//        pht::PhBoxD<DIM> box;
-//        for (pht::dimension_t d = 0; d < DIM; ++d) {
-//            box.min()[d] = r.m_pLow[d];
-//            box.max()[d] = r.m_pHigh[d];
-//        }
-//        return box;
-//    }
-
     BBTree* tree_;
-    CONVERTER converter_;
     size_t size_;
     std::vector<T> result_{};  /// Dirty Hack!!!! TODO
 };
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER = pht::ConverterIEEE<DIM>>
-using PhTreeMultiMapD = PhTreeMultiMap<DIM, T, CONVERTER>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapD = PhTreeMultiMap<DIM, T>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX>
-using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T, CONVERTER_BOX, false, pht::QueryIntersect>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBox = PhTreeMultiMap<DIM, T>;
 
-template <pht::dimension_t DIM, typename T, typename CONVERTER_BOX = pht::ConverterBoxIEEE<DIM>>
-using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T, CONVERTER_BOX>;
+template <pht::dimension_t DIM, typename T>
+using PhTreeMultiMapBoxD = PhTreeMultiMapBox<DIM, T>;
 
 }  // namespace si
 
