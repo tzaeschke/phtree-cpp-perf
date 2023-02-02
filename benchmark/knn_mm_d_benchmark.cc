@@ -40,10 +40,10 @@ const dimension_t DIM = 10;
 
 enum Scenario {
     BOOST_RT,
-    LSI,
-    TREE_WITH_MAP,
-    MULTI_MAP,
-    MULTI_MAP_STD,
+    LSI_RT,
+    TREE_SET,
+    PHTREE_MM,
+    PHTREE_MM_STD,
     PHTREE2,
     TS_KD,
     TS_QT,
@@ -66,19 +66,19 @@ using TestMap = typename std::conditional_t<
     SCENARIO == BOOST_RT,
     b::PhTreeMultiMapD<DIM, payload_t>,
     typename std::conditional_t<
-        //        SCENARIO == LSI,
+        //        SCENARIO == LSI_RT,
         //        si::PhTreeMultiMapD<DIM, payload_t>,
         //        typename std::conditional_t<
-        SCENARIO == TREE_WITH_MAP,
+        SCENARIO == TREE_SET,
         PhTreeD<DIM, BucketType, CONVERTER<DIM>>,
         typename std::conditional_t<
-            SCENARIO == MULTI_MAP,
+            SCENARIO == PHTREE_MM,
             PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, b_plus_tree_hash_set<payload_t>>,
             typename std::conditional_t<
                 SCENARIO == PHTREE2,
                 PhTreeMultiMap2D<DIM, payload_t>,
                 typename std::conditional_t<
-                    SCENARIO == MULTI_MAP_STD,
+                    SCENARIO == PHTREE_MM_STD,
                     PhTreeMultiMap<DIM, payload_t, CONVERTER<DIM>, BucketType>,
                     typename std::conditional_t<
                         //                    SCENARIO == BB,
@@ -146,9 +146,8 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
 template <
     dimension_t DIM,
     Scenario SCENARIO,
-    std::enable_if_t<(SCENARIO == Scenario::TREE_WITH_MAP), int> = 0>
-void InsertEntry(
-    TestMap<Scenario::TREE_WITH_MAP, DIM>& tree, const std::vector<TestPoint>& points) {
+    std::enable_if_t<(SCENARIO == Scenario::TREE_SET), int> = 0>
+void InsertEntry(TestMap<Scenario::TREE_SET, DIM>& tree, const std::vector<TestPoint>& points) {
     for (size_t i = 0; i < points.size(); ++i) {
         BucketType& bucket = tree.emplace(points[i]).first;
         bucket.emplace((payload_t)i);
@@ -167,8 +166,7 @@ template <
     dimension_t DIM,
     Scenario SCN,
     std::enable_if_t<
-        (SCN != Scenario::TREE_WITH_MAP && SCN != Scenario::FLANN_KD &&
-         SCN != Scenario::FLANN_KD_S),
+        (SCN != Scenario::TREE_SET && SCN != Scenario::FLANN_KD && SCN != Scenario::FLANN_KD_S),
         int> = 0>
 void InsertEntry(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
     for (size_t i = 0; i < points.size(); ++i) {
@@ -259,7 +257,7 @@ void BoostRT(benchmark::State& state, Arguments&&... arguments) {
 
 // template <typename... Arguments>
 // void LibSI(benchmark::State& state, Arguments&&... arguments) {
-//     IndexBenchmark<DIM, Scenario::LSI> benchmark{state, arguments...};
+//     IndexBenchmark<DIM, Scenario::LSI_RT> benchmark{state, arguments...};
 //     benchmark.Benchmark(state);
 // }
 //
@@ -270,141 +268,141 @@ void BoostRT(benchmark::State& state, Arguments&&... arguments) {
 //}
 
 template <typename... Arguments>
-void KDTree3D(benchmark::State& state, Arguments&&... arguments) {
+void TinspinKDTree(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::TS_KD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void Quadtree3D(benchmark::State& state, Arguments&&... arguments) {
+void TinspinQuadtree(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::TS_QT> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void FlannKD3D(benchmark::State& state, Arguments&&... arguments) {
+void FlannKD(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::FLANN_KD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void FlannKDS3D(benchmark::State& state, Arguments&&... arguments) {
+void FlannKDS(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::FLANN_KD_S> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
 void PhTree3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<DIM, Scenario::TREE_WITH_MAP> benchmark{state, arguments...};
+    IndexBenchmark<DIM, Scenario::TREE_SET> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void PhTreeMultiMap3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<DIM, Scenario::MULTI_MAP> benchmark{state, arguments...};
+void PhTreeMM(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<DIM, Scenario::PHTREE_MM> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void PhTreeMultiMap2_3D(benchmark::State& state, Arguments&&... arguments) {
+void PhTreeMM2(benchmark::State& state, Arguments&&... arguments) {
     IndexBenchmark<DIM, Scenario::PHTREE2> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 template <typename... Arguments>
-void PhTreeMultiMapStd3D(benchmark::State& state, Arguments&&... arguments) {
-    IndexBenchmark<DIM, Scenario::MULTI_MAP_STD> benchmark{state, arguments...};
+void PhTreeMMStdSet(benchmark::State& state, Arguments&&... arguments) {
+    IndexBenchmark<DIM, Scenario::PHTREE_MM_STD> benchmark{state, arguments...};
     benchmark.Benchmark(state);
 }
 
 // index type, scenario name, data_type, num_entities, query_result_size
-// PhTree 3D CUBE
-
-BENCHMARK_CAPTURE(PhTree3D, KNN_1, 1)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(PhTree3D, KNN_10, 10)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
 
 // PhTree multi-map 1.0
-BENCHMARK_CAPTURE(PhTreeMultiMap3D, KNN_1, 1)
+BENCHMARK_CAPTURE(PhTreeMM, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(PhTreeMultiMap3D, KNN_10, 10)
+BENCHMARK_CAPTURE(PhTreeMM, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // Multimap 2.0
-BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, KNN_1, 1)
+BENCHMARK_CAPTURE(PhTreeMM2, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(PhTreeMultiMap2_3D, KNN_10, 10)
+BENCHMARK_CAPTURE(PhTreeMM2, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-// FLANN KD-tree
-BENCHMARK_CAPTURE(FlannKD3D, KNN_1, 1)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(FlannKD3D, KNN_10, 10)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // FLANN KD-tree Single
-BENCHMARK_CAPTURE(FlannKDS3D, KNN_1, 1)
+BENCHMARK_CAPTURE(FlannKDS, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(FlannKDS3D, KNN_10, 10)
+BENCHMARK_CAPTURE(FlannKDS, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // KD-tree
-BENCHMARK_CAPTURE(KDTree3D, KNN_1, 1)
+BENCHMARK_CAPTURE(TinspinKDTree, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(KDTree3D, KNN_10, 10)
+BENCHMARK_CAPTURE(TinspinKDTree, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // Quadtree
-BENCHMARK_CAPTURE(Quadtree3D, KNN_1, 1)
+BENCHMARK_CAPTURE(TinspinQuadtree, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(Quadtree3D, KNN_10, 10)
+BENCHMARK_CAPTURE(TinspinQuadtree, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 // Quadtree
 BENCHMARK_CAPTURE(BoostRT, KNN_1, 1)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BoostRT, KNN_10, 10)
     ->RangeMultiplier(10)
-    ->Ranges({{1000, 100 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// PhTree 3D with set
+BENCHMARK_CAPTURE(PhTree3D, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(PhTree3D, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// FLANN KD-tree
+BENCHMARK_CAPTURE(FlannKD, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(FlannKD, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();
