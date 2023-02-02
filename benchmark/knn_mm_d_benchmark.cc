@@ -36,7 +36,7 @@ using namespace improbable::phtree::phbenchmark;
 namespace {
 
 const double GLOBAL_MAX = 10000;
-const dimension_t DIM = 10;
+const dimension_t DIM = 3;
 
 enum Scenario {
     BOOST_RT,
@@ -339,17 +339,6 @@ BENCHMARK_CAPTURE(PhTreeMM2, KNN_10, 10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-// FLANN KD-tree Single
-BENCHMARK_CAPTURE(FlannKDS, KNN_1, 1)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(FlannKDS, KNN_10, 10)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
 // KD-tree
 BENCHMARK_CAPTURE(TinspinKDTree, KNN_1, 1)
     ->RangeMultiplier(10)
@@ -372,13 +361,24 @@ BENCHMARK_CAPTURE(TinspinQuadtree, KNN_10, 10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
-// Quadtree
+// Boost RTree
 BENCHMARK_CAPTURE(BoostRT, KNN_1, 1)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BoostRT, KNN_10, 10)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+// FLANN KD-tree Single
+BENCHMARK_CAPTURE(FlannKDS, KNN_1, 1)
+    ->RangeMultiplier(10)
+    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(FlannKDS, KNN_10, 10)
     ->RangeMultiplier(10)
     ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
     ->Unit(benchmark::kMillisecond);
