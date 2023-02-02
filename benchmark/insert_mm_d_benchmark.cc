@@ -114,7 +114,9 @@ template <dimension_t DIM, Scenario S>
 IndexBenchmark<DIM, S>::IndexBenchmark(benchmark::State& state)
 : data_type_{static_cast<TestGenerator>(state.range(1))}
 , num_entities_(state.range(0))
-, points_d_(state.range(0)), points_f_(), values_() {
+, points_d_(state.range(0))
+, points_f_()
+, values_() {
     logging::SetupDefaultLogging();
     SetupWorld(state);
 }
@@ -154,25 +156,6 @@ void IndexBenchmark<DIM, SCN>::SetupWorld(benchmark::State& state) {
     logging::info("World setup complete.");
 }
 
-//template <
-//    dimension_t DIM,
-//    Scenario SCN,
-//    std::enable_if_t<(SCN != Scenario::BB && SCN != Scenario::FLANN_KD_S), int> = 0>
-//void InsertEntries(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
-//    for (size_t i = 0; i < points.size(); ++i) {
-//        auto& p = points[i];
-//        tree.emplace(p, (payload_t)i);
-//    }
-//}
-//
-//template <
-//    dimension_t DIM,
-//    Scenario SCN,
-//    std::enable_if_t<(SCN == Scenario::BB || SCN == Scenario::FLANN_KD_S), int> = 0>
-//void InsertEntries(TestMap<SCN, DIM>& tree, const std::vector<TestPoint>& points) {
-//    tree.load(points);
-//}
-//
 template <
     dimension_t DIM,
     Scenario SCN,
@@ -204,10 +187,6 @@ void InsertEntries(TestMap<SCN, DIM>& tree, const IndexBenchmark<DIM, SCN>& data
 template <dimension_t DIM, Scenario SCN>
 void IndexBenchmark<DIM, SCN>::Insert(benchmark::State& state, Index& tree) {
     InsertEntries<DIM, SCN>(tree, *this);
-    //    for (size_t i = 0; i < num_entities_; ++i) {
-    //        auto& p = points_[i];
-    //        tree.emplace(p, (payload_t)i);
-    //    }
 
     state.counters["total_put_count"] += num_entities_;
     state.counters["put_rate"] += num_entities_;

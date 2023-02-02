@@ -37,6 +37,7 @@ PH-Tree
     - allow custom std::equals()?
   - return std::pair<Key&, Val&>  /  struct <Key&, Val&, distance>
   - Use /** comment format for functions/classes (?)
+  - emplace() to return iterator (or similar) i.o. pair!
 
 
 General
