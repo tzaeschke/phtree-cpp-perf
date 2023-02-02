@@ -387,6 +387,9 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
+        "//src/boost:ph-boost-mm",
+        "//src/lsi:ph-lsi-mm",
+        "//src/flann:ph-flann",
         "//src/tinspin",
         "@gbenchmark//:benchmark",
         "@phtree",

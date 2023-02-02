@@ -942,7 +942,7 @@ class KDTree {
      * Get the number of key-value pairs in the tree.
      * @return the size
      */
-    int size() {
+    size_t size() {
         return size_;
     }
 

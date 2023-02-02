@@ -68,3 +68,79 @@ PhTreeMMEraseEmplace3D/UPDATE_1000/100000/7           0.623 ms        0.623 ms  
 PhTreeMMEraseEmplace3D/UPDATE_1000/1000000/7          0.912 ms        0.912 ms          855            855k  1096.93k/s
 
 
+2023-02-02 - gcc 12.1
+
+Run on (8 X 4600.59 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 12288 KiB (x1)
+Load Average: 1.03, 1.38, 1.52
+------------------------------------------------------------------------------------------------------------
+Benchmark                                      Time             CPU   Iterations total_upd_count update_rate
+------------------------------------------------------------------------------------------------------------
+PhTreeMMBpt/UPDATE_1000/1000/4             0.049 ms        0.049 ms        12488         12.488M  20.3536M/s
+PhTreeMMBpt/UPDATE_1000/10000/4            0.079 ms        0.079 ms         8130           8.13M  12.7095M/s
+PhTreeMMBpt/UPDATE_1000/100000/4           0.262 ms        0.262 ms         2682          2.682M  3.81406M/s
+PhTreeMMBpt/UPDATE_1000/1000000/4          0.416 ms        0.416 ms         1673          1.673M  2.40319M/s
+PhTreeMMBpt/UPDATE_1000/1000/7             0.127 ms        0.127 ms         4909          4.909M  7.88669M/s
+PhTreeMMBpt/UPDATE_1000/10000/7            0.194 ms        0.194 ms         3421          3.421M  5.16145M/s
+PhTreeMMBpt/UPDATE_1000/100000/7           0.543 ms        0.543 ms         1000           1000k   1.8425M/s
+PhTreeMMBpt/UPDATE_1000/1000000/7          0.789 ms        0.789 ms          986            986k  1.26736M/s
+PhtreeMM2/UPDATE_1000/1000/4               0.096 ms        0.096 ms         7073          7.073M  10.3841M/s
+PhtreeMM2/UPDATE_1000/10000/4              0.171 ms        0.171 ms         3964          3.964M  5.83672M/s
+PhtreeMM2/UPDATE_1000/100000/4             0.286 ms        0.286 ms         2477          2.477M  3.49258M/s
+PhtreeMM2/UPDATE_1000/1000000/4            0.624 ms        0.624 ms         1122          1.122M   1.6017M/s
+PhtreeMM2/UPDATE_1000/1000/7               0.127 ms        0.127 ms         5022          5.022M  7.88339M/s
+PhtreeMM2/UPDATE_1000/10000/7              0.261 ms        0.261 ms         2545          2.545M  3.82849M/s
+PhtreeMM2/UPDATE_1000/100000/7             0.529 ms        0.529 ms         1000           1000k   1.8897M/s
+PhtreeMM2/UPDATE_1000/1000000/7             1.04 ms         1.04 ms          745            745k  959.947k/s
+TinspinKDTree/UPDATE_1000/1000/4           0.246 ms        0.246 ms         3032          3.032M     4.06M/s
+TinspinKDTree/UPDATE_1000/10000/4          0.338 ms        0.338 ms         2412          2.412M  2.95913M/s
+TinspinKDTree/UPDATE_1000/100000/4         0.397 ms        0.397 ms         1801          1.801M  2.51943M/s
+TinspinKDTree/UPDATE_1000/1000000/4         1.06 ms         1.06 ms          667            667k  947.331k/s
+TinspinKDTree/UPDATE_1000/1000/7           0.169 ms        0.169 ms         4259          4.259M  5.91746M/s
+TinspinKDTree/UPDATE_1000/10000/7          0.323 ms        0.323 ms         2227          2.227M  3.09532M/s
+TinspinKDTree/UPDATE_1000/100000/7         0.471 ms        0.471 ms         1488          1.488M  2.12284M/s
+TinspinKDTree/UPDATE_1000/1000000/7         1.07 ms         1.07 ms          685            685k  935.817k/s
+TinspinQuadtree/UPDATE_1000/1000/4         0.082 ms        0.082 ms         9886          9.886M  12.2484M/s
+TinspinQuadtree/UPDATE_1000/10000/4        0.175 ms        0.175 ms         4138          4.138M  5.71697M/s
+TinspinQuadtree/UPDATE_1000/100000/4       0.291 ms        0.291 ms         2469          2.469M  3.43788M/s
+TinspinQuadtree/UPDATE_1000/1000000/4      0.633 ms        0.633 ms         1110           1.11M  1.57998M/s
+TinspinQuadtree/UPDATE_1000/1000/7         0.113 ms        0.113 ms         5452          5.452M  8.86392M/s
+TinspinQuadtree/UPDATE_1000/10000/7        0.298 ms        0.298 ms         2223          2.223M  3.35116M/s
+TinspinQuadtree/UPDATE_1000/100000/7       0.579 ms        0.579 ms         1000           1000k  1.72851M/s
+TinspinQuadtree/UPDATE_1000/1000000/7       1.21 ms         1.21 ms          623            623k  826.184k/s
+BoostRT/UPDATE_1000/1000/4                 0.654 ms        0.654 ms         1178          1.178M  1.52818M/s
+BoostRT/UPDATE_1000/10000/4                1.000 ms        0.999 ms          696            696k  1000.51k/s
+BoostRT/UPDATE_1000/100000/4                1.35 ms         1.35 ms          469            469k  739.896k/s
+BoostRT/UPDATE_1000/1000000/4               2.32 ms         2.32 ms          295            295k   430.25k/s
+BoostRT/UPDATE_1000/1000/7                 0.412 ms        0.412 ms         1302          1.302M  2.42832M/s
+BoostRT/UPDATE_1000/10000/7                0.788 ms        0.788 ms          638            638k  1.26864M/s
+BoostRT/UPDATE_1000/100000/7                1.61 ms         1.61 ms          388            388k  619.544k/s
+BoostRT/UPDATE_1000/1000000/7               2.34 ms         2.34 ms          294            294k  427.165k/s
+LSI_RT/UPDATE_1000/1000/4                   15.6 ms         15.6 ms           48             48k  64.1065k/s
+LSI_RT/UPDATE_1000/10000/4                  25.1 ms         25.1 ms           30             30k  39.8748k/s
+LSI_RT/UPDATE_1000/100000/4                 32.2 ms         32.2 ms           23             23k    31.01k/s
+LSI_RT/UPDATE_1000/1000000/4                51.3 ms         51.3 ms           14             14k  19.4998k/s
+LSI_RT/UPDATE_1000/1000/7                   13.4 ms         13.4 ms           47             47k  74.7823k/s
+LSI_RT/UPDATE_1000/10000/7                  21.0 ms         21.0 ms           32             32k  47.5241k/s
+LSI_RT/UPDATE_1000/100000/7                 33.6 ms         33.6 ms           21             21k  29.7489k/s
+LSI_RT/UPDATE_1000/1000000/7                53.9 ms         53.9 ms           13             13k   18.565k/s
+PhTreeMMStdSet/UPDATE_1000/1000/4          0.049 ms        0.049 ms        13289         13.289M  20.5724M/s
+PhTreeMMStdSet/UPDATE_1000/10000/4         0.090 ms        0.091 ms         7093          7.093M  11.0442M/s
+PhTreeMMStdSet/UPDATE_1000/100000/4        0.273 ms        0.273 ms         2495          2.495M  3.65933M/s
+PhTreeMMStdSet/UPDATE_1000/1000000/4       0.458 ms        0.458 ms         1620           1.62M  2.18503M/s
+PhTreeMMStdSet/UPDATE_1000/1000/7          0.129 ms        0.129 ms         4839          4.839M  7.77488M/s
+PhTreeMMStdSet/UPDATE_1000/10000/7         0.233 ms        0.233 ms         2898          2.898M  4.29179M/s
+PhTreeMMStdSet/UPDATE_1000/100000/7        0.589 ms        0.589 ms         1389          1.389M  1.69877M/s
+PhTreeMMStdSet/UPDATE_1000/1000000/7       0.836 ms        0.836 ms          936            936k  1.19635M/s
+PhTreeMM2_ErEmp/UPDATE_1000/1000/4         0.203 ms        0.203 ms         3332          3.332M  4.93109M/s
+PhTreeMM2_ErEmp/UPDATE_1000/10000/4        0.329 ms        0.329 ms         2093          2.093M  3.03828M/s
+PhTreeMM2_ErEmp/UPDATE_1000/100000/4       0.503 ms        0.503 ms         1000           1000k  1.98764M/s
+PhTreeMM2_ErEmp/UPDATE_1000/1000000/4      0.911 ms        0.911 ms          773            773k  1097.59k/s
+PhTreeMM2_ErEmp/UPDATE_1000/1000/7         0.241 ms        0.241 ms         2798          2.798M  4.15185M/s
+PhTreeMM2_ErEmp/UPDATE_1000/10000/7        0.424 ms        0.424 ms         1632          1.632M  2.35711M/s
+PhTreeMM2_ErEmp/UPDATE_1000/100000/7       0.730 ms        0.730 ms         1030           1030k  1.37011M/s
+PhTreeMM2_ErEmp/UPDATE_1000/1000000/7       1.28 ms         1.28 ms          602            602k  783.356k/s
