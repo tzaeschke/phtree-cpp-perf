@@ -56,3 +56,44 @@ TinspinKDTree/WEB/1000/3                    0.003 ms        0.003 ms       20633
 TinspinKDTree/WEB/10000/3                   0.005 ms        0.005 ms       128950           3.0197 183.294k/s  553.492k/s
 TinspinKDTree/WEB/100000/3                  0.007 ms        0.007 ms       107164          3.04998 152.629k/s  465.516k/s
 TinspinKDTree/WEB/1000000/3                 0.014 ms        0.015 ms        47858          3.36495 68.8684k/s  231.739k/s
+
+
+
+2023-02-02 - gcc 12.1
+
+PhTreeMM/WQ/1000/3                          0.000 ms        0.000 ms      1719144          2.99707 2.50713M/s
+PhTreeMM/WQ/10000/3                         0.000 ms        0.000 ms      1530907          3.01965 2.20227M/s
+PhTreeMM/WQ/100000/3                        0.001 ms        0.001 ms       863437          3.05014 1.24858M/s
+PhTreeMM/WQ/1000000/3                       0.001 ms        0.001 ms       533605          3.36052 756.841k/s
+PhTreeMM2/WEB/1000/3                        0.000 ms        0.000 ms      1948441          2.99708 2.76348M/s
+PhTreeMM2/WEB/10000/3                       0.000 ms        0.000 ms      1554293          3.01963 2.21088M/s
+PhTreeMM2/WEB/100000/3                      0.001 ms        0.001 ms      1154971          3.04997 1.64656M/s
+PhTreeMM2/WEB/1000000/3                     0.001 ms        0.001 ms       542388          3.36064 776.519k/s
+TinspinKDTree/WEB/1000/3                    0.002 ms        0.002 ms       296133          2.99719 424.724k/s
+TinspinKDTree/WEB/10000/3                   0.004 ms        0.004 ms       177361          3.01975 253.677k/s
+TinspinKDTree/WEB/100000/3                  0.005 ms        0.005 ms       140178          3.05029 201.966k/s
+TinspinKDTree/WEB/1000000/3                 0.012 ms        0.012 ms        56507          3.36489 80.9493k/s
+TinspinQuadtree/WEB/1000/3                  0.000 ms        0.000 ms      2118971          2.99709 3.05013M/s
+TinspinQuadtree/WEB/10000/3                 0.001 ms        0.001 ms      1350584           3.0197 1.93586M/s
+TinspinQuadtree/WEB/100000/3                0.001 ms        0.001 ms       929503          3.05015 1.32262M/s
+TinspinQuadtree/WEB/1000000/3               0.002 ms        0.002 ms       430561          3.36083  614.73k/s
+BoostRT/WEB/1000/3                          0.000 ms        0.000 ms      1893760          2.99708 2.69746M/s
+BoostRT/WEB/10000/3                         0.001 ms        0.001 ms      1195737          3.01972 1.72191M/s
+BoostRT/WEB/100000/3                        0.001 ms        0.001 ms       550439          3.05009 784.176k/s
+BoostRT/WEB/1000000/3                       0.004 ms        0.004 ms       189060          3.36276 271.752k/s
+FlannKDS/WEB/1000/3                         0.001 ms        0.001 ms      1354654          2.99704  1.9592M/s
+FlannKDS/WEB/10000/3                        0.001 ms        0.001 ms      1122088           3.0198 1.59923M/s
+FlannKDS/WEB/100000/3                       0.001 ms        0.001 ms       894195          3.05016 1.28678M/s
+FlannKDS/WEB/1000000/3                      0.002 ms        0.002 ms       445666          3.36092 641.213k/s
+BBTree/WEB/1000/3                           0.001 ms        0.001 ms       974482          2.99704 1.36465M/s
+BBTree/WEB/10000/3                          0.001 ms        0.001 ms       738640          3.01972 1086.76k/s
+BBTree/WEB/100000/3                         0.001 ms        0.001 ms       580190           3.0502 836.204k/s
+BBTree/WEB/1000000/3                        0.004 ms        0.004 ms       198732          3.36296 279.992k/s
+LsiRT/WEB/1000/3                            0.002 ms        0.002 ms       365037           2.9971 509.293k/s
+LsiRT/WEB/10000/3                           0.003 ms        0.003 ms       234056          3.01969 336.565k/s
+LsiRT/WEB/100000/3                          0.007 ms        0.007 ms        96540          3.04963 140.769k/s
+LsiRT/WEB/1000000/3                         0.022 ms        0.022 ms        32224          3.36637 46.0935k/s
+PhTreeMultiMapMultiply3D/WEB/1000/3         0.000 ms        0.000 ms      1686012          2.99708 2.39658M/s
+PhTreeMultiMapMultiply3D/WEB/10000/3        0.000 ms        0.000 ms      1517456          3.01968 2.18279M/s
+PhTreeMultiMapMultiply3D/WEB/100000/3       0.001 ms        0.001 ms       876574          3.05013 1.24629M/s
+PhTreeMultiMapMultiply3D/WEB/1000000/3      0.001 ms        0.001 ms       524166          3.36076 751.365k/s

@@ -39,7 +39,7 @@ using namespace improbable::phtree::phbenchmark;
 namespace {
 
 const double GLOBAL_MAX = 10000;
-const double AVG_QUERY_RESULT_SIZE = 3;
+const double AVG_QUERY_RESULT_SIZE = 100;
 
 enum Scenario {
     BOOST_RT,
@@ -190,24 +190,6 @@ void IndexBenchmark<DIM, SCENARIO>::Benchmark(benchmark::State& state) {
         QueryWorld(state, query);
     }
 }
-
-// template <
-//     dimension_t DIM,
-//     Scenario SCENARIO,
-//     std::enable_if_t<(SCENARIO != Scenario::TREE_SET), int> = 0>
-// void InsertEntry(TestMap<SCENARIO, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//     tree.emplace(point, data);
-// }
-//
-// template <
-//     dimension_t DIM,
-//     Scenario SCENARIO,
-//     std::enable_if_t<(SCENARIO == Scenario::TREE_SET), int> = 0>
-// void InsertEntry(
-//     TestMap<Scenario::TREE_SET, DIM>& tree, const TestPoint& point, const payload_t& data) {
-//     BucketType& bucket = tree.emplace(point).first;
-//     bucket.emplace(data);
-// }
 
 template <
     dimension_t DIM,

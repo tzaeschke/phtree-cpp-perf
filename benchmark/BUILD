@@ -303,6 +303,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
+        "//src/bb-tree:ph-bb-tree",
         "//src/boost:ph-boost-mm",
         "//src/flann:ph-flann",
         "//src/lsi:ph-lsi-mm",
