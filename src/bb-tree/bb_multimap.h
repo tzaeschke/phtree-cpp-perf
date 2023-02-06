@@ -63,7 +63,7 @@ class PhTreeMultiMap {
         size_ += keys.size() / DIM;  // TODO this is bad..!
     }
 
-    template <typename ITERATOR, typename... Args>
+    template <typename ITERATOR>
     std::pair<T&, bool> emplace_hint(const ITERATOR&, const Key& key, const T& id) {
         emplace(key, id);
     }

@@ -294,7 +294,7 @@ class PhTreeMultiMap {
         tree_.insert(std::make_pair(converter_.pre(key), id));
     }
 
-    template <typename ITERATOR, typename... Args>
+    template <typename ITERATOR>
     std::pair<T&, bool> emplace_hint(const ITERATOR&, const Key& key, const T& id) {
         emplace(key, id);
     }

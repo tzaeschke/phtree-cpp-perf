@@ -733,7 +733,6 @@ class QIterator : public QIteratorBase<Key, T> {
     using IterNodeT = decltype(std::vector<QNode<Key, T>*>().cbegin());
     using IterEntryT = decltype(std::vector<QEntry<Key, T>>().cbegin());
     using EntryInnerT = std::pair<QNode<Key, T>*, IterNodeT>;
-    const QNode<Key, T>* root_;
 
     std::stack<EntryInnerT> stack_;  // TODO backport, Why is this a Deque????????
     IterEntryT iter_leaf_;
@@ -745,7 +744,6 @@ class QIterator : public QIteratorBase<Key, T> {
     template <typename F = FilterNoOp>
     QIterator(QNode<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
     : QIteratorBase<Key, T>()
-    , root_{root}
     , stack_{}
     , min(min)
     , max(max)
@@ -840,9 +838,7 @@ class QIterator : public QIteratorBase<Key, T> {
 
 template <typename Key, typename T, typename FILTER>
 class QIteratorFind : public QIteratorBase<Key, T> {
-    using IterNodeT = decltype(std::vector<QNode<Key, T>>().begin());
     using IterEntryT = decltype(std::vector<QEntry<Key, T>>().begin());
-    using EntryInnerT = std::pair<QNode<Key, T>*, IterNodeT>;
 
     IterEntryT iter_;
     QNode<Key, T>* leaf_;
@@ -911,7 +907,6 @@ class QIteratorEnd : public QIteratorBase<Key, T> {
 template <typename Key, typename T, typename DISTANCE, typename FILTER>
 class QIteratorKnnHS : public QIteratorBase<Key, T> {
     static constexpr dimension_t DIM = 3;
-    using EntryT = QEntry<Key, T>;
     struct EntryDistT {
         double first;                  // distance
         const QEntry<Key, T>* second;  // entry
@@ -921,7 +916,7 @@ class QIteratorKnnHS : public QIteratorBase<Key, T> {
         EntryDistT(double dist, const QNode<Key, T>* node)
         : first{dist}, second{nullptr}, node{node} {}
 
-        bool is_node() const {
+        [[nodiscard]] bool is_node() const {
             return node != nullptr;
         }
     };
