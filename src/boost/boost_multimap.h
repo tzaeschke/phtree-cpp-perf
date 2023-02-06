@@ -440,12 +440,16 @@ class PhTreeMultiMap {
     auto begin_knn_query(
         size_t min_results,
         const Key& center,
-        DISTANCE&&  // distance_function = DISTANCE(),
-        // FILTER&& filter = FILTER()
-    ) const {
-        return IteratorNormal<ITER, PHTREE>(tree_.qbegin(bgi::nearest(
-            converter_.pre(center), min_results)));  // bgi::satisfies([&](value const& v) {return
-                                                     // bg::distance(v.first, sought) < 2;}),
+        DISTANCE&& dist_fn = DISTANCE(),
+        FILTER&& filter = FILTER()) const {
+        (void)dist_fn;
+        return IteratorNormal<ITER, PHTREE>(tree_.qbegin(
+            bgi::nearest(converter_.pre(center), min_results)
+            && bgi::satisfies([&](auto const& v) {
+                   // KeyInternal k{};  // TODO
+                   KeyInternal k = converter_.post(v.first);
+                   return filter.IsBucketEntryValid(k, v.second);
+               })));
     }
 
     auto end() const {
