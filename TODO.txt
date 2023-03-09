@@ -9,7 +9,7 @@ KD-tree
 - fix function naming etc
 - Backport fixes to Java
 
-QUadtree
+Quadtree
 ========
 - Fix memory leaks
 - Make fit for DIM != 3
@@ -38,6 +38,8 @@ PH-Tree
   - return std::pair<Key&, Val&>  /  struct <Key&, Val&, distance>
   - Use /** comment format for functions/classes (?)
   - emplace() to return iterator (or similar) i.o. pair!
+  - remove post-increment iterators!
+  - Change distance functions to avoid sqrt() for internal distances (e.g. in kNN)
 
 
 General
