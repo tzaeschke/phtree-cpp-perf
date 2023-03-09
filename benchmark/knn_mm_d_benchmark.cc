@@ -36,7 +36,7 @@ using namespace improbable::phtree::phbenchmark;
 namespace {
 
 const double GLOBAL_MAX = 10000;
-const dimension_t DIM = 3;
+const dimension_t DIM = 10;
 
 enum Scenario {
     BOOST_RT,

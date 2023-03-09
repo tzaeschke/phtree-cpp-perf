@@ -467,3 +467,287 @@ FlannKD/KNN_10/1000/7                 0.005 ms        0.005 ms       100000     
 FlannKD/KNN_10/10000/7                0.032 ms        0.032 ms        21625               10 31.2446k/s  312.446k/s
 FlannKD/KNN_10/100000/7               0.100 ms        0.100 ms         5919               10 9.95497k/s  99.5497k/s
 FlannKD/KNN_10/1000000/7              0.932 ms        0.932 ms          917               10  1073.35/s  10.7335k/s
+
+
+2023-03-09 Clang 14.0
+=================
+Run on (8 X 4600.13 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 12288 KiB (x1)
+Load Average: 0.98, 1.05, 0.87
+-------------------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations avg_result_count query_rate result_rate
+-------------------------------------------------------------------------------------------------------------------
+PhTreeMM/KNN_1/1000/4                 0.006 ms        0.006 ms       106572                1 160.335k/s  160.335k/s
+PhTreeMM/KNN_1/10000/4                0.013 ms        0.013 ms        53064                1 74.8506k/s  74.8506k/s
+PhTreeMM/KNN_1/100000/4               0.022 ms        0.022 ms        32260                1 45.8494k/s  45.8494k/s
+PhTreeMM/KNN_1/1000000/4              0.031 ms        0.031 ms        22395                1 31.8912k/s  31.8912k/s
+PhTreeMM/KNN_1/1000/7                 0.001 ms        0.001 ms       707945                1 996.757k/s  996.757k/s
+PhTreeMM/KNN_1/10000/7                0.002 ms        0.002 ms       280328                1 401.436k/s  401.436k/s
+PhTreeMM/KNN_1/100000/7               0.009 ms        0.009 ms        75606                1 107.935k/s  107.935k/s
+PhTreeMM/KNN_1/1000000/7              0.016 ms        0.016 ms        42381                1 60.6827k/s  60.6827k/s
+PhTreeMM/KNN_10/1000/4                0.009 ms        0.009 ms        73387               10 109.466k/s  1094.66k/s
+PhTreeMM/KNN_10/10000/4               0.018 ms        0.018 ms        38031               10 54.3468k/s  543.468k/s
+PhTreeMM/KNN_10/100000/4              0.028 ms        0.028 ms        24915               10 35.3478k/s  353.478k/s
+PhTreeMM/KNN_10/1000000/4             0.039 ms        0.039 ms        17775               10 25.4285k/s  254.285k/s
+PhTreeMM/KNN_10/1000/7                0.003 ms        0.003 ms       258084               10 366.786k/s  3.66786M/s
+PhTreeMM/KNN_10/10000/7               0.004 ms        0.004 ms       159653               10 228.052k/s  2.28052M/s
+PhTreeMM/KNN_10/100000/7              0.011 ms        0.011 ms        63341               10 90.5929k/s  905.929k/s
+PhTreeMM/KNN_10/1000000/7             0.019 ms        0.019 ms        37309               10 53.2282k/s  532.282k/s
+PhTreeMM2/KNN_1/1000/4                0.004 ms        0.004 ms       169739                1 241.205k/s  241.205k/s
+PhTreeMM2/KNN_1/10000/4               0.012 ms        0.012 ms        57066                1 81.9508k/s  81.9508k/s
+PhTreeMM2/KNN_1/100000/4              0.021 ms        0.021 ms        33676                1 47.6821k/s  47.6821k/s
+PhTreeMM2/KNN_1/1000000/4             0.031 ms        0.031 ms        21595                1    32.1k/s     32.1k/s
+PhTreeMM2/KNN_1/1000/7                0.001 ms        0.001 ms       856526                1 1.22435M/s  1.22435M/s
+PhTreeMM2/KNN_1/10000/7               0.002 ms        0.002 ms       304326                1 437.242k/s  437.242k/s
+PhTreeMM2/KNN_1/100000/7              0.009 ms        0.009 ms        75614                1 108.328k/s  108.328k/s
+PhTreeMM2/KNN_1/1000000/7             0.017 ms        0.017 ms        41606                1 58.9542k/s  58.9542k/s
+PhTreeMM2/KNN_10/1000/4               0.006 ms        0.006 ms       114455               10 165.134k/s  1.65134M/s
+PhTreeMM2/KNN_10/10000/4              0.017 ms        0.017 ms        41394               10 59.1903k/s  591.903k/s
+PhTreeMM2/KNN_10/100000/4             0.026 ms        0.026 ms        26515               10 38.0706k/s  380.706k/s
+PhTreeMM2/KNN_10/1000000/4            0.038 ms        0.038 ms        18657               10 26.5682k/s  265.682k/s
+PhTreeMM2/KNN_10/1000/7               0.002 ms        0.002 ms       349006               10 499.693k/s  4.99693M/s
+PhTreeMM2/KNN_10/10000/7              0.003 ms        0.003 ms       204000               10 292.224k/s  2.92224M/s
+PhTreeMM2/KNN_10/100000/7             0.011 ms        0.011 ms        64719               10 92.5535k/s  925.535k/s
+PhTreeMM2/KNN_10/1000000/7            0.019 ms        0.019 ms        36092               10 51.3915k/s  513.915k/s
+TinspinKDTree/KNN_1/1000/4            0.015 ms        0.015 ms        46445                1 66.4382k/s  66.4382k/s
+TinspinKDTree/KNN_1/10000/4           0.075 ms        0.075 ms         9190                1 13.3144k/s  13.3144k/s
+TinspinKDTree/KNN_1/100000/4          0.325 ms        0.325 ms         2152                1 3.07807k/s  3.07807k/s
+TinspinKDTree/KNN_1/1000000/4          1.49 ms         1.49 ms          463                1  669.812/s   669.812/s
+TinspinKDTree/KNN_1/1000/7            0.028 ms        0.028 ms        24903                1 35.2657k/s  35.2657k/s
+TinspinKDTree/KNN_1/10000/7           0.116 ms        0.116 ms         6032                1 8.64259k/s  8.64259k/s
+TinspinKDTree/KNN_1/100000/7          0.516 ms        0.516 ms         1369                1 1.93893k/s  1.93893k/s
+TinspinKDTree/KNN_1/1000000/7          2.41 ms         2.41 ms          292                1  415.028/s   415.028/s
+TinspinKDTree/KNN_10/1000/4           0.017 ms        0.017 ms        40925               10 58.7321k/s  587.321k/s
+TinspinKDTree/KNN_10/10000/4          0.077 ms        0.077 ms         8988               10 12.9191k/s  129.191k/s
+TinspinKDTree/KNN_10/100000/4         0.330 ms        0.330 ms         2105               10   3.031k/s    30.31k/s
+TinspinKDTree/KNN_10/1000000/4         1.49 ms         1.49 ms          470               10  670.766/s  6.70766k/s
+TinspinKDTree/KNN_10/1000/7           0.030 ms        0.030 ms        23637               10 33.7674k/s  337.674k/s
+TinspinKDTree/KNN_10/10000/7          0.117 ms        0.117 ms         5921               10 8.51857k/s  85.1857k/s
+TinspinKDTree/KNN_10/100000/7         0.521 ms        0.521 ms         1307               10 1.92088k/s  19.2088k/s
+TinspinKDTree/KNN_10/1000000/7         2.42 ms         2.42 ms          291               10   413.94/s   4.1394k/s
+TinspinQuadtree/KNN_1/1000/4          0.002 ms        0.002 ms       392745                1 561.291k/s  561.291k/s
+TinspinQuadtree/KNN_1/10000/4         0.003 ms        0.003 ms       201578                1 286.849k/s  286.849k/s
+TinspinQuadtree/KNN_1/100000/4        0.005 ms        0.005 ms       143624                1 205.303k/s  205.303k/s
+TinspinQuadtree/KNN_1/1000000/4       0.006 ms        0.006 ms       113277                1 172.071k/s  172.071k/s
+TinspinQuadtree/KNN_1/1000/7          0.001 ms        0.001 ms       559947                1 802.954k/s  802.954k/s
+TinspinQuadtree/KNN_1/10000/7         0.002 ms        0.002 ms       321021                1 456.259k/s  456.259k/s
+TinspinQuadtree/KNN_1/100000/7        0.004 ms        0.004 ms       164132                1   235.4k/s    235.4k/s
+TinspinQuadtree/KNN_1/1000000/7       0.005 ms        0.005 ms       100000                1 199.275k/s  199.275k/s
+TinspinQuadtree/KNN_10/1000/4         0.003 ms        0.003 ms       224859               10 321.275k/s  3.21275M/s
+TinspinQuadtree/KNN_10/10000/4        0.005 ms        0.005 ms       128997               10 184.066k/s  1.84066M/s
+TinspinQuadtree/KNN_10/100000/4       0.007 ms        0.007 ms        99752               10 141.782k/s  1.41782M/s
+TinspinQuadtree/KNN_10/1000000/4      0.008 ms        0.008 ms        81096               10 120.742k/s  1.20742M/s
+TinspinQuadtree/KNN_10/1000/7         0.002 ms        0.002 ms       298498               10 426.298k/s  4.26298M/s
+TinspinQuadtree/KNN_10/10000/7        0.003 ms        0.003 ms       209434               10 299.043k/s  2.99043M/s
+TinspinQuadtree/KNN_10/100000/7       0.005 ms        0.005 ms       138271               10 197.404k/s  1.97404M/s
+TinspinQuadtree/KNN_10/1000000/7      0.006 ms        0.006 ms       112184               10 160.293k/s  1.60293M/s
+BoostRT/KNN_1/1000/4                  0.001 ms        0.001 ms      1174322                1 1.68071M/s  1.68071M/s
+BoostRT/KNN_1/10000/4                 0.001 ms        0.001 ms       953358                1 1.35129M/s  1.35129M/s
+BoostRT/KNN_1/100000/4                0.001 ms        0.001 ms       770154                1 1092.39k/s  1092.39k/s
+BoostRT/KNN_1/1000000/4               0.001 ms        0.001 ms       544814                1 779.152k/s  779.152k/s
+BoostRT/KNN_1/1000/7                  0.001 ms        0.001 ms      1113827                1 1.59199M/s  1.59199M/s
+BoostRT/KNN_1/10000/7                 0.001 ms        0.001 ms       858623                1 1.21833M/s  1.21833M/s
+BoostRT/KNN_1/100000/7                0.001 ms        0.001 ms       509693                1 726.561k/s  726.561k/s
+BoostRT/KNN_1/1000000/7               0.001 ms        0.001 ms       539150                1 767.625k/s  767.625k/s
+BoostRT/KNN_10/1000/4                 0.001 ms        0.001 ms       490576               10 701.277k/s  7.01277M/s
+BoostRT/KNN_10/10000/4                0.002 ms        0.002 ms       370654               10 539.752k/s  5.39752M/s
+BoostRT/KNN_10/100000/4               0.002 ms        0.002 ms       333907               10 476.462k/s  4.76462M/s
+BoostRT/KNN_10/1000000/4              0.003 ms        0.003 ms       261426               10 374.509k/s  3.74509M/s
+BoostRT/KNN_10/1000/7                 0.001 ms        0.001 ms       547020               10 782.054k/s  7.82054M/s
+BoostRT/KNN_10/10000/7                0.002 ms        0.002 ms       448661               10 643.015k/s  6.43015M/s
+BoostRT/KNN_10/100000/7               0.002 ms        0.002 ms       339631               10 492.371k/s  4.92371M/s
+BoostRT/KNN_10/1000000/7              0.002 ms        0.002 ms       344671               10 492.887k/s  4.92887M/s
+FlannKDS/KNN_1/1000/4                 0.000 ms        0.000 ms      1450407                1  2.0607M/s   2.0607M/s
+FlannKDS/KNN_1/10000/4                0.001 ms        0.001 ms      1232257                1 1.76974M/s  1.76974M/s
+FlannKDS/KNN_1/100000/4               0.001 ms        0.001 ms      1144320                1 1.66139M/s  1.66139M/s
+FlannKDS/KNN_1/1000000/4              0.001 ms        0.001 ms      1029065                1 1.47561M/s  1.47561M/s
+FlannKDS/KNN_1/1000/7                 0.001 ms        0.001 ms       568124                1 810.292k/s  810.292k/s
+FlannKDS/KNN_1/10000/7                0.002 ms        0.002 ms       458898                1 658.679k/s  658.679k/s
+FlannKDS/KNN_1/100000/7               0.002 ms        0.002 ms       294104                1  422.05k/s   422.05k/s
+FlannKDS/KNN_1/1000000/7              0.002 ms        0.002 ms       422589                1 602.526k/s  602.526k/s
+FlannKDS/KNN_10/1000/4                0.001 ms        0.001 ms       796187               10 1.14044M/s  11.4044M/s
+FlannKDS/KNN_10/10000/4               0.001 ms        0.001 ms       612381               10 870.506k/s  8.70506M/s
+FlannKDS/KNN_10/100000/4              0.001 ms        0.001 ms       568345               10 808.302k/s  8.08302M/s
+FlannKDS/KNN_10/1000000/4             0.001 ms        0.001 ms       531526               10 762.592k/s  7.62592M/s
+FlannKDS/KNN_10/1000/7                0.002 ms        0.002 ms       383304               10 546.608k/s  5.46608M/s
+FlannKDS/KNN_10/10000/7               0.002 ms        0.002 ms       359812               10 516.313k/s  5.16313M/s
+FlannKDS/KNN_10/100000/7              0.003 ms        0.003 ms       226929               10 326.011k/s  3.26011M/s
+FlannKDS/KNN_10/1000000/7             0.002 ms        0.002 ms       334307               10  476.95k/s   4.7695M/s
+PhTree3D/KNN_1/1000/4                 0.007 ms        0.007 ms       102886                1 146.456k/s  146.456k/s
+PhTree3D/KNN_1/10000/4                0.015 ms        0.015 ms        48473                1 68.8136k/s  68.8136k/s
+PhTree3D/KNN_1/100000/4               0.024 ms        0.024 ms        29375                1 41.6752k/s  41.6752k/s
+PhTree3D/KNN_1/1000000/4              0.035 ms        0.035 ms        20122                1 28.8411k/s  28.8411k/s
+PhTree3D/KNN_1/1000/7                 0.001 ms        0.001 ms       674386                1 969.671k/s  969.671k/s
+PhTree3D/KNN_1/10000/7                0.003 ms        0.003 ms       268788                1 386.656k/s  386.656k/s
+PhTree3D/KNN_1/100000/7               0.010 ms        0.010 ms        69489                1 99.6618k/s  99.6618k/s
+PhTree3D/KNN_1/1000000/7              0.018 ms        0.018 ms        39306                1 55.7013k/s  55.7013k/s
+PhTree3D/KNN_10/1000/4                0.010 ms        0.010 ms        71031               10 101.912k/s  1019.12k/s
+PhTree3D/KNN_10/10000/4               0.020 ms        0.020 ms        35433               10 50.3984k/s  503.984k/s
+PhTree3D/KNN_10/100000/4              0.031 ms        0.031 ms        22664               10  32.363k/s   323.63k/s
+PhTree3D/KNN_10/1000000/4             0.043 ms        0.043 ms        16295               10 23.1192k/s  231.192k/s
+PhTree3D/KNN_10/1000/7                0.003 ms        0.003 ms       254468               10 362.436k/s  3.62436M/s
+PhTree3D/KNN_10/10000/7               0.004 ms        0.004 ms       154840               10 222.357k/s  2.22357M/s
+PhTree3D/KNN_10/100000/7              0.012 ms        0.012 ms        59092               10  84.361k/s   843.61k/s
+PhTree3D/KNN_10/1000000/7             0.020 ms        0.020 ms        34442               10 48.8356k/s  488.356k/s
+FlannKD/KNN_1/1000/4                  0.006 ms        0.006 ms        99363                1 172.963k/s  172.963k/s
+FlannKD/KNN_1/10000/4                 0.036 ms        0.036 ms        18543                1 27.6545k/s  27.6545k/s
+FlannKD/KNN_1/100000/4                0.147 ms        0.148 ms         4460                1 6.77846k/s  6.77846k/s
+FlannKD/KNN_1/1000000/4                1.45 ms         1.45 ms          446                1  688.581/s   688.581/s
+FlannKD/KNN_1/1000/7                  0.006 ms        0.006 ms       148169                1 177.088k/s  177.088k/s
+FlannKD/KNN_1/10000/7                 0.033 ms        0.033 ms        16817                1 29.9161k/s  29.9161k/s
+FlannKD/KNN_1/100000/7                0.143 ms        0.143 ms         4856                1 6.99872k/s  6.99872k/s
+FlannKD/KNN_1/1000000/7               0.978 ms        0.978 ms          641                1  1022.81/s   1022.81/s
+FlannKD/KNN_10/1000/4                 0.006 ms        0.006 ms       100418               10 162.479k/s  1.62479M/s
+FlannKD/KNN_10/10000/4                0.038 ms        0.038 ms        18788               10 26.2427k/s  262.427k/s
+FlannKD/KNN_10/100000/4               0.159 ms        0.159 ms         3592               10 6.27803k/s  62.7803k/s
+FlannKD/KNN_10/1000000/4               1.54 ms         1.54 ms          467               10  647.898/s  6.47898k/s
+FlannKD/KNN_10/1000/7                 0.007 ms        0.007 ms       102103               10 153.181k/s  1.53181M/s
+FlannKD/KNN_10/10000/7                0.035 ms        0.035 ms        20580               10 28.7943k/s  287.943k/s
+FlannKD/KNN_10/100000/7               0.144 ms        0.144 ms         5007               10 6.93992k/s  69.3992k/s
+FlannKD/KNN_10/1000000/7               1.04 ms         1.04 ms          706               10  964.511/s  9.64511k/s
+
+
+2023-03-09 gcc 12.1
+=================
+Run on (8 X 4610.7 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 12288 KiB (x1)
+Load Average: 1.90, 1.21, 1.00
+-------------------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations avg_result_count query_rate result_rate
+-------------------------------------------------------------------------------------------------------------------
+PhTreeMM/KNN_1/1000/4                 0.007 ms        0.007 ms       100847                1 151.642k/s  151.642k/s
+PhTreeMM/KNN_1/10000/4                0.014 ms        0.014 ms        49545                1 70.5885k/s  70.5885k/s
+PhTreeMM/KNN_1/100000/4               0.023 ms        0.023 ms        30060                1 42.9075k/s  42.9075k/s
+PhTreeMM/KNN_1/1000000/4              0.034 ms        0.034 ms        20817                1 29.5412k/s  29.5412k/s
+PhTreeMM/KNN_1/1000/7                 0.001 ms        0.001 ms       677526                1  959.84k/s   959.84k/s
+PhTreeMM/KNN_1/10000/7                0.003 ms        0.003 ms       267222                1 382.842k/s  382.842k/s
+PhTreeMM/KNN_1/100000/7               0.010 ms        0.010 ms        71677                1 102.653k/s  102.653k/s
+PhTreeMM/KNN_1/1000000/7              0.017 ms        0.017 ms        40330                1 57.3488k/s  57.3488k/s
+PhTreeMM/KNN_10/1000/4                0.010 ms        0.010 ms        70999               10 103.361k/s  1033.61k/s
+PhTreeMM/KNN_10/10000/4               0.019 ms        0.020 ms        35217               10 51.2515k/s  512.515k/s
+PhTreeMM/KNN_10/100000/4              0.030 ms        0.030 ms        23179               10 33.0414k/s  330.414k/s
+PhTreeMM/KNN_10/1000000/4             0.042 ms        0.042 ms        16558               10 23.7088k/s  237.088k/s
+PhTreeMM/KNN_10/1000/7                0.003 ms        0.003 ms       251724               10 359.804k/s  3.59804M/s
+PhTreeMM/KNN_10/10000/7               0.005 ms        0.005 ms       154537               10 221.114k/s  2.21114M/s
+PhTreeMM/KNN_10/100000/7              0.012 ms        0.012 ms        60397               10 86.3767k/s  863.767k/s
+PhTreeMM/KNN_10/1000000/7             0.020 ms        0.020 ms        35090               10 50.1835k/s  501.835k/s
+PhTreeMM2/KNN_1/1000/4                0.004 ms        0.004 ms       186342                1 265.864k/s  265.864k/s
+PhTreeMM2/KNN_1/10000/4               0.011 ms        0.011 ms        60591                1 87.7226k/s  87.7226k/s
+PhTreeMM2/KNN_1/100000/4              0.020 ms        0.020 ms        35910                1 51.1555k/s  51.1555k/s
+PhTreeMM2/KNN_1/1000000/4             0.030 ms        0.030 ms        23546                1 33.5512k/s  33.5512k/s
+PhTreeMM2/KNN_1/1000/7                0.001 ms        0.001 ms       938512                1 1.35452M/s  1.35452M/s
+PhTreeMM2/KNN_1/10000/7               0.002 ms        0.002 ms       327919                1 467.763k/s  467.763k/s
+PhTreeMM2/KNN_1/100000/7              0.009 ms        0.009 ms        82218                1 117.195k/s  117.195k/s
+PhTreeMM2/KNN_1/1000000/7             0.016 ms        0.016 ms        44182                1 62.8835k/s  62.8835k/s
+PhTreeMM2/KNN_10/1000/4               0.006 ms        0.006 ms       122486               10 177.563k/s  1.77563M/s
+PhTreeMM2/KNN_10/10000/4              0.016 ms        0.016 ms        44251               10 62.8874k/s  628.874k/s
+PhTreeMM2/KNN_10/100000/4             0.025 ms        0.025 ms        27872               10  39.543k/s   395.43k/s
+PhTreeMM2/KNN_10/1000000/4            0.036 ms        0.036 ms        19360               10 27.5844k/s  275.844k/s
+PhTreeMM2/KNN_10/1000/7               0.002 ms        0.002 ms       381119               10 545.744k/s  5.45744M/s
+PhTreeMM2/KNN_10/10000/7              0.003 ms        0.003 ms       218031               10 311.627k/s  3.11627M/s
+PhTreeMM2/KNN_10/100000/7             0.010 ms        0.010 ms        69590               10 98.8179k/s  988.179k/s
+PhTreeMM2/KNN_10/1000000/7            0.019 ms        0.019 ms        37844               10 53.6306k/s  536.306k/s
+TinspinKDTree/KNN_1/1000/4            0.015 ms        0.015 ms        46655                1 66.7927k/s  66.7927k/s
+TinspinKDTree/KNN_1/10000/4           0.078 ms        0.078 ms         8955                1 12.8439k/s  12.8439k/s
+TinspinKDTree/KNN_1/100000/4          0.337 ms        0.337 ms         2072                1 2.96662k/s  2.96662k/s
+TinspinKDTree/KNN_1/1000000/4          1.54 ms         1.54 ms          457                1  647.897/s   647.897/s
+TinspinKDTree/KNN_1/1000/7            0.029 ms        0.029 ms        24515                1 35.0202k/s  35.0202k/s
+TinspinKDTree/KNN_1/10000/7           0.120 ms        0.120 ms         5807                1 8.33857k/s  8.33857k/s
+TinspinKDTree/KNN_1/100000/7          0.537 ms        0.537 ms         1313                1   1.862k/s    1.862k/s
+TinspinKDTree/KNN_1/1000000/7          2.50 ms         2.50 ms          282                1  399.403/s   399.403/s
+TinspinKDTree/KNN_10/1000/4           0.017 ms        0.017 ms        40378               10 57.9108k/s  579.108k/s
+TinspinKDTree/KNN_10/10000/4          0.081 ms        0.081 ms         8665               10 12.3954k/s  123.954k/s
+TinspinKDTree/KNN_10/100000/4         0.341 ms        0.341 ms         2042               10 2.93625k/s  29.3625k/s
+TinspinKDTree/KNN_10/1000000/4         1.53 ms         1.53 ms          457               10  651.701/s  6.51701k/s
+TinspinKDTree/KNN_10/1000/7           0.030 ms        0.031 ms        23018               10 32.7639k/s  327.639k/s
+TinspinKDTree/KNN_10/10000/7          0.124 ms        0.124 ms         5518               10 8.06065k/s  80.6065k/s
+TinspinKDTree/KNN_10/100000/7         0.541 ms        0.541 ms         1259               10 1.84776k/s  18.4776k/s
+TinspinKDTree/KNN_10/1000000/7         2.51 ms         2.51 ms          278               10    398.6/s    3.986k/s
+TinspinQuadtree/KNN_1/1000/4          0.002 ms        0.002 ms       386020                1  552.93k/s   552.93k/s
+TinspinQuadtree/KNN_1/10000/4         0.004 ms        0.004 ms       199030                1 284.436k/s  284.436k/s
+TinspinQuadtree/KNN_1/100000/4        0.005 ms        0.005 ms       142157                1 201.559k/s  201.559k/s
+TinspinQuadtree/KNN_1/1000000/4       0.006 ms        0.006 ms       110027                1 168.905k/s  168.905k/s
+TinspinQuadtree/KNN_1/1000/7          0.001 ms        0.001 ms       555834                1 790.071k/s  790.071k/s
+TinspinQuadtree/KNN_1/10000/7         0.002 ms        0.002 ms       312014                1 451.305k/s  451.305k/s
+TinspinQuadtree/KNN_1/100000/7        0.004 ms        0.004 ms       162426                1 232.064k/s  232.064k/s
+TinspinQuadtree/KNN_1/1000000/7       0.005 ms        0.005 ms       136553                1 193.717k/s  193.717k/s
+TinspinQuadtree/KNN_10/1000/4         0.003 ms        0.003 ms       220803               10 316.273k/s  3.16273M/s
+TinspinQuadtree/KNN_10/10000/4        0.006 ms        0.006 ms       126689               10 180.323k/s  1.80323M/s
+TinspinQuadtree/KNN_10/100000/4       0.007 ms        0.007 ms        98342               10 139.857k/s  1.39857M/s
+TinspinQuadtree/KNN_10/1000000/4      0.009 ms        0.009 ms        78476               10 117.226k/s  1.17226M/s
+TinspinQuadtree/KNN_10/1000/7         0.002 ms        0.002 ms       294454               10 423.864k/s  4.23864M/s
+TinspinQuadtree/KNN_10/10000/7        0.003 ms        0.003 ms       204110               10 292.004k/s  2.92004M/s
+TinspinQuadtree/KNN_10/100000/7       0.005 ms        0.005 ms       135846               10 193.877k/s  1.93877M/s
+TinspinQuadtree/KNN_10/1000000/7      0.006 ms        0.006 ms       108315               10 155.226k/s  1.55226M/s
+BoostRT/KNN_1/1000/4                  0.001 ms        0.001 ms      1119625                1 1.60526M/s  1.60526M/s
+BoostRT/KNN_1/10000/4                 0.001 ms        0.001 ms       883209                1 1.25343M/s  1.25343M/s
+BoostRT/KNN_1/100000/4                0.001 ms        0.001 ms       725606                1 1034.29k/s  1034.29k/s
+BoostRT/KNN_1/1000000/4               0.001 ms        0.001 ms       502310                1 717.733k/s  717.733k/s
+BoostRT/KNN_1/1000/7                  0.001 ms        0.001 ms      1034483                1  1.4903M/s   1.4903M/s
+BoostRT/KNN_1/10000/7                 0.001 ms        0.001 ms       809634                1 1.14565M/s  1.14565M/s
+BoostRT/KNN_1/100000/7                0.001 ms        0.001 ms       473080                1 674.959k/s  674.959k/s
+BoostRT/KNN_1/1000000/7               0.001 ms        0.001 ms       490325                1 701.264k/s  701.264k/s
+BoostRT/KNN_10/1000/4                 0.001 ms        0.001 ms       476389               10 681.326k/s  6.81326M/s
+BoostRT/KNN_10/10000/4                0.002 ms        0.002 ms       364017               10  519.34k/s   5.1934M/s
+BoostRT/KNN_10/100000/4               0.002 ms        0.002 ms       325156               10 464.555k/s  4.64555M/s
+BoostRT/KNN_10/1000000/4              0.003 ms        0.003 ms       259283               10  364.38k/s   3.6438M/s
+BoostRT/KNN_10/1000/7                 0.001 ms        0.001 ms       499699               10 696.577k/s  6.96577M/s
+BoostRT/KNN_10/10000/7                0.002 ms        0.002 ms       400689               10 573.135k/s  5.73135M/s
+BoostRT/KNN_10/100000/7               0.002 ms        0.002 ms       304794               10 432.182k/s  4.32182M/s
+BoostRT/KNN_10/1000000/7              0.002 ms        0.002 ms       326532               10 466.465k/s  4.66465M/s
+FlannKDS/KNN_1/1000/4                 0.000 ms        0.000 ms      1460197                1 2.07956M/s  2.07956M/s
+FlannKDS/KNN_1/10000/4                0.001 ms        0.001 ms      1278454                1 1.84477M/s  1.84477M/s
+FlannKDS/KNN_1/100000/4               0.001 ms        0.001 ms      1210583                1 1.72062M/s  1.72062M/s
+FlannKDS/KNN_1/1000000/4              0.001 ms        0.001 ms      1105166                1  1.5782M/s   1.5782M/s
+FlannKDS/KNN_1/1000/7                 0.001 ms        0.001 ms       607711                1 870.389k/s  870.389k/s
+FlannKDS/KNN_1/10000/7                0.001 ms        0.001 ms       509319                1  731.44k/s   731.44k/s
+FlannKDS/KNN_1/100000/7               0.002 ms        0.002 ms       330367                1 474.945k/s  474.945k/s
+FlannKDS/KNN_1/1000000/7              0.002 ms        0.002 ms       457681                1 653.268k/s  653.268k/s
+FlannKDS/KNN_10/1000/4                0.001 ms        0.001 ms       789948               10 1.13398M/s  11.3398M/s
+FlannKDS/KNN_10/10000/4               0.001 ms        0.001 ms       624872               10 895.706k/s  8.95706M/s
+FlannKDS/KNN_10/100000/4              0.001 ms        0.001 ms       587790               10 842.184k/s  8.42184M/s
+FlannKDS/KNN_10/1000000/4             0.001 ms        0.001 ms       563317               10 800.977k/s  8.00977M/s
+FlannKDS/KNN_10/1000/7                0.002 ms        0.002 ms       387080               10   571.2k/s    5.712M/s
+FlannKDS/KNN_10/10000/7               0.002 ms        0.002 ms       387053               10 553.081k/s  5.53081M/s
+FlannKDS/KNN_10/100000/7              0.003 ms        0.003 ms       245125               10 357.014k/s  3.57014M/s
+FlannKDS/KNN_10/1000000/7             0.002 ms        0.002 ms       357544               10  512.65k/s   5.1265M/s
+PhTree3D/KNN_1/1000/4                 0.007 ms        0.007 ms       103004                1 149.134k/s  149.134k/s
+PhTree3D/KNN_1/10000/4                0.015 ms        0.015 ms        47964                1  68.114k/s   68.114k/s
+PhTree3D/KNN_1/100000/4               0.024 ms        0.024 ms        29017                1 41.5579k/s  41.5579k/s
+PhTree3D/KNN_1/1000000/4              0.036 ms        0.036 ms        19515                1 27.8538k/s  27.8538k/s
+PhTree3D/KNN_1/1000/7                 0.001 ms        0.001 ms       645351                1 950.206k/s  950.206k/s
+PhTree3D/KNN_1/10000/7                0.003 ms        0.003 ms       262575                1 376.292k/s  376.292k/s
+PhTree3D/KNN_1/100000/7               0.010 ms        0.010 ms        70099                1 100.029k/s  100.029k/s
+PhTree3D/KNN_1/1000000/7              0.018 ms        0.018 ms        39135                1 55.0981k/s  55.0981k/s
+PhTree3D/KNN_10/1000/4                0.010 ms        0.010 ms        68649               10 99.7766k/s  997.766k/s
+PhTree3D/KNN_10/10000/4               0.020 ms        0.020 ms        34034               10 49.8652k/s  498.652k/s
+PhTree3D/KNN_10/100000/4              0.031 ms        0.031 ms        22512               10 32.1029k/s  321.029k/s
+PhTree3D/KNN_10/1000000/4             0.043 ms        0.043 ms        16110               10 23.0554k/s  230.554k/s
+PhTree3D/KNN_10/1000/7                0.003 ms        0.003 ms       253551               10 362.019k/s  3.62019M/s
+PhTree3D/KNN_10/10000/7               0.005 ms        0.005 ms       153417               10  221.22k/s   2.2122M/s
+PhTree3D/KNN_10/100000/7              0.012 ms        0.012 ms        59690               10 85.3695k/s  853.695k/s
+PhTree3D/KNN_10/1000000/7             0.020 ms        0.020 ms        34717               10  49.252k/s   492.52k/s
+FlannKD/KNN_1/1000/4                  0.005 ms        0.005 ms       131770                1 214.455k/s  214.455k/s
+FlannKD/KNN_1/10000/4                 0.028 ms        0.028 ms        23316                1 36.3013k/s  36.3013k/s
+FlannKD/KNN_1/100000/4                0.131 ms        0.131 ms         5743                1 7.64597k/s  7.64597k/s
+FlannKD/KNN_1/1000000/4                1.66 ms         1.66 ms          456                1  603.574/s   603.574/s
+FlannKD/KNN_1/1000/7                  0.004 ms        0.004 ms       160651                1 228.546k/s  228.546k/s
+FlannKD/KNN_1/10000/7                 0.031 ms        0.031 ms        24317                1 32.4533k/s  32.4533k/s
+FlannKD/KNN_1/100000/7                0.111 ms        0.111 ms         6097                1 9.03273k/s  9.03273k/s
+FlannKD/KNN_1/1000000/7                1.22 ms         1.22 ms          552                1  817.637/s   817.637/s
+FlannKD/KNN_10/1000/4                 0.005 ms        0.005 ms       130023               10 195.473k/s  1.95473M/s
+FlannKD/KNN_10/10000/4                0.033 ms        0.033 ms        21342               10  30.546k/s   305.46k/s
+FlannKD/KNN_10/100000/4               0.135 ms        0.135 ms         4927               10 7.41123k/s  74.1123k/s
+FlannKD/KNN_10/1000000/4               1.21 ms         1.21 ms          422               10  824.201/s  8.24201k/s
+FlannKD/KNN_10/1000/7                 0.005 ms        0.005 ms       129916               10 191.601k/s  1.91601M/s
+FlannKD/KNN_10/10000/7                0.034 ms        0.034 ms        24117               10 29.4866k/s  294.866k/s
+FlannKD/KNN_10/100000/7               0.152 ms        0.152 ms         5679               10 6.57984k/s  65.7984k/s
+FlannKD/KNN_10/1000000/7              0.939 ms        0.939 ms          903               10  1065.02/s  10.6502k/s
