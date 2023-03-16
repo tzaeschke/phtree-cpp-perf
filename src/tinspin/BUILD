@@ -5,6 +5,9 @@ cc_library(
     testonly = True,
     hdrs = [
         "kdtree.h",
+        "min_max_helpers.h",
+        "min_max_vector_heap.h",
+        "min_max_tree_heap.h",
         "quadtree_point.h",
     ],
     visibility = [

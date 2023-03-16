@@ -8,6 +8,8 @@
 #include "include/phtree/converter.h"
 #include "include/phtree/filter.h"
 #include "src/util/ph-util.h"
+#include "include/phtree/common/bpt_priority_queue.h"
+#include "min_max_vector_heap.h"
 #include <cmath>
 #include <iostream>
 #include <queue>
@@ -19,13 +21,16 @@ namespace tinspin {
 using namespace improbable::phtree;
 
 /*
- * A simple MX-quadtree implementation with configurable maximum depth, maximum nodes size, and
+ * A simple Point-quadtree implementation with configurable maximum depth, maximum nodes size, and
  * (if desired) automatic guessing of root rectangle.
  *
  * This version of the quadtree stores for each node only the center point and the
  * distance (radius) to the edges.
  * This reduces space requirements but increases problems with numerical precision.
  * Overall it is more space efficient and slightly faster.
+ *
+ * See following lecture for different types of quadtrees:
+ * https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
  */
 
 namespace {
@@ -294,31 +299,31 @@ class QEntry {
     }
 };
 
-template <typename Key, typename T>
-class QEntryDist {
-  public:
-    QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {}
-
-    const Key& key() const {
-        return entry_->key();
-    }
-
-    const T& value() const {
-        return entry_->value();
-    }
-
-    double dist() const {
-        return distance_;
-    }
-
-    QEntry<Key, T>* _entry() {
-        return entry_;
-    }
-
-  private:
-    QEntry<Key, T>* entry_;
-    double distance_;
-};
+//template <typename Key, typename T>
+//class QEntryDist {
+//  public:
+//    QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {}
+//
+//    const Key& key() const {
+//        return entry_->key();
+//    }
+//
+//    const T& value() const {
+//        return entry_->value();
+//    }
+//
+//    double dist() const {
+//        return distance_;
+//    }
+//
+//    QEntry<Key, T>* _entry() {
+//        return entry_;
+//    }
+//
+//  private:
+//    QEntry<Key, T>* entry_;
+//    double distance_;
+//};
 
 /**
  * Node class for the quadtree.
@@ -707,10 +712,6 @@ class QIteratorBase {
         return left.entry_ != right.entry_;
     }
 
-    auto _entry() const noexcept {
-        return entry_;
-    }
-
   protected:
     bool IsEnd() const noexcept {
         return entry_ == nullptr;
@@ -743,11 +744,7 @@ class QIterator : public QIteratorBase<Key, T> {
   public:
     template <typename F = FilterNoOp>
     QIterator(QNode<Key, T>* root, const Key& min, const Key& max, F&& filter = F())
-    : QIteratorBase<Key, T>()
-    , stack_{}
-    , min(min)
-    , max(max)
-    , filter_(std::forward<F>(filter)) {
+    : QIteratorBase<Key, T>(), stack_{}, min(min), max(max), filter_(std::forward<F>(filter)) {
         if (root != nullptr) {
             if (root->isLeaf()) {
                 iter_leaf_ = root->entries().begin();
@@ -907,22 +904,17 @@ class QIteratorEnd : public QIteratorBase<Key, T> {
 template <typename Key, typename T, typename DISTANCE, typename FILTER>
 class QIteratorKnnHS : public QIteratorBase<Key, T> {
     static constexpr dimension_t DIM = 3;
-    struct EntryDistT {
-        double first;                  // distance
-        const QEntry<Key, T>* second;  // entry
-        const QNode<Key, T>* node;     // node
+    using NodeDistT = std::pair<double, const QNode<Key, T>*>;
+    using ValueDistT = std::pair<double, const QEntry<Key, T>*>;
 
-        EntryDistT(double dist, const QEntry<Key, T>* e) : first{dist}, second{e}, node{nullptr} {}
-        EntryDistT(double dist, const QNode<Key, T>* node)
-        : first{dist}, second{nullptr}, node{node} {}
-
-        [[nodiscard]] bool is_node() const {
-            return node != nullptr;
-        }
+    struct CompareNodeDistByDistance {
+        bool operator()(const NodeDistT& left, const NodeDistT& right) const noexcept {
+            return left.first > right.first;
+        };
     };
 
-    struct CompareEntryDistByDistance {
-        bool operator()(const EntryDistT& left, const EntryDistT& right) const {
+    struct CompareValueDistByDistance {
+        bool operator()(const ValueDistT& left, const ValueDistT& right) const noexcept {
             return left.first > right.first;
         };
     };
@@ -938,8 +930,7 @@ class QIteratorKnnHS : public QIteratorBase<Key, T> {
     : QIteratorBase<Key, T>()
     , center_{center}
     , current_distance_{std::numeric_limits<double>::max()}
-    , num_found_results_(0)
-    , num_requested_results_(min_results)
+    , remaining_{min_results}
     , filter_(std::forward<F>(filter_fn))
     , distance_(std::forward<DIST>(dist_fn)) {
         if (min_results <= 0 || root == nullptr) {
@@ -947,8 +938,7 @@ class QIteratorKnnHS : public QIteratorBase<Key, T> {
             return;
         }
 
-        double dist = distToRectNode(center, root->getCenter(), root->getRadius(), distance_);
-        queue_.emplace(dist, root);
+        queue_n_.emplace(NodeDistT{0, root});
         FindNextElement();
     }
 
@@ -973,33 +963,55 @@ class QIteratorKnnHS : public QIteratorBase<Key, T> {
 
   private:
     void FindNextElement() {
-        while (num_found_results_ < num_requested_results_ && !queue_.empty()) {
-            auto& candidate = queue_.top();
-            if (!candidate.is_node()) {
+        while (remaining_ > 0 && !(queue_n_.empty() && queue_v_.empty())) {
+            bool use_v = !queue_v_.empty();
+            if (use_v && !queue_n_.empty()) {
+                use_v = queue_v_.top().first <= queue_n_.top().first;
+            }
+            if (use_v) {
                 // data entry
-                ++num_found_results_;
-                this->SetCurrentResult(const_cast<QEntry<Key, T>*>(candidate.second));
-                current_distance_ = candidate.first;
-                // We need to pop() AFTER we processed the value, otherwise the reference is
-                // overwritten.
-                queue_.pop();
+                auto& result = queue_v_.top();
+                --remaining_;
+                this->SetCurrentResult(const_cast<QEntry<Key, T>*>(result.second));  // TODO cast???
+                current_distance_ = result.first;
+                queue_v_.pop();
                 return;
             } else {
                 // inner node
-                auto* node = candidate.node;
-                queue_.pop();
-                if (node->isLeaf()) {
-                    for (auto& entry : node->entries()) {
+                auto top = queue_n_.top();
+                auto& node = *top.second;
+                auto d_node = top.first;
+                queue_n_.pop();
+
+                if (d_node > max_node_dist_ && queue_v_.size() >= remaining_) {
+                    // ignore this node
+                    continue;
+                }
+
+                if (node.isLeaf()) {
+                    for (auto& entry : node.entries()) {
                         if (filter_.IsEntryValid(entry.key(), entry.value())) {
                             double d = distance_(center_, entry.key());
-                            queue_.emplace(d, &entry);
+                            // Using '<=' allows dealing with infinite distances.
+                            if (d <= max_node_dist_) {
+                                queue_v_.emplace(d, &entry);
+                                if (queue_v_.size() >= remaining_) {
+                                    if (queue_v_.size() > remaining_) {
+                                        queue_v_.pop_max();
+                                    }
+                                    double d_max = queue_v_.top_max().first;
+                                    max_node_dist_ = std::min(max_node_dist_, d_max);
+                                }
+                            }
                         }
                     }
                 } else {
-                    for (auto* subnode : node->getChildNodes()) {
+                    for (auto* subnode : node.getChildNodes()) {
                         double dist = distToRectNode(
                             center_, subnode->getCenter(), subnode->getRadius(), distance_);
-                        queue_.emplace(dist, subnode);
+                        if (dist <= max_node_dist_) {
+                            queue_n_.emplace(dist, subnode);
+                        }
                     }
                 }
             }
@@ -1011,11 +1023,16 @@ class QIteratorKnnHS : public QIteratorBase<Key, T> {
   private:
     const Key center_;
     double current_distance_;
-    std::priority_queue<EntryDistT, std::vector<EntryDistT>, CompareEntryDistByDistance> queue_;
-    size_t num_found_results_;
-    size_t num_requested_results_;
+    size_t remaining_;
+    //    std::priority_queue<EntryDistT, std::vector<EntryDistT>, CompareEntryDistByDistance>
+    //    queue_n_;
+    aux::min_max_vector_heap<NodeDistT, CompareNodeDistByDistance> queue_n_;
+    aux::min_max_vector_heap<ValueDistT, CompareValueDistByDistance> queue_v_;
+    //    ::phtree::bptree::detail::priority_queue<EntryDistT, CompareEntryDistByDistance> queue_n_;
+    //    ::phtree::bptree::detail::priority_queue<EntryDistT, CompareEntryDistByDistance> queue_v_;
     FILTER filter_;
     DISTANCE distance_;
+    double max_node_dist_ = std::numeric_limits<double>::infinity();
 };
 
 template <typename Key, typename T, typename CALLBACK, typename FILTER>

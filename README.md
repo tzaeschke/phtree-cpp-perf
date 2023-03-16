@@ -103,6 +103,10 @@ This project contains libraries form other projects:
   hu-berlin (dot) de: https://www2.informatik.hu-berlin.de/~sprengsz/bb-tree/
 * PCL 1.13.0, licensed under BSD, Point Cloud Library (PCL): www.pointclouds.org
 * FLANN 1.9.2, licensed under BSD, Fast Library for Approximate Nearest Neighbors: https://github.com/flann-lib/flann
+* MinMaxHeap in [src/tinspin/aux](src/tinspin/aux) is based on code by Malte Skarupke (Copyright 2020) and is licensed under the
+  [Boost Software License 1.0](https://www.boost.org/LICENSE_1_0.txt).
+
+
 
 This projects depends on the following other projects:
 
