@@ -317,17 +317,6 @@ void PhTreeMMStdSet(benchmark::State& state, Arguments&&... arguments) {
 
 // index type, scenario name, data_type, num_entities, query_result_size
 
-// Quadtree
-BENCHMARK_CAPTURE(TinspinQuadtree, KNN_1, 1)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(TinspinQuadtree, KNN_10, 10)
-    ->RangeMultiplier(10)
-    ->Ranges({{1000, 1000 * 1000}, {TestGenerator::CUBE, TestGenerator::CLUSTER}})
-    ->Unit(benchmark::kMillisecond);
-
 // PhTree multi-map 1.0
 BENCHMARK_CAPTURE(PhTreeMM, KNN_1, 1)
     ->RangeMultiplier(10)
