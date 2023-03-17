@@ -4,12 +4,12 @@
 #ifndef TINSPIN_QUADTREE_POINT_H
 #define TINSPIN_QUADTREE_POINT_H
 
+#include "include/phtree/common/bpt_priority_queue.h"
 #include "include/phtree/common/common.h"
 #include "include/phtree/converter.h"
 #include "include/phtree/filter.h"
-#include "src/util/ph-util.h"
-#include "include/phtree/common/bpt_priority_queue.h"
 #include "min_max_vector_heap.h"
+#include "src/util/ph-util.h"
 #include <cmath>
 #include <iostream>
 #include <queue>
@@ -250,25 +250,22 @@ static double distToRectNode(
  */
 class QStats {
   public:
-    int dims;
+    int dims = 0;
     int nEntries = 0;
     int nNodes = 0;
     int minLevel = std::numeric_limits<int>::max();
     int maxLevel = -1;
-    int maxDepth = 0;
-    double sumLevel;
+    size_t maxDepth = 0;
+    double sumLevel = 0;
     int maxNodeSize = -1;
-    int nLeaf;
-    int nInner;
-    long nDistCalc;
-    long nDistCalc1NN;
-    long nDistCalcKNN;
+    int nLeaf = 0;
+    int nInner = 0;
+    long nDistCalc = 0;
+    long nDistCalc1NN = 0;
+    long nDistCalcKNN = 0;
 
-    QStats(long nDistCalc = 0, long nDistCalc1NN = 0, long nDistCalcKNN = 0) {
-        this->nDistCalc = nDistCalc;
-        this->nDistCalc1NN = nDistCalc1NN;
-        this->nDistCalcKNN = nDistCalcKNN;
-    }
+    explicit QStats(long nDistCalc = 0, long nDistCalc1NN = 0, long nDistCalcKNN = 0)
+    : nDistCalc{nDistCalc}, nDistCalc1NN{nDistCalc1NN}, nDistCalcKNN{nDistCalcKNN} {}
 
     void toString() {
         std::cout << "dims=" << dims << ";nEntries=" << nEntries << ";nNodes=" << nNodes
@@ -299,31 +296,31 @@ class QEntry {
     }
 };
 
-//template <typename Key, typename T>
-//class QEntryDist {
-//  public:
-//    QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {}
+// template <typename Key, typename T>
+// class QEntryDist {
+//   public:
+//     QEntryDist(QEntry<Key, T>* e, double dist) : entry_{e}, distance_{dist} {}
 //
-//    const Key& key() const {
-//        return entry_->key();
-//    }
+//     const Key& key() const {
+//         return entry_->key();
+//     }
 //
-//    const T& value() const {
-//        return entry_->value();
-//    }
+//     const T& value() const {
+//         return entry_->value();
+//     }
 //
-//    double dist() const {
-//        return distance_;
-//    }
+//     double dist() const {
+//         return distance_;
+//     }
 //
-//    QEntry<Key, T>* _entry() {
-//        return entry_;
-//    }
+//     QEntry<Key, T>* _entry() {
+//         return entry_;
+//     }
 //
-//  private:
-//    QEntry<Key, T>* entry_;
-//    double distance_;
-//};
+//   private:
+//     QEntry<Key, T>* entry_;
+//     double distance_;
+// };
 
 /**
  * Node class for the quadtree.
@@ -583,7 +580,7 @@ class QNode {
         return center_;
     }
 
-    double getRadius() const noexcept {
+    [[nodiscard]] double getRadius() const noexcept {
         return radius_;
     }
 
@@ -672,7 +669,7 @@ class QNode {
         }
     }
 
-    bool isLeaf() const noexcept {
+    [[nodiscard]] bool isLeaf() const noexcept {
         return is_leaf_;
     }
 
@@ -713,7 +710,7 @@ class QIteratorBase {
     }
 
   protected:
-    bool IsEnd() const noexcept {
+    [[nodiscard]] bool IsEnd() const noexcept {
         return entry_ == nullptr;
     }
 
@@ -843,7 +840,7 @@ class QIteratorFind : public QIteratorBase<Key, T> {
 
   public:
     template <typename F>
-    QIteratorFind(QNode<Key, T>* leaf, F&& filter = F())
+    explicit QIteratorFind(QNode<Key, T>* leaf, F&& filter = F())
     : QIteratorBase<Key, T>(), leaf_{leaf}, filter_(std::forward<F>(filter)) {
         if (leaf != nullptr) {
             iter_ = leaf->entries().begin();
@@ -1107,7 +1104,7 @@ class QuadTree {
   public:
     using KeyInternal = Key;
 
-    QuadTree(size_t dims = 3, size_t maxNodeSize = DEFAULT_MAX_NODE_SIZE)
+    explicit QuadTree(size_t dims = 3, size_t maxNodeSize = DEFAULT_MAX_NODE_SIZE)
     : dims{dims}, maxNodeSize{maxNodeSize} {}
 
     ~QuadTree() {

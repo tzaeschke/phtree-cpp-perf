@@ -863,3 +863,43 @@ TinspinQuadtree/KNN_10/10000/7        0.004 ms        0.004 ms       195702     
 TinspinQuadtree/KNN_10/100000/7       0.006 ms        0.006 ms       119006               10 171.161k/s  1.71161M/s
 TinspinQuadtree/KNN_10/1000000/7      0.007 ms        0.007 ms       101798               10 141.295k/s  1.41295M/s
 
+
+-------------------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations avg_result_count query_rate result_rate
+-------------------------------------------------------------------------------------------------------------------
+TinspinKDTree/KNN_1/1000/4            0.017 ms        0.017 ms        39149                1 58.8148k/s  58.8148k/s
+TinspinKDTree/KNN_1/10000/4           0.084 ms        0.084 ms         8259                1 11.8389k/s  11.8389k/s
+TinspinKDTree/KNN_1/100000/4          0.366 ms        0.366 ms         1911                1 2.73197k/s  2.73197k/s
+TinspinKDTree/KNN_1/1000000/4          1.66 ms         1.66 ms          422                1  601.771/s   601.771/s
+TinspinKDTree/KNN_1/1000/7            0.032 ms        0.033 ms        21786                1 30.7409k/s  30.7409k/s
+TinspinKDTree/KNN_1/10000/7           0.132 ms        0.133 ms         5006                1 7.54572k/s  7.54572k/s
+TinspinKDTree/KNN_1/100000/7          0.587 ms        0.587 ms         1194                1 1.70381k/s  1.70381k/s
+TinspinKDTree/KNN_1/1000000/7          2.72 ms         2.72 ms          260                1   367.96/s    367.96/s
+TinspinKDTree/KNN_10/1000/4           0.019 ms        0.019 ms        36594               10 51.8843k/s  518.843k/s
+TinspinKDTree/KNN_10/10000/4          0.088 ms        0.088 ms         7915               10 11.3952k/s  113.952k/s
+TinspinKDTree/KNN_10/100000/4         0.373 ms        0.373 ms         1897               10 2.68002k/s  26.8002k/s
+TinspinKDTree/KNN_10/1000000/4         1.63 ms         1.63 ms          431               10  613.245/s  6.13245k/s
+TinspinKDTree/KNN_10/1000/7           0.034 ms        0.034 ms        20756               10 29.5622k/s  295.622k/s
+TinspinKDTree/KNN_10/10000/7          0.134 ms        0.134 ms         5219               10 7.46217k/s  74.6217k/s
+TinspinKDTree/KNN_10/100000/7         0.590 ms        0.590 ms         1198               10 1.69475k/s  16.9475k/s
+TinspinKDTree/KNN_10/1000000/7         2.74 ms         2.74 ms          258               10  365.263/s  3.65263k/s
+
+-------------------------------------------------------------------------------------------------------------------
+Benchmark                                 Time             CPU   Iterations avg_result_count query_rate result_rate
+-------------------------------------------------------------------------------------------------------------------
+TinspinKDTree/KNN_1/1000/4            0.009 ms        0.009 ms        75575                1 113.992k/s  113.992k/s
+TinspinKDTree/KNN_1/10000/4           0.047 ms        0.047 ms        14920                1 21.3244k/s  21.3244k/s
+TinspinKDTree/KNN_1/100000/4          0.224 ms        0.224 ms         3127                1  4.4618k/s   4.4618k/s
+TinspinKDTree/KNN_1/1000000/4          1.09 ms         1.09 ms          641                1  921.318/s   921.318/s
+TinspinKDTree/KNN_1/1000/7            0.017 ms        0.017 ms        41072                1  59.098k/s   59.098k/s
+TinspinKDTree/KNN_1/10000/7           0.076 ms        0.076 ms         9219                1 13.1746k/s  13.1746k/s
+TinspinKDTree/KNN_1/100000/7          0.362 ms        0.362 ms         1940                1  2.7653k/s   2.7653k/s
+TinspinKDTree/KNN_1/1000000/7          1.72 ms         1.72 ms          407                1  579.895/s   579.895/s
+TinspinKDTree/KNN_10/1000/4           0.010 ms        0.010 ms        68989               10  98.484k/s   984.84k/s
+TinspinKDTree/KNN_10/10000/4          0.049 ms        0.049 ms        14276               10 20.4047k/s  204.047k/s
+TinspinKDTree/KNN_10/100000/4         0.224 ms        0.224 ms         3119               10 4.45675k/s  44.5675k/s
+TinspinKDTree/KNN_10/1000000/4         1.08 ms         1.08 ms          653               10  929.809/s  9.29809k/s
+TinspinKDTree/KNN_10/1000/7           0.019 ms        0.019 ms        37666               10 53.2121k/s  532.121k/s
+TinspinKDTree/KNN_10/10000/7          0.077 ms        0.077 ms         9036               10 12.9698k/s  129.698k/s
+TinspinKDTree/KNN_10/100000/7         0.359 ms        0.359 ms         1941               10 2.78318k/s  27.8318k/s
+TinspinKDTree/KNN_10/1000000/7         1.72 ms         1.72 ms          408               10  579.825/s  5.79825k/s
