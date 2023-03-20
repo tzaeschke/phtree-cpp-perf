@@ -40,6 +40,7 @@ PH-Tree
   - emplace() to return iterator (or similar) i.o. pair!
   - remove post-increment iterators!
   - Change distance functions to avoid sqrt() for internal distances (e.g. in kNN)
+  - Mobve filters/distances into namespaces ::filter/::distance
 
 
 General
