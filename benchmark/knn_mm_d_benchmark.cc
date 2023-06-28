@@ -220,10 +220,7 @@ template <dimension_t DIM, Scenario SCENARIO>
 void IndexBenchmark<DIM, SCENARIO>::SetupWorld(benchmark::State& state) {
     logging::info("Setting up world with {} entities and {} dimensions.", num_entities_, DIM);
     CreatePointData<DIM>(points_, data_type_, num_entities_, 0, GLOBAL_MAX);
-    //    for (size_t i = 0; i < num_entities_; ++i) {
-    //        InsertEntry<DIM, SCENARIO>(tree_, points_[i], (payload_t)i);
-    //    }
-    InsertEntry<DIM, SCENARIO>(tree_, points_);
+   InsertEntry<DIM, SCENARIO>(tree_, points_);
 
     state.counters["query_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);
     state.counters["result_rate"] = benchmark::Counter(0, benchmark::Counter::kIsRate);

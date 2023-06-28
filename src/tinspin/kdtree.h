@@ -42,7 +42,7 @@ struct FilterValue {
 };
 
 template <typename Key>
-static bool isEnclosed(const Key& point, const Key& min, const Key& max) {
+bool isEnclosed(const Key& point, const Key& min, const Key& max) {
     for (size_t i = 0; i < point.size(); ++i) {
         if (point[i] < min[i] || point[i] > max[i]) {
             return false;
@@ -63,7 +63,7 @@ struct KDStats {
 template <typename Key, typename T>
 class KDEntryDist {
   public:
-    KDEntryDist(){};
+    KDEntryDist() : entry_{nullptr}, distance_{0} {};
     KDEntryDist(Node<Key, T>* node, double dist) : entry_{node}, distance_{dist} {}
 
     void set(Node<Key, T>* node, double dist) {
@@ -172,7 +172,7 @@ class Node {
         assert(split_dim_ == (d_parent + 1u) % coordinate_.size());
         for (size_t d = 0; d < lower_bound.size(); ++d) {
             assert(coordinate_[d] >= lower_bound[d]);
-            assert(coordinate_[d] <= upper_bound[d]);  // TODO <- backport?
+            assert(coordinate_[d] <= upper_bound[d]);
         }
 
         ++n;
@@ -270,12 +270,9 @@ class KDIterator : public KDIteratorBase<Key, T> {
             const Key& key = node_->key();
             auto dims = min.size();
             dimension_t dim = depth % dims;
-            // TODO backport -> invariant problem, invariant can be
-            //   broken in additional cases with coordinate duplicates (multiple dimensions are
-            //   equal).
             doLeft = min[dim] <= key[dim];
-            doRight = max[dim] >= key[dim];  // TODO backport to Java !!!!!!!!!!!!!!!!!!!!
-            doKey = true;                    // TODO backport
+            doRight = max[dim] >= key[dim];
+            doKey = true;
         }
     };
 
@@ -745,7 +742,7 @@ class KDTree {
                     return n;
                 }
                 // Broken invariant? We need to check the 'lower' part as well...
-                if (n->left() != nullptr) {  // TODO backport!!!!!! "parent" -> "n"
+                if (n->left() != nullptr) {
                     Node<Key, T>* n2 = findNodeExactSlow(key, n->left(), n, resultDepth, pred_fn);
                     if (n2 != nullptr) {
                         return n2;
@@ -778,7 +775,7 @@ class KDTree {
             return 0;
         }
 
-        invariantBroken = true;  // TODO backport
+        invariantBroken = true;
 
         // find
         RemoveResult removeResult{};
@@ -795,7 +792,6 @@ class KDTree {
         }
 
         // find replacement
-        //   removeResult.nodeParent = nullptr; // TODO backport!
         while (eToRemove != nullptr && !eToRemove->is_leaf()) {
             // recurse
             auto dim = removeResult.dim;
@@ -874,8 +870,6 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = node->key()[dim];
                 result.dim = node->dim();
-                //       invariantBroken |= result.best == node->key()[dim]; // TODO remove?
-                //       backport
             }
         } else {
             // split in any other dimension.
@@ -886,7 +880,6 @@ class KDTree {
                 result.nodeParent = parent;
                 result.best = localX;
                 result.dim = node->dim();
-                //       invariantBroken |= result.best == localX; // TODO remove? backport
             }
             if (node->left() != nullptr) {
                 removeMaxLeaf(node->left(), node, dim, result);
