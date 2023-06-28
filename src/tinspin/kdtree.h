@@ -789,6 +789,7 @@ class KDTree {
             root_ = nullptr;
             size_ = 0;
             invariantBroken = false;
+            return 1;
         }
 
         // find replacement
