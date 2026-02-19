@@ -1,4 +1,4 @@
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -54,7 +54,7 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-       "@boost//:geometry",
+       "@boost.geometry",
        "@phtree//:phtree",
     ],
     alwayslink = 1,

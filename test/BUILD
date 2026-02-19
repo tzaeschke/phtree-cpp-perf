@@ -1,4 +1,5 @@
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_test")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -11,7 +12,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/mcxme:ph-mcxme",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -25,7 +26,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/mcxme:ph-mcxme",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -39,7 +40,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/bb-tree:ph-bb-tree",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -53,7 +54,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/boost:ph-boost-mm",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -67,7 +68,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/boost:ph-boost-mm",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -81,7 +82,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/flann:ph-flann",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -95,7 +96,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/flann:ph-flann",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -109,7 +110,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/lsi:ph-lsi-mm",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -123,7 +124,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/lsi:ph-lsi-mm",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -137,7 +138,7 @@ cc_test(
 #    linkstatic = True,
 #    deps = [
 #        "//src/pcl:ph-pcl",
-#        "@gtest//:gtest_main",
+#        "@googletest//:gtest_main",
 #        "@pcl//:common",
 #        "@phtree",
 #    ],
@@ -152,7 +153,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/tinspin",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )
@@ -166,7 +167,7 @@ cc_test(
     linkstatic = True,
     deps = [
         "//src/tinspin",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
         "@phtree",
     ],
 )

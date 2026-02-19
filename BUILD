@@ -73,7 +73,8 @@ filegroup(
     srcs = [".clang-format"],
 )
 
+# TODO?
 # libPCL
-load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
-
-pcl_config()
+#load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
+#
+#pcl_config()
