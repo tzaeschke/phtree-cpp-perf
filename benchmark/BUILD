@@ -1,3 +1,6 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:private"])
 
 cc_library(
@@ -11,7 +14,7 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@spdlog",
     ],
     alwayslink = 1,
@@ -26,7 +29,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -41,7 +44,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -56,7 +59,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -71,7 +74,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -86,7 +89,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -101,7 +104,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -116,7 +119,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -132,7 +135,7 @@ cc_binary(
     deps = [
         ":benchmark",
         "//src/mcxme:ph-mcxme",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -153,7 +156,7 @@ cc_binary(
         "//src/lsi:ph-lsi-mm",
         "//src/mcxme:ph-mcxme",
         "//src/tinspin",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -169,7 +172,7 @@ cc_binary(
     deps = [
         ":benchmark",
         "//src/mcxme:ph-mcxme",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -187,7 +190,7 @@ cc_binary(
         "//src/boost:ph-boost-mm",
         "//src/lsi:ph-lsi-mm",
         "//src/mcxme:ph-mcxme",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -202,7 +205,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -220,7 +223,7 @@ cc_binary(
         "//src/boost:ph-boost-mm",
         "//src/flann:ph-flann",
         "//src/tinspin",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -235,7 +238,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -251,7 +254,7 @@ cc_binary(
     deps = [
         ":benchmark",
         "//src/mcxme:ph-mcxme",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -266,7 +269,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -288,7 +291,7 @@ cc_binary(
         "//src/mcxme:ph-mcxme",
         "//src/robin_hood",
         "//src/tinspin",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -310,7 +313,7 @@ cc_binary(
         "//src/mcxme:ph-mcxme",
         "//src/robin_hood",
         "//src/tinspin",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -325,7 +328,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -342,7 +345,7 @@ cc_binary(
         ":benchmark",
         "//src/boost:ph-boost-mm",
         "//src/lsi:ph-lsi-mm",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -359,7 +362,7 @@ cc_binary(
         ":benchmark",
         "//src/boost:ph-boost-mm",
         "//src/lsi:ph-lsi-mm",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -375,7 +378,7 @@ cc_binary(
     deps = [
         ":benchmark",
         "//src/mcxme:ph-mcxme",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -394,7 +397,7 @@ cc_binary(
         "//src/flann:ph-flann",
         "//src/lsi:ph-lsi-mm",
         "//src/tinspin",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -409,7 +412,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -424,7 +427,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -439,7 +442,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -454,7 +457,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -469,7 +472,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],
@@ -484,7 +487,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":benchmark",
-        "@gbenchmark//:benchmark",
+        "@google_benchmark//:benchmark",
         "@phtree",
         "@spdlog",
     ],

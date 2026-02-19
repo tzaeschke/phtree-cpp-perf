@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:private"])
 
 cc_library(
@@ -56,7 +58,7 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        "@boost//:thread",
+        "@boost.thread",
     ],
     alwayslink = 1,
 )

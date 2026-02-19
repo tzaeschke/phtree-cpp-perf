@@ -1,3 +1,6 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
@@ -70,7 +73,8 @@ filegroup(
     srcs = [".clang-format"],
 )
 
+# TODO?
 # libPCL
-load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
-
-pcl_config()
+#load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
+#
+#pcl_config()
