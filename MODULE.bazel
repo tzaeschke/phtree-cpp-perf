@@ -15,6 +15,9 @@ bazel_dep(name = "google_benchmark", version = "1.9.5")
 
 bazel_dep(name = "boost.geometry", version = "1.90.0.bcr.1")
 
+# TODO update?
+bazel_dep(name = "abseil-cpp", version = "20211102.0")
+
 # Development environment tooling
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
@@ -44,36 +47,62 @@ BUILDIFIER_VERSION = "0.29.0"
 #    url = "https://github.com/gabime/spdlog/archive/v1.5.0.tar.gz",
 #)
 
+
+# TODO ? -> from migration tool
+#http_archive(
+#  name = "rules_pcl",
+#  url = "https://github.com/kgreenek/rules_pcl/archive/v1.1.0.tar.gz",
+#  sha256 = "987dd22ac4637093414ff2b9291d0e9e29f3ef156a12d5471eedaa2d5beb0a93",
+#  strip_prefix = "rules_pcl-1.1.0",
+#)
+# TODO ? -> from migration tool
+#http_file(
+#  name = "buildifier_linux",
+#  executable = True,
+#  sha256 = "4c985c883eafdde9c0e8cf3c8595b8bfdf32e77571c369bf8ddae83b042028d6",
+#  urls = [
+#    "https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier"
+#  ],
+#)
+
+http_archive(
+  name = "lib-spatial-index",
+  url = "https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz",
+  sha256 = "7b44340a3edc55c11abfc453bb60f148b29f569cef9e1148583e76132e9c7379",
+  strip_prefix = "libspatialindex-1.9.3",
+  build_file = "@@third_party//lib-spatial-index:BUILD",
+)
+
 #https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz
 #https://github.com/libspatialindex/libspatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.gz
-http_archive(
-    name = "lib-spatial-index",
-    build_file = "@third_party//lib-spatial-index:BUILD",
-    sha256 = "7b44340a3edc55c11abfc453bb60f148b29f569cef9e1148583e76132e9c7379",
-    strip_prefix = "libspatialindex-1.9.3",
-    url = "https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz",
-)
+#http_archive(
+#    name = "lib-spatial-index",
+#    build_file = "@third_party//lib-spatial-index:BUILD",
+#    sha256 = "7b44340a3edc55c11abfc453bb60f148b29f569cef9e1148583e76132e9c7379",
+#    strip_prefix = "libspatialindex-1.9.3",
+#    url = "https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz",
+#)
 
-http_archive(
-    name = "gbenchmark",
-    sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
-    strip_prefix = "benchmark-1.6.1",
-    url = "https://github.com/google/benchmark/archive/v1.6.1.tar.gz",
-)
+#http_archive(
+#    name = "gbenchmark",
+#    sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
+#    strip_prefix = "benchmark-1.6.1",
+#    url = "https://github.com/google/benchmark/archive/v1.6.1.tar.gz",
+#)
+#
+#http_archive(
+#    name = "gtest",
+#    sha256 = "ad7fdba11ea011c1d925b3289cf4af2c66a352e18d4c7264392fead75e919363",
+#    strip_prefix = "googletest-1.13.0",
+#    url = "https://github.com/google/googletest/archive/v1.13.0.tar.gz",
+#)
 
-http_archive(
-    name = "gtest",
-    sha256 = "ad7fdba11ea011c1d925b3289cf4af2c66a352e18d4c7264392fead75e919363",
-    strip_prefix = "googletest-1.13.0",
-    url = "https://github.com/google/googletest/archive/v1.13.0.tar.gz",
-)
-
-http_archive(
-    name = "absl",
-    sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
-    strip_prefix = "abseil-cpp-20211102.0",
-    url = "https://github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
-)
+#http_archive(
+#    name = "absl",
+#    sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
+#    strip_prefix = "abseil-cpp-20211102.0",
+#    url = "https://github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
+#)
 
 #http_archive(
 #    name = "phtree",
