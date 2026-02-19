@@ -1,24 +1,48 @@
-# Bazel bootstrapping
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-# NOTE: We make third_party/ its own bazel workspace because it allows to run `bazel build ...` without
-# having all targets defined in third-party BUILD files in that directory buildable.
-local_repository(
-    name = "third_party",
-    path = "third_party",
+module(
+    name = "phtree-cpp",
+    version = "1.6.2",
 )
+
+# Bazel rules repositories.
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+# Dependencies.
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "spdlog", version = "1.17.0")
+bazel_dep(name = "google_benchmark", version = "1.9.5")
+
+bazel_dep(name = "boost.geometry", version = "1.90.0.bcr.1")
+
+# Development environment tooling
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+BUILDIFIER_VERSION = "0.29.0"
+
+## Bazel bootstrapping
+#
+#load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+#load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+#
+## NOTE: We make third_party/ its own bazel workspace because it allows to run `bazel build ...` without
+## having all targets defined in third-party BUILD files in that directory buildable.
+#local_repository(
+#    name = "third_party",
+#    path = "third_party",
+#)
 
 # External PH-Tree dependencies
 
-http_archive(
-    name = "spdlog",
-    build_file = "@third_party//spdlog:BUILD",
-    sha256 = "b38e0bbef7faac2b82fed550a0c19b0d4e7f6737d5321d4fd8f216b80f8aee8a",
-    strip_prefix = "spdlog-1.5.0",
-    url = "https://github.com/gabime/spdlog/archive/v1.5.0.tar.gz",
-)
+# TODO remove
+#http_archive(
+#    name = "spdlog",
+#    build_file = "@third_party//spdlog:BUILD",
+#    sha256 = "b38e0bbef7faac2b82fed550a0c19b0d4e7f6737d5321d4fd8f216b80f8aee8a",
+#    strip_prefix = "spdlog-1.5.0",
+#    url = "https://github.com/gabime/spdlog/archive/v1.5.0.tar.gz",
+#)
 
 #https://github.com/libspatialindex/libspatialindex/archive/refs/tags/1.9.3.tar.gz
 #https://github.com/libspatialindex/libspatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.gz
@@ -64,14 +88,15 @@ http_archive(
 #    remote = "https://github.com/tzaeschke/phtree-cpp",
 #)
 
-local_repository(
-    name = "phtree",
-    path = "/home/franky/work/phtree-cpp-2",
-)
+# TODO
+#local_repository(
+#    name = "phtree",
+#    path = "/home/franky/work/phtree-cpp-2",
+#)
 
 # Development environment tooling
 
-BUILDIFIER_VERSION = "0.29.0"
+#BUILDIFIER_VERSION = "0.29.0"
 
 http_file(
     name = "buildifier_linux",
@@ -137,9 +162,9 @@ http_archive(
     ],
 )
 
-load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+# load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 
-boost_deps()
+#boost_deps()
 
 ### libSpatialIndex
 
@@ -157,7 +182,7 @@ boost_deps()
 #)
 
 ### libPCL
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_pcl",
@@ -166,14 +191,14 @@ http_archive(
     url = "https://github.com/kgreenek/rules_pcl/archive/v1.1.0.tar.gz",
 )
 
-load("@rules_pcl//bzl:repositories.bzl", "pcl_repositories")
-
-pcl_repositories()
+# load("@rules_pcl//bzl:repositories.bzl", "pcl_repositories")
+bazel_dep(name = "pcl", version = "1.15.1.bcr.3")
+# TODO pcl_repositories()
 
 # NOTE: This must be loaded after the call to pcl_repositories().
-load("@rules_pcl//bzl:init_deps.bzl", "pcl_init_deps")
+# load("@rules_pcl//bzl:init_deps.bzl", "pcl_init_deps")
 
-pcl_init_deps()
+# TODO pcl_init_deps()
 
 #new_local_repository(
 #    name = "system_libs",
