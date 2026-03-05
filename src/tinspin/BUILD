@@ -1,7 +1,6 @@
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:private"])
-load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "tinspin",
@@ -9,8 +8,8 @@ cc_library(
     hdrs = [
         "kdtree.h",
         "min_max_helpers.h",
-        "min_max_vector_heap.h",
         "min_max_tree_heap.h",
+        "min_max_vector_heap.h",
         "quadtree_point.h",
     ],
     visibility = [

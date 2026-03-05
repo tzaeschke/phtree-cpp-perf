@@ -1,4 +1,3 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
 package(default_visibility = ["//visibility:private"])

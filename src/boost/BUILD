@@ -9,7 +9,6 @@ package(default_visibility = ["//visibility:private"])
 #)
 #
 
-
 #cc_library(
 #    name = "lib-si",
 #    testonly = True,
@@ -26,7 +25,6 @@ package(default_visibility = ["//visibility:private"])
 #    ],
 #    alwayslink = 1,
 #)
-
 
 #cc_library(
 #    name = "ph-mcxme",
@@ -49,18 +47,16 @@ cc_library(
     testonly = True,
     hdrs = [
         "boost_multimap.h",
-   ],
+    ],
     visibility = [
         "//visibility:public",
     ],
     deps = [
-       "@boost.geometry",
-       "@phtree//:phtree",
+        "@boost.geometry",
+        "@phtree",
     ],
     alwayslink = 1,
 )
-
-
 
 #cc_binary(
 #    name = "mcxme-main",

@@ -1,4 +1,3 @@
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:private"])
@@ -9,7 +8,6 @@ package(default_visibility = ["//visibility:private"])
 #    deps = ["@system_libs//:lib-spatial-index"],
 #)
 #
-
 
 #cc_library(
 #    name = "lib-si",
@@ -27,7 +25,6 @@ package(default_visibility = ["//visibility:private"])
 #    ],
 #    alwayslink = 1,
 #)
-
 
 #cc_library(
 #    name = "ph-mcxme",
@@ -50,18 +47,16 @@ cc_library(
     testonly = True,
     hdrs = [
         "lsi_multimap.h",
-   ],
+    ],
     visibility = [
         "//visibility:public",
     ],
     deps = [
-       "@lib-spatial-index",
-       "@phtree//:phtree",
+        "@lib-spatial-index",
+        "@phtree",
     ],
     alwayslink = 1,
 )
-
-
 
 #cc_binary(
 #    name = "mcxme-main",
